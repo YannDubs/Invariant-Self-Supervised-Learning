@@ -1,4 +1,0 @@
-- experiment=test
-- mode=debug_cpu
-- decodability=cluster_self_distillation
-- regularizer=cosine

@@ -1,7 +1,0 @@
-- mode=dev
-- data_repr.kwargs.num_workers=2
-- regularizer=cosine
-- decodability=cluster_self_distillation
-- decodability.kwargs.is_ema=True
-- experiment=dev
-- predictor=sk_svm

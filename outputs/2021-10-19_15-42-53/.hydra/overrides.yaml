@@ -1,4 +1,0 @@
-- mode=debug
-- data_repr.kwargs.num_workers=2
-- regularizer=cosine
-- decodability=prior_self_distillation

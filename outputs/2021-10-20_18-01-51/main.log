@@ -1,5 +1,0 @@
-[2021-10-20 18:01:51,707][__main__][INFO] - Stage : Startup
-[2021-10-20 18:01:51,715][__main__][INFO] - Workdir : /atlas/u/yanndubs/ISSL/outputs/2021-10-20_18-01-51.
-[2021-10-20 18:01:51,722][__main__][INFO] - Stage : Representor
-[2021-10-20 18:01:51,749][__main__][INFO] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None.
-[2021-10-20 18:07:36,293][__main__][INFO] - Load pretrained representor ...

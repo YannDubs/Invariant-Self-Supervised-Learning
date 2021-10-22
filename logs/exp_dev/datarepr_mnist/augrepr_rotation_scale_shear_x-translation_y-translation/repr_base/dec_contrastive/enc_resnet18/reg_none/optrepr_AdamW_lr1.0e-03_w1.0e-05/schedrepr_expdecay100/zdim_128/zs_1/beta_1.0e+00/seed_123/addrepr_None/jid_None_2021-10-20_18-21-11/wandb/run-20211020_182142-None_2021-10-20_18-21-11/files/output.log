@@ -1,9 +1,0 @@
-
-Predicting: 0it [00:00, ?it/s]
-/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:376: UserWarning: Your predict_dataloader has `shuffle=True`, it is best practice to turn this off for val/test/predict dataloaders.
-  rank_zero_warn(
-/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, predict dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
-Predicting: 100%|██████████████████████████████████████████████| 891/891 [00:18<00:00, 47.07it/s]
-Predicting: 0it [00:00, ?it/s]
-/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.setup has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.setup.
-  rank_zero_deprecation(

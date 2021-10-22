@@ -1,9 +1,0 @@
-,test
-repr/beta,1.0
-repr/decodability,8.139517784118652
-repr/eval_acc,0.109375
-repr/eval_err,0.890625
-repr/eval_loss,2.9702234268188477
-repr/fit_pMlz_qMlz,8.139517784118652
-repr/loss,8.176572799682617
-repr/regularize,0.037054456770420074

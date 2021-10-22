@@ -1,0 +1,74 @@
+# user specific
+config/user.yaml
+
+# directories
+results
+outputs*
+tensorboard
+multirun
+pretrained
+checkpoints
+wandb
+test
+/data
+logs
+notebooks
+.hydra
+old
+.idea
+*old
+lightning_logs
+
+# pyotrch
+*.ckpt
+
+# MAC
+.DS_Store
+__MACOSX/
+
+# IDE
+.vscode
+
+# Jupyter
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+*.egg-info
+__pycache__/
+*.py[cod]
+.python-version
+*$py.class
+
+# Distribution / packaging
+*.egg*
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+
+# pyenv
+.python-version
+
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
