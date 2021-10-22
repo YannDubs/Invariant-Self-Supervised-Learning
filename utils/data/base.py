@@ -5,8 +5,9 @@ Most code is reused from: https://github.com/YannDubs/lossyless/tree/main/utils/
 from __future__ import annotations
 
 import abc
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 import torch
 from pytorch_lightning import LightningDataModule
@@ -49,7 +50,7 @@ class ISSLDataset(abc.ABC):
         self,
         *args,
         aux_target: Optional[str] = "augmentation",
-        a_augmentations: Set[str] = {},
+        a_augmentations: Sequence[str] = {},
         is_normalize: bool = False,
         normalization: Optional[str] = None,
         seed: int = 123,
@@ -73,7 +74,7 @@ class ISSLDataset(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def get_x_target_Mx(self, index: int) -> Tuple[Any, Any, Any]:
+    def get_x_target_Mx(self, index: int) -> tuple[Any, Any, Any]:
         """Return the correct example, target, and maximal invariant."""
         ...
 
@@ -89,17 +90,17 @@ class ISSLDataset(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def is_clfs(self) -> Dict[Optional[str], Any]:
+    def is_clfs(self) -> dict[Optional[str], Any]:
         """Return a dictionary saying whether `input`, `target`, should be classified."""
         ...
 
     @property
     @abc.abstractmethod
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         """Return dictionary giving the shape `input`, `target`."""
         ...
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         x, target, Mx = self.get_x_target_Mx(index)
 
         if self.aux_target is None:
@@ -129,7 +130,7 @@ class ISSLDataset(abc.ABC):
 
         return to_add
 
-    def get_is_clf(self) -> Tuple[bool, bool]:
+    def get_is_clf(self) -> tuple[bool, bool]:
         """Return `is_clf` for the target and aux_target."""
         is_clf = self.is_clfs
         is_clf["representative"] = is_clf["input"]
@@ -138,7 +139,7 @@ class ISSLDataset(abc.ABC):
 
         return is_clf["target"], is_clf[self.aux_target]
 
-    def get_shapes(self) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+    def get_shapes(self) -> tuple[tuple[int, ...], tuple[int, ...]]:
         """Return `shapes` for the target and aux_target."""
         shapes = self.shapes
         shapes["representative"] = shapes["input"]
@@ -199,7 +200,7 @@ class ISSLDataModule(LightningDataModule):
         val_batch_size: Optional[int] = None,
         seed: int = 123,
         reload_dataloaders_every_n_epochs: bool = False,
-        dataset_kwargs: Dict = {},
+        dataset_kwargs: dict = {},
     ) -> None:
         super().__init__()
         self.data_dir = data_dir
@@ -257,8 +258,8 @@ class ISSLDataModule(LightningDataModule):
         self.is_aux_already_represented = dataset.is_aux_already_represented
 
     @property
-    def balancing_weights(self) -> Dict[str, float]:
-        """Dictionary mapping every target to a weight that examples from this class should carry."""
+    def balancing_weights(self) -> dict[str, float]:
+        """dictionary mapping every target to a weight that examples from this class should carry."""
         return dict()
 
     def setup(self, stage: Optional[str] = None) -> None:

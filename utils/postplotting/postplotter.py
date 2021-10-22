@@ -19,7 +19,7 @@ class PostPlotter(abc.ABC):
         Prefix for the filename to save.
 
     pretty_renamer : dict, optional
-        Dictionary mapping string (keys) to human readable ones for nicer printing and plotting.
+        dictionary mapping string (keys) to human readable ones for nicer printing and plotting.
 
     dpi : int, optional
         Resolution of the figures

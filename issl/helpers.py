@@ -9,7 +9,7 @@ from argparse import Namespace
 from collections.abc import MutableMapping, MutableSet, Sequence
 from functools import reduce
 from queue import Queue
-from typing import Any, Dict, Optional
+from typing import Any, Optional, dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -482,7 +482,7 @@ def get_lr_scheduler(
     decay_factor: int = 1000,
     k_steps: int = 3,
     name: Optional[str] = None,
-    kwargs_config_scheduler: Dict[str, Any] = {},
+    kwargs_config_scheduler: dict[str, Any] = {},
     **kwargs,
 ):
     """Return the correct lr scheduler as a dictionary as required by pytorch lightning.

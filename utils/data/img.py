@@ -7,7 +7,7 @@ import os
 from collections.abc import Callable, Sequence
 from os import path
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -119,7 +119,7 @@ class ISSLImgDataset(ISSLDataset):
         standard in ISSL but not theoretically necessary.
 
     val_x_augmentations : set of str or "train_x_augmentations" or "a_augmentations", optional
-        List of augmentation to use during evaluation.
+        list of augmentation to use during evaluation.
 
     is_normalize : bool, optional
         Whether to normalize all input images. Only for colored images. If True, you should ensure
@@ -149,9 +149,9 @@ class ISSLImgDataset(ISSLDataset):
     def __init__(
         self,
         *args,
-        a_augmentations: Set[str] = {},
-        train_x_augmentations: Union[Set[str], str] = {},
-        val_x_augmentations: Union[Set[str], str] = {},
+        a_augmentations: Sequence[str] = {},
+        train_x_augmentations: Union[Sequence[str], str] = {},
+        val_x_augmentations: Union[Sequence[str], str] = {},
         is_normalize: bool = True,
         normalization: Optional[str] = None,
         base_resize: str = "resize",
@@ -217,15 +217,15 @@ class ISSLImgDataset(ISSLDataset):
         return self.curr_split == "train"
 
     @abc.abstractmethod
-    def get_img_target(self, index: int) -> Tuple[Any, npt.ArrayLike]:
+    def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
         """Return the unaugmented image (in PIL format) and target."""
         ...
 
     @classmethod  # class method property does not work before python 3.9
-    def get_available_splits(cls) -> List[str]:
+    def get_available_splits(cls) -> list[str]:
         return ["train", "test"]
 
-    def get_augmentor(self, augmentations: Union[Set[str], str]) -> Callable:
+    def get_augmentor(self, augmentations: Union[Sequence[str], str]) -> Callable:
         """Return an augmentor that can be called with augmentor(X)."""
 
         if isinstance(augmentations, str):
@@ -255,7 +255,7 @@ class ISSLImgDataset(ISSLDataset):
         )
         return augmentor
 
-    def get_x_target_Mx(self, index: int) -> Tuple[Any, Any, Any]:
+    def get_x_target_Mx(self, index: int) -> tuple[Any, Any, Any]:
         """Return the correct example, target, and maximal invariant."""
         img, target = self.get_img_target(index)
 
@@ -269,7 +269,7 @@ class ISSLImgDataset(ISSLDataset):
         return x, target, max_inv
 
     @property
-    def augmentations(self) -> Dict[str, Dict[str, Callable[..., Any]]]:
+    def augmentations(self) -> dict[str, dict[str, Callable[..., Any]]]:
         """
         Return a dictionary of dictionaries containing all possible augmentations of interest.
         first dictionary say which kind of data they act on.
@@ -405,12 +405,12 @@ class ISSLImgDataset(ISSLDataset):
         return shape[0] == 3
 
     @property
-    def is_clfs(self) -> Dict[str, bool]:
+    def is_clfs(self) -> dict[str, bool]:
         # images should be seen as regression when they are color and clf otherwise
         return dict(input=not self.is_color, target=True)
 
     @property
-    def shapes(self) -> Dict[str, Tuple[int, ...]]:
+    def shapes(self) -> dict[str, tuple[int, ...]]:
         # Imp: In each child should assign "input" and "target"
         shapes = dict()
 
@@ -424,7 +424,7 @@ class ISSLImgDataset(ISSLDataset):
 class ISSLImgDataModule(ISSLDataModule):
     def get_train_val_dataset(
         self, **dataset_kwargs
-    ) -> Tuple[ISSLImgDataset, ISSLImgDataset]:
+    ) -> tuple[ISSLImgDataset, ISSLImgDataset]:
         dataset = self.Dataset(
             self.data_dir, download=False, curr_split="train", **dataset_kwargs,
         )
@@ -502,13 +502,13 @@ class MnistDataset(ISSLImgDataset, MNIST):
         return os.path.join(self.root, self.FOLDER, "processed")
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super(MnistDataset, self).shapes
         shapes["input"] = shapes.get("input", (1, 32, 32))
         shapes["target"] = (10,)
         return shapes
 
-    def get_img_target(self, index: int) -> Tuple[Any, int]:
+    def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = MNIST.__getitem__(self, index)
         return img, target
 
@@ -549,13 +549,13 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
     get_img_from_target = MnistDataset.get_img_from_target
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super(Cifar10Dataset, self).shapes
         shapes["input"] = shapes.get("input", (3, 32, 32))
         shapes["target"] = (10,)
         return shapes
 
-    def get_img_target(self, index: int) -> Tuple[Any, int]:
+    def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = CIFAR10.__getitem__(self, index)
         return img, target
 
@@ -579,13 +579,13 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
     get_img_from_target = MnistDataset.get_img_from_target
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super(Cifar100Dataset, self).shapes
         shapes["input"] = shapes.get("input", (3, 32, 32))
         shapes["target"] = (100,)
         return shapes
 
-    def get_img_target(self, index: int) -> Tuple[Any, int]:
+    def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = CIFAR100.__getitem__(self, index)
         return img, target
 
@@ -606,13 +606,13 @@ class STL10Dataset(ISSLImgDataset, STL10):
         super().__init__(*args, curr_split=curr_split, split=curr_split, **kwargs)
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super(STL10Dataset, self).shapes
         shapes["input"] = shapes.get("input", (3, 96, 96))
         shapes["target"] = (10,)
         return shapes
 
-    def get_img_target(self, index: int) -> Tuple[Any, int]:
+    def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = STL10.__getitem__(self, index)
         return img, target
 
@@ -676,13 +676,13 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
         )
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super(ImageNetDataset, self).shapes
         shapes["input"] = shapes.get("input", (3, 224, 224))
         shapes["target"] = (1000,)
         return shapes
 
-    def get_img_target(self, index: int) -> Tuple[Any, npt.ArrayLike]:
+    def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
         img, target = ImageNet.__getitem__(self, index)
         return img, target
 
@@ -818,7 +818,7 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
         # remove all downloading files
         remove_rf(Path(metadata.data_dir))
 
-    def get_img_target(self, index: int) -> Tuple[Any, npt.ArrayLike]:
+    def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
         img, target = ImageFolder.__getitem__(self, index)
         return img, target
 
@@ -847,7 +847,7 @@ class Food101Dataset(TensorflowBaseDataset):
     min_size = 256
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super().shapes
         shapes["input"] = shapes.get("input", (3, 224, 224))
         shapes["target"] = (101,)
@@ -863,7 +863,7 @@ class Food101Dataset(TensorflowBaseDataset):
         return renamer[split]
 
     @classmethod
-    def get_available_splits(cls) -> List[str]:
+    def get_available_splits(cls) -> list[str]:
         return ["train", "validation"]
 
 
@@ -878,7 +878,7 @@ class Cars196Dataset(TensorflowBaseDataset):
     min_size = 256
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super().shapes
         shapes["input"] = shapes.get("input", (3, 224, 224))
         shapes["target"] = (196,)
@@ -900,7 +900,7 @@ class PCamDataset(TensorflowBaseDataset):
     min_size = None
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super().shapes
         shapes["input"] = shapes.get("input", (3, 96, 96))
         shapes["target"] = (2,)
@@ -911,7 +911,7 @@ class PCamDataset(TensorflowBaseDataset):
         return "patch_camelyon"
 
     @classmethod
-    def get_available_splits(cls) -> List[str]:
+    def get_available_splits(cls) -> list[str]:
         return ["train", "test", "validation"]
 
 
@@ -929,7 +929,7 @@ class Pets37Dataset(TensorflowBaseDataset):
     min_size = 256
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super().shapes
         shapes["input"] = shapes.get("input", (3, 224, 224))
         shapes["target"] = (37,)
@@ -946,7 +946,7 @@ class Pets37DataModule(ISSLImgDataModule):
         return Pets37Dataset
 
     @property
-    def balancing_weights(self) -> Dict[str, float]:
+    def balancing_weights(self) -> dict[str, float]:
         return Pets37BalancingWeights  # should compute mean acc per class
 
 
@@ -955,7 +955,7 @@ class Caltech101Dataset(TensorflowBaseDataset):
     min_size = 256
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super().shapes
         shapes["input"] = shapes.get("input", (3, 224, 224))
         shapes["target"] = (102,)  # ?!? there are 102 classes in caltech 101
@@ -972,7 +972,7 @@ class Caltech101DataModule(ISSLImgDataModule):
         return Caltech101Dataset
 
     @property
-    def balancing_weights(self) -> Dict[str, float]:
+    def balancing_weights(self) -> dict[str, float]:
         return Caltech101BalancingWeights  # should compute mean acc per class
 
 
@@ -1090,7 +1090,7 @@ class ExternalImgDataset(ISSLImgDataset):
         return self.length
 
     @classmethod
-    def get_available_splits(cls) -> List[str]:
+    def get_available_splits(cls) -> list[str]:
         return ["test", "train"]
 
     @property
@@ -1192,13 +1192,13 @@ class CocoClipDataset(ExternalImgDataset):
         return files_to_rm
 
     @property
-    def shapes(self) -> Dict[Optional[str], Tuple[int, ...]]:
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         shapes = super().shapes
         shapes["input"] = shapes.get("input", (3, 224, 224))
         shapes["target"] = None  # no classification
         return shapes
 
-    def get_img_target(self, index: int) -> Tuple[Any, npt.ArrayLike]:
+    def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
         split_path = self.get_dir(self.curr_split)
         img = image_loader(split_path / f"{index}th_img.jpeg")
         return img, -1  # target -1 means missing for torchvision (see stl10)

@@ -16,7 +16,7 @@ trainer:
   limit_train_batches: 0.05
   limit_test_batches: 0.05
 
-data_feat:
+data_repr:
   kwargs:
     # decreased because it was giving an error
     batch_size: 128

@@ -120,10 +120,10 @@ class StrFormatter:
     Parameters
     ----------
     exact_match : dict, optional
-        Dictionary of strings that will be replaced by exact match.
+        dictionary of strings that will be replaced by exact match.
 
     substring_replace : dict, optional
-        Dictionary of substring that will be replaced if no exact_match. Order matters.
+        dictionary of substring that will be replaced if no exact_match. Order matters.
         Everything is title case at this point.
 
     to_upper : list, optional

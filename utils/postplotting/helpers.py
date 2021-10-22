@@ -61,10 +61,10 @@ def aggregate(
         Table to aggregate.
 
     cols_to_agg : list of str
-        List of columns over which to aggregate. E.g. `["seed"]`.
+        list of columns over which to aggregate. E.g. `["seed"]`.
 
     aggregates : list of str
-        List of functions to use for aggregation. The aggregated columns will be called `{col}_{aggregate}`.
+        list of functions to use for aggregation. The aggregated columns will be called `{col}_{aggregate}`.
     """
     if len(cols_to_agg) == 0:
         return table

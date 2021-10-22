@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Sequence
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, tuple
 
 import torch
 import torch.nn as nn
@@ -207,7 +207,7 @@ class CNN(nn.Module):
 
     def validate_sizes(
         self, out_dim: int, in_shape: Sequence[int]
-    ) -> Tuple[Sequence[int], int, Any]:
+    ) -> tuple[Sequence[int], int, Any]:
         if isinstance(out_dim, int) and not isinstance(in_shape, int):
             self.is_transpose = False
         else:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from numbers import Number
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Union, dict, tuple
 
 import einops
 import torch
@@ -58,7 +58,7 @@ class Distributions:
         return cls(*suff_params, **kwargs)
 
     @classmethod
-    def preprocess_suff_params(cls, *suff_params: torch.Tensor) -> Tuple[torch.Tensor]:
+    def preprocess_suff_params(cls, *suff_params: torch.Tensor) -> tuple[torch.Tensor]:
         """Preprocesses parameters outputted from network (usually to satisfy some constraints)."""
         return suff_params
 
@@ -91,7 +91,7 @@ class DiagGaussian(Distributions, Independent):
     @classmethod
     def preprocess_suff_params(
         cls, diag_loc: torch.Tensor, diag_log_var: torch.Tensor
-    ) -> Tuple[torch.Tensor]:
+    ) -> tuple[torch.Tensor]:
         # usually exp()**0.5, but you don't want to explode
         diag_scale = F.softplus(diag_log_var) + cls.min_std
         return diag_loc, diag_scale
@@ -178,9 +178,9 @@ class CondDist(nn.Module):
         in_shape: Sequence[int],
         out_shape: Sequence[int],
         architecture: Union[str, Callable],
-        arch_kwargs: Dict[str, Any] = {},
+        arch_kwargs: dict[str, Any] = {},
         family: str = "deterministic",
-        fam_kwargs: Dict[str, Any] = {},
+        fam_kwargs: dict[str, Any] = {},
     ) -> None:
         super().__init__()
 

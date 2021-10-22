@@ -86,7 +86,7 @@ class Predictor(pl.LightningModule):
 
         if is_return_logs:
             logs : dict
-                Dictionary of values to log.
+                dictionary of values to log.
         """
         with torch.no_grad():
             # shape: [batch_size,  *z.out_shape]

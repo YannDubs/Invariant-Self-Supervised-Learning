@@ -44,7 +44,11 @@ class ISSLModule(pl.LightningModule):
     def final_beta(self):
         """Return the final beta to use."""
         cfg = self.hparams
-        beta = cfg.representor.loss.beta * cfg.regularizer.factor_beta
+        beta = (
+            cfg.representor.loss.beta
+            * cfg.regularizer.factor_beta
+            * cfg.decodability.factor_beta
+        )
         return beta
 
     def get_beta_annealer(self) -> Annealer:

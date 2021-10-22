@@ -25,6 +25,25 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_gen,vae,gen,gen_no_norm,gen_no_V,gen_A_pred,gen_no_reg,gen_no_aug,gen_std_aug
+representor=std_gen,vae,gen,gen_no_norm,gen_no_V,gen_A_pred,gen_no_reg,gen_no_aug,gen_std_aug,gen_stoch
 seed=1
 "
+
+
+kwargs_multi="
+representor=std_gen
+seed=1
+"
+
+if [ "$is_plot_only" = false ] ; then
+  for kwargs_dep in   ""
+  do
+
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+
+    sleep 3
+
+  done
+fi
+
+wait

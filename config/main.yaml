@@ -96,7 +96,7 @@ callbacks: # can use any callback name of issl.callbacks, pl_bolts.callbacks, pl
 
 trainer:
   #default_root_dir: ${paths.results}
-  max_epochs: 200
+  max_epochs: 100
   #detect_anomaly: false # makes it slower if true #TODO uncomment once you have pytorch 1.5
   progress_bar_refresh_rate: 10000 # increase to show progress bar  #DEV
   resume_from_checkpoint: null # string to checkpoint if you want to resume

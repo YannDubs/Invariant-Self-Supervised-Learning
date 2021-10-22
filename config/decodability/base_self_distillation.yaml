@@ -1,6 +1,7 @@
 defaults:
   - base
 
+factor_beta: 1
 kwargs:
   mode: self_distillation
   z_shape: ${encoder.z_shape}
