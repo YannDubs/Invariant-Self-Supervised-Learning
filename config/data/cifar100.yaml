@@ -1,0 +1,9 @@
+defaults:
+  - base
+
+dataset: cifar100
+
+kwargs:
+  val_size: 0.05
+  dataset_kwargs:
+    a_augmentations: [hflip,resize-crop,color,gray]

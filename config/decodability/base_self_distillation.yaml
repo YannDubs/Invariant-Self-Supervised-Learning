@@ -1,0 +1,19 @@
+defaults:
+  - base
+
+kwargs:
+  mode: self_distillation
+  z_shape: ${encoder.z_shape}
+  loss: null
+  is_ema: False
+  is_process_Mx: False
+  is_stop_grad:  True
+  is_aux_already_represented: ${data.is_aux_already_represented}
+  is_normalize_proj: False
+  is_proj_pred_same: False
+  predictor_kwargs:
+      architecture: "linear"
+      out_shape: 128
+  projector_kwargs:
+      architecture: "flatten"
+      out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}

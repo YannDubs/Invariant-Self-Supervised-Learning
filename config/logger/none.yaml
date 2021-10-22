@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - base@logger
+
+logger:
+  name: null
+
+callbacks: # can use any callback name of issl.callbacks, pl_bolts.callbacks, pl.callbacks
+  LearningRateMonitor:
+    is_use : false

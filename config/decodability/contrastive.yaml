@@ -1,0 +1,19 @@
+defaults:
+  - base
+
+kwargs:
+  mode: contrastive
+  z_shape: ${encoder.z_shape}
+  is_train_temperature: True
+  is_normalize_proj: True
+  effective_batch_size: null
+  is_aux_already_represented: ${data.is_aux_already_represented}
+  is_project:  True
+  src_tgt_comparison: "all"
+  is_proj_pred_same: True
+  predictor_kwargs:
+    architecture: "linear"
+    out_shape: 128
+  projector_kwargs:
+    architecture: "mlp"
+    out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}

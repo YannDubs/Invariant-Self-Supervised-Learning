@@ -1,0 +1,210 @@
+defaults:
+
+  # GENERAL #
+  - _self_
+  - user
+
+  - logger: wandb
+  - server: none
+  - hypopt: none
+  - mode: none
+
+  # REPRESENTOR #
+  - data@data_repr: mnist
+  - architecture@encoder: resnet18
+  - architecture@online_evaluator: mlp_h2048_l2
+  - checkpoint@checkpoint_repr: bestValLoss
+  - optimizer@optimizer_issl: AdamW_lr1e-3_w1e-5 # larger learning rate gives smaller rate but smaller acc. should stick to using adam if not changing the  beta will effectively change the lr
+  - scheduler@scheduler_issl: expdecay100
+  - optimizer@optimizer_eval: AdamW_lr3e-4_w1e-5
+  - scheduler@scheduler_eval: expdecay100 # ensure that can always keep up with the changing representation
+  - representor: base
+  - decodability: contrastive
+  - regularizer: none
+  - finetune: none # change if using pretrained representor.
+
+  # PREDICTOR #
+  - data@data_pred: data_repr # use same as data_repr
+  - checkpoint@checkpoint_pred: bestValLoss  # really important if using cosine scheduler
+  - optimizer@optimizer_pred: AdamW_lr3e-4_w1e-5
+  - scheduler@scheduler_pred: unifmultistep100
+  - predictor: pytorch
+
+  # OVERRIDES #
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+
+########## GENERAL ##########
+experiment: ???
+job_id: ??? # unique identifier
+seed: 123
+timeout: 1440 # 24 hours
+time: ${hydra:job.num}_${now:%Y-%m-%d_%H-%M-%S} # add job num because time is not when job runs
+long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/reg_${regularizer.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_shape}/zs_1/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr}
+long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/addpred_${other.add_pred}
+is_return: false # will return everything (the data, the models, ...)
+monitor_return: [] # normal return of the function. This is especially useful for hyperparameter tuning
+monitor_direction: [] # whether the monitor should be maximized or minimized. useful for hyperparameter tuning
+is_no_save: ${is_return} # if you are sure you don't want to save anything
+
+paths: #! the best practice is not to modify those paths but to symlink them to the places you want
+  base_dir: ${hydra:runtime.cwd}
+  data: ${paths.base_dir}/data
+  work: ${hydra.runtime.cwd}/outputs/${now:%Y-%m-%d_%H-%M-%S} # unfortunately cannot use hydra: in hydra so need to do everything by hand i.e. cannot use ${paths.base_dir}/outputs/{time}
+  results: ${paths.base_dir}/results/${long_name}/jid_${job_id}
+  logs: ${paths.base_dir}/logs/${long_name}/jid_${job_id}
+  checkpoint: ${paths.base_dir}/checkpoints/${long_name}/jid_${job_id}
+  pretrained:
+    save: ${paths.base_dir}/pretrained/${long_name}/jid_${job_id} # directory for saving pretrained models
+    load: ${paths.base_dir}/pretrained/${long_name}/*  # directory for loading pretrained models if you use ** or * it will glob all matching files and take the latest
+
+other: # some meta information that can be useful for internal stuff (usually dirty workarounds or for logging)
+  is_debug: False # using debug mode
+  is_quick: False # using a "quick" mode and should not log very slow things
+  hydra_job_id: ${hydra:job.id} # this is the job id without the sweep number. Useful for filtering and grouping in wandb
+  add_repr: null # some additional value for saving (e.g. current sweeping values)
+  add_pred: null # some additional value for saving (e.g. current sweeping values)
+  git_hash: null
+
+### STAGE SPECIFIC ###
+stage: ???
+long_name: ???
+checkpoint: {}
+data: {}
+
+### RUNNING ###
+evaluation:
+  is_eval_on_test: True # whether to evaluate on test. If not uses validation which is necessary if you don't have access to test set
+  representor:
+    ckpt_path: "best"
+    is_evaluate: ${representor.is_train}
+    is_online_eval: True
+  predictor:
+    ckpt_path: "best"
+    is_evaluate: ${predictor.is_train}
+    is_eval_train: False # whether to evaluate the predictor on train
+
+callbacks: # can use any callback name of issl.callbacks, pl_bolts.callbacks, pl.callbacks
+  is_force_no_additional_callback: false # force empty callback
+
+  # all callback kwargs should be here (`is_use` just says whether to use that callback)
+  LearningRateMonitor:
+    is_use : true
+    kwargs:
+      logging_interval : epoch
+
+trainer:
+  #default_root_dir: ${paths.results}
+  max_epochs: 200
+  #detect_anomaly: false # makes it slower if true #TODO uncomment once you have pytorch 1.5
+  progress_bar_refresh_rate: 10000 # increase to show progress bar  #DEV
+  resume_from_checkpoint: null # string to checkpoint if you want to resume
+  gradient_clip_val: 3 # 0 means no clip
+  reload_dataloaders_every_n_epochs: 0
+  log_every_n_steps: 500
+  val_check_interval: 1.0 # decrease for subepoch checkpointing
+
+  # ENGINEERING / SPEED #
+  gpus: 1
+  num_nodes: 1  # number gpu nodes
+  precision: 16 # use 16 bit for speed # TODO "b16" once use pytorhc lightnin 1.5
+  accumulate_grad_batches: 1
+  sync_batchnorm: false # whether to synchronize batch norm over GPUs
+
+  # DEBUGGING #
+  fast_dev_run: false # use true to make a quick test (not full epoch)
+  overfit_batches: 0.0 # use 0.01 to make sure you can overfit 1% of training data => training works
+  weights_summary: full # full to print show the entire model, top nly prints the top module
+  profiler: null # use `simple` or `"advanced"` to find bottleneck
+
+########## REPRESENTOR ##########
+### DATA ###
+data_repr: {}
+
+### MODELS ###
+encoder:
+  name: ???
+  z_shape: 128
+  is_normalize_Z: True
+  kwargs:
+    in_shape: ${data.shape}
+    out_shape: ${encoder.z_shape} # do not change that
+    architecture: ???
+    arch_kwargs: {}
+    fam_kwargs: {}
+    family: deterministic
+
+Z_processor:
+  kwargs:
+    in_shape: ${encoder.z_shape}
+    out_shape: ${Z_processor.kwargs.in_shape} # should not change that. COde assumes that in and out processor are same
+    architecture: identity
+
+online_evaluator:
+  name: ???
+  kwargs:
+    in_shape: ${encoder.z_shape}
+    out_shape: ${data.target_shape}
+    architecture: ???
+    arch_kwargs: {}
+    is_classification: ${data.target_is_clf}
+
+### OPTIMIZER ###
+optimizer_issl:
+  name: ${optimizer_issl.mode}_lr${format:${optimizer_issl.kwargs.lr},.1e}_w${format:${optimizer_issl.kwargs.weight_decay},.1e}
+  mode: ???
+  kwargs:
+    lr: ???
+    weight_decay: 0
+scheduler_issl: {}
+
+optimizer_eval:
+  name: ${optimizer_eval.mode}_lr${format:${optimizer_eval.kwargs.lr},.1e}_w${format:${optimizer_eval.kwargs.weight_decay},.1e}
+  mode: ???
+  kwargs:
+    lr: ???
+    weight_decay: 0
+scheduler_eval: {}
+
+### RUNNING ###
+checkpoint_repr: {}
+# dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
+update_trainer_repr: {}
+
+########## PREDICTOR ##########
+### DATA ###
+data_pred: {}
+
+### MODEL ###
+predictor:
+  name: ???
+  is_skip: false # run predictor?
+  is_train: True
+
+### OPTIMIZER ###
+optimizer_pred:
+  name: ${optimizer_pred.mode}_lr${format:${optimizer_pred.kwargs.lr},.1e}_w${format:${optimizer_pred.kwargs.weight_decay},.1e}
+  mode: ???
+  kwargs:
+    lr: ???
+    weight_decay: 0
+scheduler_pred: {}
+
+### RUNNING ###
+checkpoint_pred: {}
+# dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
+update_trainer_pred: {}
+
+########## HYDRA ##########
+hydra:
+  job:
+    env_set:
+      NCCL_DEBUG: INFO
+
+  run:
+    dir: ${paths.work}
+
+  sweep:
+    dir:  ${paths.work}
+    subdir: ${hydra.job.num}_${hydra.job.id}

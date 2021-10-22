@@ -1,0 +1,39 @@
+2021-10-20 00:09:15,159 INFO    MainThread:3536334 [wandb_setup.py:_flush():69] setting env: {}
+2021-10-20 00:09:15,159 WARNING MainThread:3536334 [wandb_setup.py:_flush():69] could not save program above cwd: /atlas/u/yanndubs/ISSL/main.py
+2021-10-20 00:09:15,159 INFO    MainThread:3536334 [wandb_setup.py:_flush():69] setting login settings: {'anonymous': 'allow'}
+2021-10-20 00:09:15,160 INFO    MainThread:3536334 [wandb_init.py:_log_setup():357] Logging user logs to /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_00-08-28/wandb/run-20211020_000915-None_2021-10-20_00-08-28/logs/debug.log
+2021-10-20 00:09:15,160 INFO    MainThread:3536334 [wandb_init.py:_log_setup():358] Logging internal logs to /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_00-08-28/wandb/run-20211020_000915-None_2021-10-20_00-08-28/logs/debug-internal.log
+2021-10-20 00:09:15,160 INFO    MainThread:3536334 [wandb_init.py:init():390] calling init triggers
+2021-10-20 00:09:15,160 INFO    MainThread:3536334 [wandb_init.py:init():395] wandb.init called with sweep_config: {}
+config: {}
+2021-10-20 00:09:15,161 INFO    MainThread:3536334 [wandb_init.py:init():435] starting backend
+2021-10-20 00:09:15,161 INFO    MainThread:3536334 [backend.py:_multiprocessing_setup():70] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2021-10-20 00:09:15,167 INFO    MainThread:3536334 [backend.py:ensure_launched():135] starting backend process...
+2021-10-20 00:09:15,220 INFO    MainThread:3536334 [backend.py:ensure_launched():139] started backend process with pid: 3537080
+2021-10-20 00:09:15,221 INFO    MainThread:3536334 [wandb_init.py:init():440] backend started and connected
+2021-10-20 00:09:15,258 INFO    MainThread:3536334 [wandb_init.py:init():499] updated telemetry
+2021-10-20 00:09:15,259 INFO    MainThread:3536334 [wandb_init.py:init():522] communicating current version
+2021-10-20 00:09:19,858 INFO    MainThread:3536334 [wandb_init.py:init():527] got version response upgrade_message: "wandb version 0.12.5 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2021-10-20 00:09:19,859 INFO    MainThread:3536334 [wandb_init.py:init():535] communicating run to backend with 30 second timeout
+2021-10-20 00:09:49,860 INFO    MainThread:3536334 [interface.py:_communicate_run():651] couldn't get run from backend
+2021-10-20 00:09:49,861 ERROR   MainThread:3536334 [wandb_init.py:init():540] backend process timed out
+2021-10-20 00:09:49,861 ERROR   MainThread:3536334 [wandb_init.py:init():549] encountered error: Error communicating with wandb process
+try: wandb.init(settings=wandb.Settings(start_method='fork'))
+or:  wandb.init(settings=wandb.Settings(start_method='thread'))
+For more info see: https://docs.wandb.ai/library/init#init-start-error
+2021-10-20 00:09:49,895 ERROR   MainThread:3536334 [wandb_init.py:init():835] error
+Traceback (most recent call last):
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 808, in init
+    run = wi.init()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 553, in init
+    backend.cleanup()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/backend/backend.py", line 167, in cleanup
+    self.interface.join()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 830, in join
+    _ = self._communicate(record)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 539, in _communicate
+    return self._communicate_async(rec, local=local).get(timeout=timeout)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 544, in _communicate_async
+    raise Exception("The wandb backend process has shutdown")
+Exception: The wandb backend process has shutdown

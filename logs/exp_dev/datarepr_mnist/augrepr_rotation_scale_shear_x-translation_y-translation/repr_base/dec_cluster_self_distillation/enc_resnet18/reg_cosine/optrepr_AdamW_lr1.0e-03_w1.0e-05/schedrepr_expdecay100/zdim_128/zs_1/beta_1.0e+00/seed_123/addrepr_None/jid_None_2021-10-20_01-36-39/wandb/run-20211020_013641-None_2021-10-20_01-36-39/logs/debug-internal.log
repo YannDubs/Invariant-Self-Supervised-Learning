@@ -1,0 +1,44 @@
+2021-10-20 01:36:43,538 INFO    MainThread:3568485 [internal.py:wandb_internal():86] W&B internal server running at pid: 3568485, started at: 2021-10-20 01:36:43.537771
+2021-10-20 01:36:43,541 DEBUG   HandlerThread:3568485 [handler.py:handle_request():126] handle_request: check_version
+2021-10-20 01:36:43,541 INFO    WriterThread:3568485 [datastore.py:open_for_write():77] open: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/run-None_2021-10-20_01-36-39.wandb
+2021-10-20 01:36:43,545 DEBUG   SenderThread:3568485 [sender.py:send():185] send: header
+2021-10-20 01:36:43,545 DEBUG   SenderThread:3568485 [sender.py:send_request():199] send_request: check_version
+2021-10-20 01:36:43,624 DEBUG   SenderThread:3568485 [sender.py:send():185] send: run
+2021-10-20 01:36:43,628 INFO    SenderThread:3568485 [sender.py:_maybe_setup_resume():427] checking resume status for issl/tmp/None_2021-10-20_01-36-39
+2021-10-20 01:36:43,721 DEBUG   SenderThread:3568485 [git.py:repo():33] git repository is invalid
+2021-10-20 01:36:43,857 INFO    SenderThread:3568485 [dir_watcher.py:__init__():169] watching files in: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files
+2021-10-20 01:36:43,858 DEBUG   HandlerThread:3568485 [handler.py:handle_request():126] handle_request: run_start
+2021-10-20 01:36:43,858 INFO    SenderThread:3568485 [sender.py:_start_run_threads():746] run started: None_2021-10-20_01-36-39 with start time 1634719001
+2021-10-20 01:36:43,859 DEBUG   SenderThread:3568485 [sender.py:send():185] send: summary
+2021-10-20 01:36:43,861 INFO    SenderThread:3568485 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 01:36:43,865 DEBUG   HandlerThread:3568485 [meta.py:__init__():40] meta init
+2021-10-20 01:36:43,865 DEBUG   HandlerThread:3568485 [meta.py:__init__():54] meta init done
+2021-10-20 01:36:43,865 DEBUG   HandlerThread:3568485 [meta.py:probe():211] probe
+2021-10-20 01:36:43,873 DEBUG   HandlerThread:3568485 [git.py:repo():33] git repository is invalid
+2021-10-20 01:36:43,873 DEBUG   HandlerThread:3568485 [meta.py:_save_code():90] save code
+2021-10-20 01:36:43,873 WARNING HandlerThread:3568485 [meta.py:_save_code():92] unable to save code -- program entry not found
+2021-10-20 01:36:43,873 DEBUG   HandlerThread:3568485 [meta.py:_save_pip():58] save pip
+2021-10-20 01:36:43,875 DEBUG   HandlerThread:3568485 [meta.py:_save_pip():72] save pip done
+2021-10-20 01:36:43,875 DEBUG   HandlerThread:3568485 [meta.py:_save_conda():79] save conda
+2021-10-20 01:36:44,872 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/conda-environment.yaml
+2021-10-20 01:36:44,873 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/requirements.txt
+2021-10-20 01:36:44,873 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/wandb-summary.json
+2021-10-20 01:36:48,863 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/conda-environment.yaml
+2021-10-20 01:36:48,956 DEBUG   HandlerThread:3568485 [meta.py:_save_conda():87] save conda done
+2021-10-20 01:36:48,956 DEBUG   HandlerThread:3568485 [meta.py:probe():249] probe done
+2021-10-20 01:36:49,903 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/output.log
+2021-10-20 01:36:49,904 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/wandb-metadata.json
+2021-10-20 01:36:50,905 INFO    Thread-8  :3568485 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/files/output.log
+2021-10-20 01:36:50,912 DEBUG   HandlerThread:3568485 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 01:36:50,912 DEBUG   SenderThread:3568485 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 01:36:51,013 DEBUG   SenderThread:3568485 [sender.py:send():185] send: metric
+2021-10-20 01:36:51,014 DEBUG   SenderThread:3568485 [sender.py:send():185] send: metric
+2021-10-20 01:36:51,014 WARNING SenderThread:3568485 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 01:36:51,014 DEBUG   SenderThread:3568485 [sender.py:send():185] send: config
+2021-10-20 01:36:51,015 DEBUG   SenderThread:3568485 [sender.py:send():185] send: files
+2021-10-20 01:36:51,015 INFO    SenderThread:3568485 [sender.py:_save_file():879] saving file wandb-metadata.json with policy now
+2021-10-20 01:36:51,393 INFO    Thread-11 :3568485 [upload_job.py:push():137] Uploaded file /tmp/tmpz5u0ijchwandb/1zgvtykf-wandb-metadata.json
+2021-10-20 01:37:02,169 WARNING MainThread:3568485 [internal.py:wandb_internal():145] Internal process interrupt: 1
+2021-10-20 01:37:02,352 WARNING MainThread:3568485 [internal.py:wandb_internal():145] Internal process interrupt: 2
+2021-10-20 01:37:02,352 ERROR   MainThread:3568485 [internal.py:wandb_internal():148] Internal process interrupted.
+2021-10-20 01:37:02,714 INFO    MainThread:3568485 [internal.py:handle_exit():76] Internal process exited

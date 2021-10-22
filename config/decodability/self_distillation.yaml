@@ -1,0 +1,17 @@
+defaults:
+  - base
+
+kwargs:
+  mode: self_distillation
+  z_shape: ${encoder.z_shape}
+  loss: Opt
+    is_ema: bool = False,
+    is_process_Mx: bool = False,
+    is_stop_grad: bool = True,
+    is_already_represented: bool = False,
+    is_normalize_proj: bool = False,
+    is_proj_is_pred: bool = False,
+    predictor_kwargs:
+      dict[str, Any] = {"mode": "linear", "out_shape": 128},
+    projector_kwargs:
+      dict[str, Any] = {"mode": "flatten", "out_shape": 128},

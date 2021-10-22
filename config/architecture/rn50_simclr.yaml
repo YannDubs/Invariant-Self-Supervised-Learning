@@ -1,0 +1,4 @@
+defaults:
+  - base
+
+arch: simclr_rn50

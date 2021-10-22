@@ -1,0 +1,193 @@
+
+[[36m2021-10-20 22:08:28,962[39m][[34m__main__[39m][[32mINFO[39m] - Train representor ...
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.setup has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.setup.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+   | Name                                      | Type                        | Params
+-------------------------------------------------------------------------------------------
+0  | p_ZlX                                     | CondDist                    | 11.2 M
+1  | p_ZlX.mapper                              | ResNet                      | 11.2 M
+2  | p_ZlX.mapper.resnet                       | ResNet                      | 11.2 M
+3  | p_ZlX.mapper.resnet.conv1                 | Conv2d                      | 576
+4  | p_ZlX.mapper.resnet.bn1                   | BatchNorm2d                 | 128
+5  | p_ZlX.mapper.resnet.relu                  | ReLU                        | 0
+6  | p_ZlX.mapper.resnet.maxpool               | Identity                    | 0
+7  | p_ZlX.mapper.resnet.layer1                | Sequential                  | 147 K
+8  | p_ZlX.mapper.resnet.layer1.0              | BasicBlock                  | 74.0 K
+9  | p_ZlX.mapper.resnet.layer1.0.conv1        | Conv2d                      | 36.9 K
+10 | p_ZlX.mapper.resnet.layer1.0.bn1          | BatchNorm2d                 | 128
+11 | p_ZlX.mapper.resnet.layer1.0.relu         | ReLU                        | 0
+12 | p_ZlX.mapper.resnet.layer1.0.conv2        | Conv2d                      | 36.9 K
+13 | p_ZlX.mapper.resnet.layer1.0.bn2          | BatchNorm2d                 | 128
+14 | p_ZlX.mapper.resnet.layer1.1              | BasicBlock                  | 74.0 K
+15 | p_ZlX.mapper.resnet.layer1.1.conv1        | Conv2d                      | 36.9 K
+16 | p_ZlX.mapper.resnet.layer1.1.bn1          | BatchNorm2d                 | 128
+17 | p_ZlX.mapper.resnet.layer1.1.relu         | ReLU                        | 0
+18 | p_ZlX.mapper.resnet.layer1.1.conv2        | Conv2d                      | 36.9 K
+19 | p_ZlX.mapper.resnet.layer1.1.bn2          | BatchNorm2d                 | 128
+20 | p_ZlX.mapper.resnet.layer2                | Sequential                  | 525 K
+21 | p_ZlX.mapper.resnet.layer2.0              | BasicBlock                  | 230 K
+22 | p_ZlX.mapper.resnet.layer2.0.conv1        | Conv2d                      | 73.7 K
+23 | p_ZlX.mapper.resnet.layer2.0.bn1          | BatchNorm2d                 | 256
+24 | p_ZlX.mapper.resnet.layer2.0.relu         | ReLU                        | 0
+25 | p_ZlX.mapper.resnet.layer2.0.conv2        | Conv2d                      | 147 K
+26 | p_ZlX.mapper.resnet.layer2.0.bn2          | BatchNorm2d                 | 256
+27 | p_ZlX.mapper.resnet.layer2.0.downsample   | Sequential                  | 8.4 K
+28 | p_ZlX.mapper.resnet.layer2.0.downsample.0 | Conv2d                      | 8.2 K
+29 | p_ZlX.mapper.resnet.layer2.0.downsample.1 | BatchNorm2d                 | 256
+30 | p_ZlX.mapper.resnet.layer2.1              | BasicBlock                  | 295 K
+31 | p_ZlX.mapper.resnet.layer2.1.conv1        | Conv2d                      | 147 K
+32 | p_ZlX.mapper.resnet.layer2.1.bn1          | BatchNorm2d                 | 256
+33 | p_ZlX.mapper.resnet.layer2.1.relu         | ReLU                        | 0
+34 | p_ZlX.mapper.resnet.layer2.1.conv2        | Conv2d                      | 147 K
+35 | p_ZlX.mapper.resnet.layer2.1.bn2          | BatchNorm2d                 | 256
+36 | p_ZlX.mapper.resnet.layer3                | Sequential                  | 2.1 M
+37 | p_ZlX.mapper.resnet.layer3.0              | BasicBlock                  | 919 K
+38 | p_ZlX.mapper.resnet.layer3.0.conv1        | Conv2d                      | 294 K
+39 | p_ZlX.mapper.resnet.layer3.0.bn1          | BatchNorm2d                 | 512
+40 | p_ZlX.mapper.resnet.layer3.0.relu         | ReLU                        | 0
+41 | p_ZlX.mapper.resnet.layer3.0.conv2        | Conv2d                      | 589 K
+42 | p_ZlX.mapper.resnet.layer3.0.bn2          | BatchNorm2d                 | 512
+43 | p_ZlX.mapper.resnet.layer3.0.downsample   | Sequential                  | 33.3 K
+44 | p_ZlX.mapper.resnet.layer3.0.downsample.0 | Conv2d                      | 32.8 K
+45 | p_ZlX.mapper.resnet.layer3.0.downsample.1 | BatchNorm2d                 | 512
+46 | p_ZlX.mapper.resnet.layer3.1              | BasicBlock                  | 1.2 M
+47 | p_ZlX.mapper.resnet.layer3.1.conv1        | Conv2d                      | 589 K
+48 | p_ZlX.mapper.resnet.layer3.1.bn1          | BatchNorm2d                 | 512
+49 | p_ZlX.mapper.resnet.layer3.1.relu         | ReLU                        | 0
+50 | p_ZlX.mapper.resnet.layer3.1.conv2        | Conv2d                      | 589 K
+51 | p_ZlX.mapper.resnet.layer3.1.bn2          | BatchNorm2d                 | 512
+52 | p_ZlX.mapper.resnet.layer4                | Sequential                  | 8.4 M
+53 | p_ZlX.mapper.resnet.layer4.0              | BasicBlock                  | 3.7 M
+54 | p_ZlX.mapper.resnet.layer4.0.conv1        | Conv2d                      | 1.2 M
+55 | p_ZlX.mapper.resnet.layer4.0.bn1          | BatchNorm2d                 | 1.0 K
+56 | p_ZlX.mapper.resnet.layer4.0.relu         | ReLU                        | 0
+57 | p_ZlX.mapper.resnet.layer4.0.conv2        | Conv2d                      | 2.4 M
+58 | p_ZlX.mapper.resnet.layer4.0.bn2          | BatchNorm2d                 | 1.0 K
+59 | p_ZlX.mapper.resnet.layer4.0.downsample   | Sequential                  | 132 K
+60 | p_ZlX.mapper.resnet.layer4.0.downsample.0 | Conv2d                      | 131 K
+61 | p_ZlX.mapper.resnet.layer4.0.downsample.1 | BatchNorm2d                 | 1.0 K
+62 | p_ZlX.mapper.resnet.layer4.1              | BasicBlock                  | 4.7 M
+63 | p_ZlX.mapper.resnet.layer4.1.conv1        | Conv2d                      | 2.4 M
+64 | p_ZlX.mapper.resnet.layer4.1.bn1          | BatchNorm2d                 | 1.0 K
+65 | p_ZlX.mapper.resnet.layer4.1.relu         | ReLU                        | 0
+66 | p_ZlX.mapper.resnet.layer4.1.conv2        | Conv2d                      | 2.4 M
+67 | p_ZlX.mapper.resnet.layer4.1.bn2          | BatchNorm2d                 | 1.0 K
+68 | p_ZlX.mapper.resnet.avgpool               | AdaptiveAvgPool2d           | 0
+69 | p_ZlX.mapper.resnet.fc                    | Linear                      | 65.7 K
+70 | Z_processor                               | Identity                    | 0
+71 | loss_decodability                         | ClusterSelfDistillationISSL | 400 K
+72 | loss_decodability.predictor               | FlattenLinear               | 16.5 K
+73 | loss_decodability.Mx_logits               | Linear                      | 384 K
+74 | loss_regularizer                          | CoarseningRegularizer       | 0
+75 | evaluator                                 | OnlineEvaluator             | 4.5 M
+76 | evaluator.model                           | FlattenMLP                  | 4.5 M
+77 | evaluator.model.pre_block                 | Sequential                  | 266 K
+78 | evaluator.model.pre_block.0               | Linear                      | 262 K
+79 | evaluator.model.pre_block.1               | BatchNorm1d                 | 4.1 K
+80 | evaluator.model.pre_block.2               | ReLU                        | 0
+81 | evaluator.model.pre_block.3               | Identity                    | 0
+82 | evaluator.model.hidden_block              | Sequential                  | 4.2 M
+83 | evaluator.model.hidden_block.0            | Linear                      | 4.2 M
+84 | evaluator.model.hidden_block.1            | BatchNorm1d                 | 4.1 K
+85 | evaluator.model.hidden_block.2            | ReLU                        | 0
+86 | evaluator.model.hidden_block.3            | Identity                    | 0
+87 | evaluator.model.post_block                | Linear                      | 20.5 K
+-------------------------------------------------------------------------------------------
+16.1 M    Trainable params
+0         Non-trainable params
+16.1 M    Total params
+64.476    Total estimated model params size (MB)
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, train dataloader, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, val dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+Epoch 0:   0%|                                                    | 0/13 [00:00<00:00, 44.04it/s]
+
+
+Epoch 1:   0%|                              | 0/13 [00:00<00:01, 12.20it/s, loss=5.4, v_num=8-19]
+
+
+Epoch 2: 100%|████████████████████████████| 13/13 [00:03<00:00,  3.98it/s, loss=5.14, v_num=8-19]
+Validating:   0%|                                                          | 0/2 [00:00<?, ?it/s]
+
+Epoch 2, global step 32: val/repr/loss was not in top 1
+
+Epoch 2: 100%|████████████████████████████| 13/13 [00:06<00:00,  2.19it/s, loss=5.14, v_num=8-19]
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, test dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+[[36m2021-10-20 22:09:41,343[39m][[34m__main__[39m][[32mINFO[39m] - Saved best checkpoint to /atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_22-08-19/best_representor.ckpt.
+[[36m2021-10-20 22:09:41,344[39m][[34m__main__[39m][[32mINFO[39m] - Evaluate representor ...
+Testing: 0it [00:00, ?it/s]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torchvision/transforms/transforms.py:280: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:00<00:00,  3.22it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/repr/beta': 1.0,
+ 'test/repr/decodability': 8.121394157409668,
+ 'test/repr/eval_acc': 0.109375,
+ 'test/repr/eval_err': 0.890625,
+ 'test/repr/eval_loss': 2.830190658569336,
+ 'test/repr/fit_pMlz_qMlz': 8.121394157409668,
+ 'test/repr/loss': 8.177770614624023,
+ 'test/repr/regularize': 0.05637681484222412}
+--------------------------------------------------------------------------------
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:00<00:00,  2.63it/s]
+[[36m2021-10-20 22:09:42,495[39m][[34m__main__[39m][[32mINFO[39m] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_22-08-19/results_representor.csv.
+[[36m2021-10-20 22:09:42,495[39m][[34m__main__[39m][[32mINFO[39m] - Finalizing representor.
+[[36m2021-10-20 22:09:42,785[39m][[34m__main__[39m][[32mINFO[39m] - Stage : Predictor
+[[36m2021-10-20 22:09:42,816[39m][[34m__main__[39m][[32mINFO[39m] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:376: UserWarning: Your predict_dataloader has `shuffle=True`, it is best practice to turn this off for val/test/predict dataloaders.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, predict dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+Predicting: 11it [00:00, ?it/s]
+
+Predicting: 100%|██████████████████████████████████████████████| 891/891 [00:11<00:00, 78.00it/s]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.teardown has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.teardown.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Predicting: 100%|████████████████████████████████████████████████| 47/47 [00:00<00:00, 41.16it/s]
+
+Predicting: 100%|██████████████████████████████████████████████| 157/157 [00:02<00:00, 63.11it/s]
+> /atlas/u/yanndubs/ISSL/main.py(155)main()
+-> is_sklearn = pred_cfg.predictor.is_sklearn
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(156)main()
+-> if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(157)main()
+-> if is_sklearn:
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(158)main()
+-> assert not repr_cfg.representor.is_on_the_fly
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(159)main()
+-> predictor = SklearnPredictor(pred_cfg)
+(Pdb) SklearnPredictor(pred_cfg)
+*** hydra.errors.InstantiationException: Top level config has to be OmegaConf DictConfig, plain dict, or a Structured Config class or instance
+(Pdb) n
+hydra.errors.InstantiationException: Top level config has to be OmegaConf DictConfig, plain dict, or a Structured Config class or instance
+> /atlas/u/yanndubs/ISSL/main.py(159)main()
+-> predictor = SklearnPredictor(pred_cfg)
+(Pdb) s
+--Return--
+> /atlas/u/yanndubs/ISSL/main.py(159)main()->None
+-> predictor = SklearnPredictor(pred_cfg)
+(Pdb) s
+hydra.errors.InstantiationException: Top level config has to be OmegaConf DictConfig, plain dict, or a Structured Config class or instance
+> /sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/core/utils.py(160)run_job()
+-> ret.return_value = task_function(task_cfg)
+(Pdb) --KeyboardInterrupt--
+(Pdb) --KeyboardInterrupt--
+
+(Pdb) quit()
+Error executing job with overrides: ['mode=dev', 'data_repr.kwargs.num_workers=2', 'regularizer=cosine', 'decodability=cluster_self_distillation', 'experiment=dev', 'predictor=sk_svm']
+Traceback (most recent call last):
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/bdb.py", line 94, in trace_dispatch
+    return self.dispatch_exception(frame, arg)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/bdb.py", line 174, in dispatch_exception
+    if self.quitting: raise BdbQuit
+bdb.BdbQuit
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

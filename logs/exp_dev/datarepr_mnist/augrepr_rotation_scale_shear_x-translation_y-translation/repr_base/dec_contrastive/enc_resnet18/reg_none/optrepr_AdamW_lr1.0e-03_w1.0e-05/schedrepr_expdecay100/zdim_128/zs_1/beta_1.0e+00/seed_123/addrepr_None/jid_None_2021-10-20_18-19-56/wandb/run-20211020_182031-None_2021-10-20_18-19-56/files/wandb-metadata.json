@@ -1,0 +1,27 @@
+{
+    "os": "Linux-4.15.0-72-generic-x86_64-with-glibc2.23",
+    "python": "3.9.6",
+    "heartbeatAt": "2021-10-21T01:20:36.075993",
+    "startedAt": "2021-10-21T01:20:31.623986",
+    "docker": null,
+    "gpu": "GeForce RTX 2080 Ti",
+    "gpu_count": 1,
+    "cpu_count": 40,
+    "cuda": "11.0.228",
+    "args": [
+        "mode=dev",
+        "data_repr.kwargs.num_workers=2",
+        "experiment=dev",
+        "representor.is_train=False",
+        "paths.pretrained.load=/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29",
+        "evaluation.representor.is_evaluate=True",
+        "predictor=sk_svm",
+        "evaluation.representor.is_evaluate=False",
+        "representor.is_on_the_fly=False"
+    ],
+    "state": "running",
+    "program": "/atlas/u/yanndubs/ISSL/main.py",
+    "host": "atlas22.stanford.edu",
+    "username": "yanndubs",
+    "executable": "/sailhome/yanndubs/anaconda3/envs/issl/bin/python"
+}

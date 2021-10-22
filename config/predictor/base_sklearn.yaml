@@ -1,0 +1,10 @@
+# @package _global_
+predictor:
+  is_sklearn: True
+  is_scale: False
+  scaler:
+    _target_: sklearn.preprocessing.StandardScaler
+  metrics: [accuracy_score,balanced_accuracy_score]
+
+representor:
+  is_on_the_fly: False

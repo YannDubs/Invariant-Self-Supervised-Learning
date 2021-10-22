@@ -1,0 +1,10 @@
+defaults:
+  - base_sklearn
+
+name: sk_svm
+model:
+  _target_: sklearn.svm.LinearSVC
+  dual: False
+  C: 1 #smaller regularizes more
+  class_weight: null # might want to use "balanced"
+  random_state: ${seed}

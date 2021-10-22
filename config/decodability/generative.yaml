@@ -1,0 +1,13 @@
+defaults:
+  - base
+
+is_reconstruct: True # can reconstruct images
+kwargs:
+  mode: generative
+  z_shape: ${encoder.z_shape}
+  a_shape: ${data.aux_shape}
+  decoder_kwargs:
+    architecture: linear
+  normalized: ${data.normalized}
+  pred_loss_kwargs:
+    is_classification: ${data.aux_is_clf}

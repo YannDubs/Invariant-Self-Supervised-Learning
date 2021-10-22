@@ -1,0 +1,14 @@
+defaults:
+  - base_self_distillation
+
+kwargs:
+  mode: cluster_self_distillation
+  n_Mx: 3000
+  freeze_Mx_epochs:  1
+  src_tgt_comparison: symmetric
+  temperature:  0.1
+  queue_size:  30
+  sinkhorn_kwargs:
+    eps: 0.05
+  is_normalize_proj:  True
+  is_proj_pred_same:  True

@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - /architecture@predictor: mlp_h2048_l2
+
+predictor:
+  is_sklearn: False
+  kwargs:
+    architecture: ???
+    arch_kwargs:
+      out_shape: ${data.target_shape}
+      # in shape automatic

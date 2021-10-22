@@ -1,0 +1,4 @@
+defaults:
+  - base
+
+mode: self_distillation

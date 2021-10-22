@@ -1,0 +1,81 @@
+
+Predicting: 0it [00:00, ?it/s]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:376: UserWarning: Your predict_dataloader has `shuffle=True`, it is best practice to turn this off for val/test/predict dataloaders.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, predict dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+Traceback (most recent call last):
+  File "/atlas/u/yanndubs/ISSL/main.py", line 688, in <module>
+    OmegaConf.register_new_resolver("list2str", list2str_resolver)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/main.py", line 48, in decorated_main
+    _run_hydra(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/utils.py", line 377, in _run_hydra
+    run_and_report(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/utils.py", line 211, in run_and_report
+    return func()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/utils.py", line 378, in <lambda>
+    lambda: hydra.run(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/hydra.py", line 98, in run
+    ret = run_job(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/core/utils.py", line 160, in run_job
+    ret.return_value = task_function(task_cfg)
+  File "/atlas/u/yanndubs/ISSL/main.py", line 151, in main
+    pred_datamodule = instantiate_datamodule_(pred_cfg, pre_representor=pre_representor)
+  File "/atlas/u/yanndubs/ISSL/main.py", line 302, in instantiate_datamodule_
+    if pre_representor is not None:
+  File "/atlas/u/yanndubs/ISSL/utils/helpers.py", line 311, in apply_representor
+    out_train = representor.predict(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 775, in predict
+    results = self._run(model)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 922, in _run
+    self._dispatch()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 988, in _dispatch
+    self.accelerator.start_predicting(self)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 98, in start_predicting
+    self.training_type_plugin.start_predicting(trainer)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 169, in start_predicting
+    self._results = trainer.run_stage()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 999, in run_stage
+    return self._run_predict()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 1099, in _run_predict
+    return self.predict_loop.run()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/dataloader/prediction_loop.py", line 91, in advance
+    dl_predictions, dl_batch_indices = self.epoch_loop.run(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/epoch/prediction_epoch_loop.py", line 98, in advance
+    self._predict_step(batch, batch_idx, dataloader_idx)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/epoch/prediction_epoch_loop.py", line 131, in _predict_step
+    predictions = self.trainer.accelerator.predict_step(step_kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 241, in predict_step
+    return self.training_type_plugin.predict_step(*step_kwargs.values())
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 184, in predict_step
+    return self.model.predict_step(*args, **kwargs)
+  File "/atlas/u/yanndubs/ISSL/issl/issl.py", line 71, in predict_step
+    return self(x).cpu(), y.cpu()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1051, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/atlas/u/yanndubs/ISSL/issl/issl.py", line 95, in forward
+    p_Zlx = self.p_ZlX(x)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1051, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/atlas/u/yanndubs/ISSL/issl/distributions.py", line 212, in forward
+    suff_params = self.mapper(x)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1051, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/atlas/u/yanndubs/ISSL/issl/architectures/cnn.py", line 93, in forward
+    Y_pred = self.resnet(X)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1051, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torchvision/models/resnet.py", line 249, in forward
+    return self._forward_impl(x)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torchvision/models/resnet.py", line 232, in _forward_impl
+    x = self.conv1(x)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1051, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/conv.py", line 443, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/conv.py", line 439, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,

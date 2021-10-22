@@ -1,0 +1,167 @@
+
+[[36m2021-10-20 15:28:14,680[39m][[34m__main__[39m][[32mINFO[39m] - Train representor ...
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.setup has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.setup.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Epoch 0:   0%|                                 | 0/13 [00:00<00:00, 546.20it/s]
+   | Name                                      | Type              | Params
+---------------------------------------------------------------------------------
+0  | p_ZlX                                     | CondDist          | 11.2 M
+1  | p_ZlX.mapper                              | ResNet            | 11.2 M
+2  | p_ZlX.mapper.resnet                       | ResNet            | 11.2 M
+3  | p_ZlX.mapper.resnet.conv1                 | Conv2d            | 576
+4  | p_ZlX.mapper.resnet.bn1                   | BatchNorm2d       | 128
+5  | p_ZlX.mapper.resnet.relu                  | ReLU              | 0
+6  | p_ZlX.mapper.resnet.maxpool               | Identity          | 0
+7  | p_ZlX.mapper.resnet.layer1                | Sequential        | 147 K
+8  | p_ZlX.mapper.resnet.layer1.0              | BasicBlock        | 74.0 K
+9  | p_ZlX.mapper.resnet.layer1.0.conv1        | Conv2d            | 36.9 K
+10 | p_ZlX.mapper.resnet.layer1.0.bn1          | BatchNorm2d       | 128
+11 | p_ZlX.mapper.resnet.layer1.0.relu         | ReLU              | 0
+12 | p_ZlX.mapper.resnet.layer1.0.conv2        | Conv2d            | 36.9 K
+13 | p_ZlX.mapper.resnet.layer1.0.bn2          | BatchNorm2d       | 128
+14 | p_ZlX.mapper.resnet.layer1.1              | BasicBlock        | 74.0 K
+15 | p_ZlX.mapper.resnet.layer1.1.conv1        | Conv2d            | 36.9 K
+16 | p_ZlX.mapper.resnet.layer1.1.bn1          | BatchNorm2d       | 128
+17 | p_ZlX.mapper.resnet.layer1.1.relu         | ReLU              | 0
+18 | p_ZlX.mapper.resnet.layer1.1.conv2        | Conv2d            | 36.9 K
+19 | p_ZlX.mapper.resnet.layer1.1.bn2          | BatchNorm2d       | 128
+20 | p_ZlX.mapper.resnet.layer2                | Sequential        | 525 K
+21 | p_ZlX.mapper.resnet.layer2.0              | BasicBlock        | 230 K
+22 | p_ZlX.mapper.resnet.layer2.0.conv1        | Conv2d            | 73.7 K
+23 | p_ZlX.mapper.resnet.layer2.0.bn1          | BatchNorm2d       | 256
+24 | p_ZlX.mapper.resnet.layer2.0.relu         | ReLU              | 0
+25 | p_ZlX.mapper.resnet.layer2.0.conv2        | Conv2d            | 147 K
+26 | p_ZlX.mapper.resnet.layer2.0.bn2          | BatchNorm2d       | 256
+27 | p_ZlX.mapper.resnet.layer2.0.downsample   | Sequential        | 8.4 K
+28 | p_ZlX.mapper.resnet.layer2.0.downsample.0 | Conv2d            | 8.2 K
+29 | p_ZlX.mapper.resnet.layer2.0.downsample.1 | BatchNorm2d       | 256
+30 | p_ZlX.mapper.resnet.layer2.1              | BasicBlock        | 295 K
+31 | p_ZlX.mapper.resnet.layer2.1.conv1        | Conv2d            | 147 K
+32 | p_ZlX.mapper.resnet.layer2.1.bn1          | BatchNorm2d       | 256
+33 | p_ZlX.mapper.resnet.layer2.1.relu         | ReLU              | 0
+34 | p_ZlX.mapper.resnet.layer2.1.conv2        | Conv2d            | 147 K
+35 | p_ZlX.mapper.resnet.layer2.1.bn2          | BatchNorm2d       | 256
+36 | p_ZlX.mapper.resnet.layer3                | Sequential        | 2.1 M
+37 | p_ZlX.mapper.resnet.layer3.0              | BasicBlock        | 919 K
+38 | p_ZlX.mapper.resnet.layer3.0.conv1        | Conv2d            | 294 K
+39 | p_ZlX.mapper.resnet.layer3.0.bn1          | BatchNorm2d       | 512
+40 | p_ZlX.mapper.resnet.layer3.0.relu         | ReLU              | 0
+41 | p_ZlX.mapper.resnet.layer3.0.conv2        | Conv2d            | 589 K
+42 | p_ZlX.mapper.resnet.layer3.0.bn2          | BatchNorm2d       | 512
+43 | p_ZlX.mapper.resnet.layer3.0.downsample   | Sequential        | 33.3 K
+44 | p_ZlX.mapper.resnet.layer3.0.downsample.0 | Conv2d            | 32.8 K
+45 | p_ZlX.mapper.resnet.layer3.0.downsample.1 | BatchNorm2d       | 512
+46 | p_ZlX.mapper.resnet.layer3.1              | BasicBlock        | 1.2 M
+47 | p_ZlX.mapper.resnet.layer3.1.conv1        | Conv2d            | 589 K
+48 | p_ZlX.mapper.resnet.layer3.1.bn1          | BatchNorm2d       | 512
+49 | p_ZlX.mapper.resnet.layer3.1.relu         | ReLU              | 0
+50 | p_ZlX.mapper.resnet.layer3.1.conv2        | Conv2d            | 589 K
+51 | p_ZlX.mapper.resnet.layer3.1.bn2          | BatchNorm2d       | 512
+52 | p_ZlX.mapper.resnet.layer4                | Sequential        | 8.4 M
+53 | p_ZlX.mapper.resnet.layer4.0              | BasicBlock        | 3.7 M
+54 | p_ZlX.mapper.resnet.layer4.0.conv1        | Conv2d            | 1.2 M
+55 | p_ZlX.mapper.resnet.layer4.0.bn1          | BatchNorm2d       | 1.0 K
+56 | p_ZlX.mapper.resnet.layer4.0.relu         | ReLU              | 0
+57 | p_ZlX.mapper.resnet.layer4.0.conv2        | Conv2d            | 2.4 M
+58 | p_ZlX.mapper.resnet.layer4.0.bn2          | BatchNorm2d       | 1.0 K
+59 | p_ZlX.mapper.resnet.layer4.0.downsample   | Sequential        | 132 K
+60 | p_ZlX.mapper.resnet.layer4.0.downsample.0 | Conv2d            | 131 K
+61 | p_ZlX.mapper.resnet.layer4.0.downsample.1 | BatchNorm2d       | 1.0 K
+62 | p_ZlX.mapper.resnet.layer4.1              | BasicBlock        | 4.7 M
+63 | p_ZlX.mapper.resnet.layer4.1.conv1        | Conv2d            | 2.4 M
+64 | p_ZlX.mapper.resnet.layer4.1.bn1          | BatchNorm2d       | 1.0 K
+65 | p_ZlX.mapper.resnet.layer4.1.relu         | ReLU              | 0
+66 | p_ZlX.mapper.resnet.layer4.1.conv2        | Conv2d            | 2.4 M
+67 | p_ZlX.mapper.resnet.layer4.1.bn2          | BatchNorm2d       | 1.0 K
+68 | p_ZlX.mapper.resnet.avgpool               | AdaptiveAvgPool2d | 0
+69 | p_ZlX.mapper.resnet.fc                    | Linear            | 65.7 K
+70 | Z_processor                               | Identity          | 0
+71 | loss_decodability                         | ContrastiveISSL   | 16.5 K
+72 | loss_decodability.predictor               | FlattenLinear     | 16.5 K
+73 | evaluator                                 | OnlineEvaluator   | 4.5 M
+74 | evaluator.model                           | FlattenMLP        | 4.5 M
+75 | evaluator.model.pre_block                 | Sequential        | 266 K
+76 | evaluator.model.pre_block.0               | Linear            | 262 K
+77 | evaluator.model.pre_block.1               | BatchNorm1d       | 4.1 K
+78 | evaluator.model.pre_block.2               | ReLU              | 0
+79 | evaluator.model.pre_block.3               | Identity          | 0
+80 | evaluator.model.hidden_block              | Sequential        | 4.2 M
+81 | evaluator.model.hidden_block.0            | Linear            | 4.2 M
+82 | evaluator.model.hidden_block.1            | BatchNorm1d       | 4.1 K
+83 | evaluator.model.hidden_block.2            | ReLU              | 0
+84 | evaluator.model.hidden_block.3            | Identity          | 0
+85 | evaluator.model.post_block                | Linear            | 20.5 K
+---------------------------------------------------------------------------------
+15.7 M    Trainable params
+0         Non-trainable params
+15.7 M    Total params
+62.940    Total estimated model params size (MB)
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, train dataloader, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, val dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+Error executing job with overrides: ['mode=dev', 'data_repr.kwargs.num_workers=2', 'experiment=dev']
+Traceback (most recent call last):
+  File "/atlas/u/yanndubs/ISSL/main.py", line 102, in main
+    repr_trainer.fit(representor, datamodule=repr_datamodule)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 552, in fit
+    self._run(model)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 922, in _run
+    self._dispatch()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 990, in _dispatch
+    self.accelerator.start_training(self)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 92, in start_training
+    self.training_type_plugin.start_training(trainer)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 161, in start_training
+    self._results = trainer.run_stage()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 1000, in run_stage
+    return self._run_train()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 1049, in _run_train
+    self.fit_loop.run()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/fit_loop.py", line 200, in advance
+    epoch_output = self.epoch_loop.run(train_dataloader)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/epoch/training_epoch_loop.py", line 130, in advance
+    batch_output = self.batch_loop.run(batch, self.iteration_count, self._dataloader_idx)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 100, in run
+    super().run(batch, batch_idx, dataloader_idx)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 147, in advance
+    result = self._run_optimization(batch_idx, split_batch, opt_idx, optimizer)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 201, in _run_optimization
+    self._optimizer_step(optimizer, opt_idx, batch_idx, closure)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 395, in _optimizer_step
+    model_ref.optimizer_step(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/lightning.py", line 1616, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/optimizer.py", line 206, in step
+    self.__optimizer_step(closure=closure, profiler_name=profiler_name, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/optimizer.py", line 128, in __optimizer_step
+    trainer.accelerator.optimizer_step(self._optimizer, self._optimizer_idx, lambda_closure=closure, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 292, in optimizer_step
+    make_optimizer_step = self.precision_plugin.pre_optimizer_step(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/precision/native_amp.py", line 57, in pre_optimizer_step
+    result = lambda_closure()  # native amp does not support closures
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 235, in _training_step_and_backward_closure
+    result = self.training_step_and_backward(split_batch, batch_idx, opt_idx, optimizer, hiddens)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 536, in training_step_and_backward
+    result = self._training_step(split_batch, batch_idx, opt_idx, hiddens)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 306, in _training_step
+    training_step_output = self.trainer.accelerator.training_step(step_kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 193, in training_step
+    return self.training_type_plugin.training_step(*step_kwargs.values())
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 172, in training_step
+    return self.model.training_step(*args, **kwargs)
+  File "/atlas/u/yanndubs/ISSL/issl/issl.py", line 193, in training_step
+    loss, logs, other = self.step(batch)
+  File "/atlas/u/yanndubs/ISSL/issl/issl.py", line 138, in step
+    loss, logs, other = self.loss(decodability, regularize)
+  File "/atlas/u/yanndubs/ISSL/issl/issl.py", line 162, in loss
+    regularize = regularize.float().mean(0)
+AttributeError: 'int' object has no attribute 'float'
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

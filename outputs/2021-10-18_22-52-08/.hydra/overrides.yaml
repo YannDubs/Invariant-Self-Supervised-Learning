@@ -1,0 +1,3 @@
+- experiment=test
+- mode=debug_cpu
+- decodability=prior_self_distillation

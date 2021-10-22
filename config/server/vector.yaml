@@ -1,0 +1,48 @@
+# @package _global_
+defaults:
+  - override /hydra/launcher: submitit_slurm
+
+job_id: ${hydra:job.num}_${hydra:job.id} # job num is number in sweep. ID is unique ID like SLURM_JOB_ID
+
+hydra:
+  launcher:
+    # maximum time for the job in minutes
+    timeout_min: ${timeout}
+    # number of cpus to use for each task
+    cpus_per_task: 8
+    # number of gpus to use on each node
+    gpus_per_node: ${trainer.gpus}
+    # number of tasks to spawn on each node
+    tasks_per_node: 1 # number of tasks on single machine
+    # memory to reserve for the job on each node (in GB)
+    mem_gb: 32
+    # number of nodes to use for the job
+    nodes: ${trainer.num_nodes}
+    # name of the job
+    name: ${experiment}
+
+    # slurm partition to use on the cluster
+    partition: t4v2 # rtx6000 # cpu,interactive,t4v1,t4v2,p100,rtx6000
+    comment: null
+    constraint: null
+    exclude: null
+    array_parallelism: 30
+
+    max_num_timeout: 30 # allow resume from checkpointing
+    additional_parameters:
+      qos: normal # normal, high, deadline, nopreemption (this is the stream of execution )
+
+# NOTE:
+# I also had to change the command in submitit. specifically in submitit/slurm/slurm
+# somewhere : /h/yannd/.conda/envs/lossyless/lib/python3.8/site-packages/submitit/slurm/
+# function: _make_sbatch_string replace the end with
+# lines += [
+#       "",
+#       "# command",
+#       "export SUBMITIT_EXECUTOR=slurm",
+#       "export MKL_THREADING_LAYER=GNU",
+#       f"srun --mem {mem} --output '{stdout}' --error '{stderr}' --unbuffered {command}",
+#   ]
+#
+# and also had to add slurm to the path
+# export PATH="$PATH:/opt/slurm/bin"

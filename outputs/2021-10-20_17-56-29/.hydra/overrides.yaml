@@ -1,0 +1,4 @@
+- mode=dev
+- data_repr.kwargs.num_workers=2
+- experiment=dev
+- predictor.is_skip=True

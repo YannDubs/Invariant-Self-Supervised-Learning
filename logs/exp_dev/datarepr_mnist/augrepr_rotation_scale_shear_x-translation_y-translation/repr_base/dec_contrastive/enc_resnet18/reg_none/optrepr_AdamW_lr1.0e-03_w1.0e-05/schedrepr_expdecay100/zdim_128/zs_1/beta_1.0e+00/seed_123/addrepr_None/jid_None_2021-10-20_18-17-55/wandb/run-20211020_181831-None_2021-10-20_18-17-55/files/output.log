@@ -1,0 +1,29 @@
+
+Testing: 0it [00:00, ?it/s]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, test dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torchvision/transforms/transforms.py:280: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:08<00:00,  4.37s/it]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/repr/I_q_zm': 1.2050845623016357,
+ 'test/repr/beta': 9.999999747378752e-06,
+ 'test/repr/decodability': 5.031284809112549,
+ 'test/repr/eval_acc': 0.119140625,
+ 'test/repr/eval_err': 0.880859375,
+ 'test/repr/eval_loss': 2.5886335372924805,
+ 'test/repr/hat_H_m': 6.236369609832764,
+ 'test/repr/loss': 5.031284809112549,
+ 'test/repr/n_negatives': 511.0,
+ 'test/repr/regularize': 0.0}
+--------------------------------------------------------------------------------
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:08<00:00,  4.45s/it]
+[[36m2021-10-20 18:18:49,697[39m][[34m__main__[39m][[32mINFO[39m] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_18-17-55/results_representor.csv.
+[[36m2021-10-20 18:18:49,699[39m][[34m__main__[39m][[32mINFO[39m] - Finalizing representor.
+[[36m2021-10-20 18:18:49,815[39m][[34m__main__[39m][[32mINFO[39m] - Stage : Predictor
+[[36m2021-10-20 18:18:49,845[39m][[34m__main__[39m][[32mINFO[39m] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None.
+Error executing job with overrides: ['mode=dev', 'data_repr.kwargs.num_workers=2', 'experiment=dev', 'representor.is_train=False', 'paths.pretrained.load=/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29', 'evaluation.representor.is_evaluate=True', 'predictor=sk_svm']
+Traceback (most recent call last):
+  File "/atlas/u/yanndubs/ISSL/main.py", line 157, in main
+    assert not repr_cfg.representor.is_on_the_fly
+AssertionError
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

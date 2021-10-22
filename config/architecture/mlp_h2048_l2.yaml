@@ -1,0 +1,12 @@
+defaults:
+  - base
+
+name: mlp_h${.kwargs.arch_kwargs.hid_dim}_l${.kwargs.arch_kwargs.n_hid_layers} # automatic naming
+kwargs:
+  architecture: mlp
+  arch_kwargs:
+    hid_dim: 2048
+    norm_layer: batchnorm
+    n_hid_layers: 2
+    activation: ReLU
+    dropout_p: 0.

@@ -1,0 +1,751 @@
+2021-10-20 14:00:23,786 INFO    MainThread:3943155 [internal.py:wandb_internal():86] W&B internal server running at pid: 3943155, started at: 2021-10-20 14:00:23.785699
+2021-10-20 14:00:23,789 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: check_version
+2021-10-20 14:00:23,790 INFO    WriterThread:3943155 [datastore.py:open_for_write():77] open: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/run-None_2021-10-20_14-00-18.wandb
+2021-10-20 14:00:23,794 DEBUG   SenderThread:3943155 [sender.py:send():185] send: header
+2021-10-20 14:00:23,794 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: check_version
+2021-10-20 14:00:23,879 DEBUG   SenderThread:3943155 [sender.py:send():185] send: run
+2021-10-20 14:00:23,884 INFO    SenderThread:3943155 [sender.py:_maybe_setup_resume():427] checking resume status for issl/tmp/None_2021-10-20_14-00-18
+2021-10-20 14:00:23,981 DEBUG   SenderThread:3943155 [git.py:repo():33] git repository is invalid
+2021-10-20 14:00:24,112 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: run_start
+2021-10-20 14:00:24,114 INFO    SenderThread:3943155 [dir_watcher.py:__init__():169] watching files in: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files
+2021-10-20 14:00:24,114 INFO    SenderThread:3943155 [sender.py:_start_run_threads():746] run started: None_2021-10-20_14-00-18 with start time 1634763621
+2021-10-20 14:00:24,114 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:00:24,116 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:00:24,121 DEBUG   HandlerThread:3943155 [meta.py:__init__():40] meta init
+2021-10-20 14:00:24,121 DEBUG   HandlerThread:3943155 [meta.py:__init__():54] meta init done
+2021-10-20 14:00:24,121 DEBUG   HandlerThread:3943155 [meta.py:probe():211] probe
+2021-10-20 14:00:24,129 DEBUG   HandlerThread:3943155 [git.py:repo():33] git repository is invalid
+2021-10-20 14:00:24,130 DEBUG   HandlerThread:3943155 [meta.py:_save_code():90] save code
+2021-10-20 14:00:24,130 WARNING HandlerThread:3943155 [meta.py:_save_code():92] unable to save code -- program entry not found
+2021-10-20 14:00:24,130 DEBUG   HandlerThread:3943155 [meta.py:_save_pip():58] save pip
+2021-10-20 14:00:24,131 DEBUG   HandlerThread:3943155 [meta.py:_save_pip():72] save pip done
+2021-10-20 14:00:24,132 DEBUG   HandlerThread:3943155 [meta.py:_save_conda():79] save conda
+2021-10-20 14:00:25,124 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/requirements.txt
+2021-10-20 14:00:25,125 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:00:25,125 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/conda-environment.yaml
+2021-10-20 14:00:30,123 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:00:32,128 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:00,531 DEBUG   HandlerThread:3943155 [meta.py:_save_conda():87] save conda done
+2021-10-20 14:01:00,532 DEBUG   HandlerThread:3943155 [meta.py:probe():249] probe done
+2021-10-20 14:01:00,536 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/conda-environment.yaml
+2021-10-20 14:01:00,537 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-metadata.json
+2021-10-20 14:01:02,613 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:01:02,614 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:01:02,723 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:02,724 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:02,725 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:02,725 DEBUG   SenderThread:3943155 [sender.py:send():185] send: config
+2021-10-20 14:01:02,725 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:01:02,733 DEBUG   SenderThread:3943155 [sender.py:send():185] send: files
+2021-10-20 14:01:02,734 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-metadata.json with policy now
+2021-10-20 14:01:03,246 INFO    Thread-11 :3943155 [upload_job.py:push():137] Uploaded file /tmp/tmp9grtx480wandb/1lcsdyb6-wandb-metadata.json
+2021-10-20 14:01:04,101 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:04,101 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:04,101 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:04,110 DEBUG   SenderThread:3943155 [sender.py:send():185] send: config
+2021-10-20 14:01:04,137 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:04,143 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:04,145 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:04,145 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:04,145 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:04,146 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:04,146 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:04,154 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:04,549 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:05,553 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:15,096 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,097 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,097 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,099 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,100 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,100 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,100 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:15,100 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:15,112 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:15,578 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:15,949 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,950 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,950 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:15,952 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:15,953 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:15,954 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:16,628 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:17,725 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:01:17,725 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:01:17,751 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:20,354 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:20,367 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:20,367 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:20,367 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:20,367 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:20,369 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:21,055 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:22,056 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:23,633 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:01:23,701 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:23,702 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:23,703 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:23,705 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:23,705 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:23,714 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:24,058 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:25,060 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/config.yaml
+2021-10-20 14:01:25,159 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:25,160 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:25,160 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:25,162 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:25,162 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:25,163 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:26,184 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:26,185 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:27,316 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:28,537 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:29,614 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:29,615 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:29,616 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:29,617 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:29,617 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:29,627 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:30,561 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:31,562 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:32,851 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:01:32,851 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:01:32,942 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:32,943 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:32,943 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:32,943 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:32,943 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:32,944 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:33,564 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:34,271 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:34,273 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:34,273 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:34,273 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:34,274 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:34,275 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:34,565 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:35,693 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:37,889 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:42,573 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:42,573 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:42,573 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:42,579 DEBUG   SenderThread:3943155 [sender.py:send():185] send: config
+2021-10-20 14:01:43,496 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,497 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,497 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:43,500 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,500 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,500 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,500 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,500 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,501 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,501 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,501 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,501 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:43,501 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:43,502 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:43,593 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,599 DEBUG   SenderThread:3943155 [sender.py:send():185] send: metric
+2021-10-20 14:01:43,599 WARNING SenderThread:3943155 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 14:01:43,599 DEBUG   SenderThread:3943155 [sender.py:send():185] send: history
+2021-10-20 14:01:43,599 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:01:43,600 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:01:44,464 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:01:44,465 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:45,465 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:47,473 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:01:47,944 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:01:47,945 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:01:54,018 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:01:56,745 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/config.yaml
+2021-10-20 14:02:03,039 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:02:03,040 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:02:18,149 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:02:18,149 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:02:24,462 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:02:33,241 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:02:33,242 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:02:48,342 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:02:48,343 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:02:54,879 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:03:03,440 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:03:03,440 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:03:18,531 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:03:18,532 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:03:25,297 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:03:33,693 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:03:33,693 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:03:48,788 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:03:48,789 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:03:55,713 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:04:03,883 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:04:03,884 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:04:18,978 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:04:18,979 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:04:26,134 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:04:34,074 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:04:34,075 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:04:49,179 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:04:49,180 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:04:56,550 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:05:04,280 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:05:04,281 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:05:19,392 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:05:19,393 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:05:26,969 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:05:34,497 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:05:34,497 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:05:49,603 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:05:49,604 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:05:57,386 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:06:04,697 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:06:04,698 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:06:19,794 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:06:19,794 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:06:27,800 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:06:34,889 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:06:34,890 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:06:49,993 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:06:49,994 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:06:58,216 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:07:05,091 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:07:05,091 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:07:20,185 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:07:20,186 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:07:28,636 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:07:35,286 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:07:35,287 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:07:50,382 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:07:50,383 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:07:59,046 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:08:05,477 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:08:05,478 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:08:20,607 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:08:20,608 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:08:29,470 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:08:35,701 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:08:35,702 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:08:50,793 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:08:50,794 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:08:59,877 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:09:05,889 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:09:05,890 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:09:20,990 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:09:20,991 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:09:30,299 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:09:36,094 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:09:36,095 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:09:51,197 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:09:51,198 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:10:00,713 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:10:06,305 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:10:06,306 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:10:21,403 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:10:21,404 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:10:31,131 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:10:36,498 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:10:36,499 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:10:51,592 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:10:51,593 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:11:01,544 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:11:07,211 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:11:07,213 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:11:22,311 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:11:22,312 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:11:31,967 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:11:37,405 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:11:37,406 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:11:52,486 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:11:52,487 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:12:02,392 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:12:07,591 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:12:07,592 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:12:22,687 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:12:22,688 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:12:32,824 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:12:37,785 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:12:37,785 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:12:52,887 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:12:52,888 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:13:03,242 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:13:07,994 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:13:07,994 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:13:23,093 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:13:23,094 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:13:33,662 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:13:38,188 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:13:38,189 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:13:53,307 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:13:53,308 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:14:04,077 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:14:08,415 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:14:08,415 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:14:23,515 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:14:23,516 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:14:34,496 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:14:38,608 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:14:38,609 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:14:53,705 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:14:53,706 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:15:04,920 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:15:08,825 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:15:08,825 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:15:23,936 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:15:23,937 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:15:35,341 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:15:39,030 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:15:39,030 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:15:54,125 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:15:54,227 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:16:05,752 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:16:09,328 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:16:09,328 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:16:24,439 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:16:24,439 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:16:36,170 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:16:39,532 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:16:39,533 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:16:54,628 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:16:54,629 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:17:06,591 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:17:09,734 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:17:09,734 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:17:24,836 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:17:24,837 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:17:37,014 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:17:39,918 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:17:39,918 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:17:55,011 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:17:55,012 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:18:07,421 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:18:10,107 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:18:10,107 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:18:25,200 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:18:25,201 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:18:37,843 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:18:40,302 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:18:40,302 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:18:55,412 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:18:55,413 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:19:08,259 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:19:10,509 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:19:10,510 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:19:25,605 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:19:25,606 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:19:38,681 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:19:40,702 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:19:40,703 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:19:55,790 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:19:55,791 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:20:09,104 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:20:10,896 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:20:10,896 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:20:26,000 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:20:26,000 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:20:39,518 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:20:41,114 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:20:41,114 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:20:56,217 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:20:56,218 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:21:09,931 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:21:11,314 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:21:11,315 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:21:26,431 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:21:26,432 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:21:40,345 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:21:41,538 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:21:41,538 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:21:56,636 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:21:56,637 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:22:10,764 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:22:11,759 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:22:11,759 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:22:26,864 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:22:26,865 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:22:41,182 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:22:41,966 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:22:41,966 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:22:57,060 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:22:57,061 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:23:11,598 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:23:12,159 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:23:12,159 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:23:27,263 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:23:27,263 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:23:42,012 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:23:42,358 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:23:42,358 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:23:57,452 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:23:57,453 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:24:12,434 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:24:12,548 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:24:12,548 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:24:27,641 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:24:27,641 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:24:42,736 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:24:42,737 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:24:42,851 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:24:57,832 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:24:57,833 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:25:12,926 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:25:12,927 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:25:13,273 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:25:28,036 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:25:28,036 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:25:43,129 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:25:43,130 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:25:43,688 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:25:58,224 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:25:58,225 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:26:13,323 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:26:13,324 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:26:14,103 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:26:28,431 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:26:28,432 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:26:43,529 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:26:43,529 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:26:44,512 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:26:58,622 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:26:58,623 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:27:13,712 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:27:13,712 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:27:14,928 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:27:28,806 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:27:28,807 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:27:43,902 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:27:43,903 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:27:45,348 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:27:59,010 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:27:59,010 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:28:14,105 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:28:14,106 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:28:15,775 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:28:29,205 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:28:29,206 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:28:44,303 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:28:44,304 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:28:46,188 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:28:59,401 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:28:59,402 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:29:14,508 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:29:14,509 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:29:16,596 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:29:29,607 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:29:29,608 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:29:44,702 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:29:44,703 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:29:47,008 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:29:59,795 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:29:59,796 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:30:14,892 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:30:14,893 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:30:17,422 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:30:29,989 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:30:29,990 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:30:45,088 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:30:45,089 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:30:47,839 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:31:00,186 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:31:00,187 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:31:15,286 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:31:15,287 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:31:18,266 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:31:30,386 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:31:30,387 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:31:45,482 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:31:45,483 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:31:48,687 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:32:00,580 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:32:00,581 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:32:15,677 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:32:15,677 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:32:19,113 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:32:30,770 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:32:30,771 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:32:45,863 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:32:45,864 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:32:49,526 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:33:00,962 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:33:00,962 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:33:16,059 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:33:16,060 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:33:19,954 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:33:31,165 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:33:31,166 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:33:46,267 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:33:46,268 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:33:50,378 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:34:01,365 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:34:01,366 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:34:16,463 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:34:16,464 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:34:20,789 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:34:31,564 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:34:31,565 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:34:46,659 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:34:46,660 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:34:51,214 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:35:01,755 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:35:01,874 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:35:16,987 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:35:16,990 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:35:21,627 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:35:32,092 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:35:32,092 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:35:47,183 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:35:47,184 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:35:52,049 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:36:02,276 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:36:02,278 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:36:17,391 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:36:17,391 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:36:22,463 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:36:32,489 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:36:32,490 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:36:47,584 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:36:47,585 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:36:52,884 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:37:02,678 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:37:02,679 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:37:17,770 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:37:17,771 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:37:23,308 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:37:32,868 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:37:32,869 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:37:47,969 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:37:47,969 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:37:53,725 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:38:03,062 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:38:03,063 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:38:18,183 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:38:18,184 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:38:24,141 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:38:33,277 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:38:33,278 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:38:48,371 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:38:48,372 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:38:54,558 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:39:03,462 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:39:03,463 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:39:18,557 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:39:18,557 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:39:24,986 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:39:33,656 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:39:33,657 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:39:48,748 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:39:48,749 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:39:55,405 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:40:03,930 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:40:03,930 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:40:19,026 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:40:19,027 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:40:25,831 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:40:34,126 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:40:34,127 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:40:49,219 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:40:49,220 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:40:56,248 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:41:04,315 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:41:04,315 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:41:19,415 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:41:19,416 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:41:26,668 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:41:34,511 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:41:34,512 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:41:49,614 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:41:49,614 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:41:57,086 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:42:04,711 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:42:04,711 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:42:19,813 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:42:19,814 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:42:27,508 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:42:34,909 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:42:34,910 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:42:50,001 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:42:50,002 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:42:57,913 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:43:05,100 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:43:05,101 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:43:20,207 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:43:20,208 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:43:28,325 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:43:35,313 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:43:35,314 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:43:50,426 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:43:50,427 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:43:58,744 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:44:05,525 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:44:05,525 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:44:20,623 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:44:20,624 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:44:29,161 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:44:35,720 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:44:35,721 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:44:50,824 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:44:50,825 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:44:59,576 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:45:05,922 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:45:05,924 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:45:21,034 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:45:21,035 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:45:29,989 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:45:36,149 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:45:36,150 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:45:51,255 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:45:51,256 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:46:00,405 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:46:06,353 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:46:06,354 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:46:21,449 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:46:21,450 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:46:30,825 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:46:36,548 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:46:36,549 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:46:51,644 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:46:51,645 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:47:01,246 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:47:06,745 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:47:06,746 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:47:21,842 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:47:21,843 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:47:31,663 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:47:36,942 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:47:36,943 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:47:52,045 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:47:52,046 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:48:02,074 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:48:07,139 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:48:07,140 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:48:22,234 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:48:22,235 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:48:25,284 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:32,490 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:48:33,295 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:35,297 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:37,300 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:37,331 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 14:48:37,331 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 14:48:41,305 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:43,307 INFO    Thread-8  :3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:44,021 DEBUG   SenderThread:3943155 [sender.py:send():185] send: telemetry
+2021-10-20 14:48:44,022 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,022 DEBUG   SenderThread:3943155 [sender.py:send():185] send: exit
+2021-10-20 14:48:44,023 INFO    SenderThread:3943155 [sender.py:send_exit():294] handling exit code: 1
+2021-10-20 14:48:44,023 INFO    SenderThread:3943155 [sender.py:send_exit():296] handling runtime: 2899
+2021-10-20 14:48:44,025 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:48:44,025 INFO    SenderThread:3943155 [sender.py:send_exit():306] send defer
+2021-10-20 14:48:44,026 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,027 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,027 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 0
+2021-10-20 14:48:44,027 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,027 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 0
+2021-10-20 14:48:44,028 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 1
+2021-10-20 14:48:44,029 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,029 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 1
+2021-10-20 14:48:44,062 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,062 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 1
+2021-10-20 14:48:44,062 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 2
+2021-10-20 14:48:44,062 DEBUG   SenderThread:3943155 [sender.py:send():185] send: stats
+2021-10-20 14:48:44,063 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,063 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 2
+2021-10-20 14:48:44,063 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,063 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 2
+2021-10-20 14:48:44,063 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 3
+2021-10-20 14:48:44,063 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,063 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 3
+2021-10-20 14:48:44,064 DEBUG   SenderThread:3943155 [sender.py:send():185] send: summary
+2021-10-20 14:48:44,065 INFO    SenderThread:3943155 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 14:48:44,066 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,066 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 3
+2021-10-20 14:48:44,066 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 4
+2021-10-20 14:48:44,067 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,067 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 4
+2021-10-20 14:48:44,067 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,067 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 4
+2021-10-20 14:48:44,140 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,274 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 5
+2021-10-20 14:48:44,275 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,275 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,275 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 5
+2021-10-20 14:48:44,275 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,275 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 5
+2021-10-20 14:48:44,275 INFO    SenderThread:3943155 [dir_watcher.py:finish():283] shutting down directory watcher
+2021-10-20 14:48:44,309 INFO    SenderThread:3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/config.yaml
+2021-10-20 14:48:44,309 INFO    SenderThread:3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:48:44,310 INFO    SenderThread:3943155 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:44,310 INFO    SenderThread:3943155 [dir_watcher.py:finish():313] scan: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files
+2021-10-20 14:48:44,311 INFO    SenderThread:3943155 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/conda-environment.yaml conda-environment.yaml
+2021-10-20 14:48:44,311 INFO    SenderThread:3943155 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/config.yaml config.yaml
+2021-10-20 14:48:44,320 INFO    SenderThread:3943155 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/requirements.txt requirements.txt
+2021-10-20 14:48:44,321 INFO    SenderThread:3943155 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-metadata.json wandb-metadata.json
+2021-10-20 14:48:44,327 INFO    SenderThread:3943155 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log output.log
+2021-10-20 14:48:44,332 INFO    SenderThread:3943155 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json wandb-summary.json
+2021-10-20 14:48:44,333 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 6
+2021-10-20 14:48:44,341 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,344 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 6
+2021-10-20 14:48:44,346 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,348 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 6
+2021-10-20 14:48:44,351 INFO    SenderThread:3943155 [file_pusher.py:finish():177] shutting down file pusher
+2021-10-20 14:48:44,376 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,376 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,482 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,482 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,583 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,584 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,686 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,686 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,704 INFO    Thread-13 :3943155 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/config.yaml
+2021-10-20 14:48:44,707 INFO    Thread-12 :3943155 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/conda-environment.yaml
+2021-10-20 14:48:44,719 INFO    Thread-16 :3943155 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/wandb-summary.json
+2021-10-20 14:48:44,724 INFO    Thread-15 :3943155 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/output.log
+2021-10-20 14:48:44,724 INFO    Thread-14 :3943155 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/files/requirements.txt
+2021-10-20 14:48:44,788 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,788 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,890 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:44,890 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:44,925 INFO    Thread-7  :3943155 [sender.py:transition_state():319] send defer: 7
+2021-10-20 14:48:44,926 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:44,926 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 7
+2021-10-20 14:48:44,926 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:44,926 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 7
+2021-10-20 14:48:44,992 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:45,113 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 8
+2021-10-20 14:48:45,113 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:45,114 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:45,114 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 8
+2021-10-20 14:48:45,114 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:45,115 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 8
+2021-10-20 14:48:45,115 INFO    SenderThread:3943155 [sender.py:transition_state():319] send defer: 9
+2021-10-20 14:48:45,116 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 14:48:45,116 DEBUG   SenderThread:3943155 [sender.py:send():185] send: final
+2021-10-20 14:48:45,116 INFO    HandlerThread:3943155 [handler.py:handle_request_defer():143] handle defer: 9
+2021-10-20 14:48:45,117 DEBUG   SenderThread:3943155 [sender.py:send():185] send: footer
+2021-10-20 14:48:45,117 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: defer
+2021-10-20 14:48:45,117 INFO    SenderThread:3943155 [sender.py:send_request_defer():315] handle sender defer: 9
+2021-10-20 14:48:45,216 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 14:48:45,216 DEBUG   SenderThread:3943155 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 14:48:45,216 INFO    SenderThread:3943155 [file_pusher.py:join():182] waiting for file pusher
+2021-10-20 14:48:45,398 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: get_summary
+2021-10-20 14:48:45,401 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: sampled_history
+2021-10-20 14:48:45,404 DEBUG   HandlerThread:3943155 [handler.py:handle_request():126] handle_request: shutdown
+2021-10-20 14:48:45,404 INFO    HandlerThread:3943155 [handler.py:finish():683] shutting down handler
+2021-10-20 14:48:46,117 INFO    WriterThread:3943155 [datastore.py:close():281] close: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_14-00-18/wandb/run-20211020_140021-None_2021-10-20_14-00-18/run-None_2021-10-20_14-00-18.wandb
+2021-10-20 14:48:46,397 INFO    SenderThread:3943155 [sender.py:finish():986] shutting down sender
+2021-10-20 14:48:46,397 INFO    SenderThread:3943155 [file_pusher.py:finish():177] shutting down file pusher
+2021-10-20 14:48:46,397 INFO    SenderThread:3943155 [file_pusher.py:join():182] waiting for file pusher
+2021-10-20 14:48:46,401 INFO    MainThread:3943155 [internal.py:handle_exit():76] Internal process exited

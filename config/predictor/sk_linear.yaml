@@ -1,0 +1,8 @@
+defaults:
+  - base_sklearn
+
+metrics: [mean_squared_error]
+name: sk_linear
+model:
+  _target_: sklearn.linear_model.LinearRegression
+  n_jobs: -1

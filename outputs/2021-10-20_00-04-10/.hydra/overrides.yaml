@@ -1,0 +1,4 @@
+- mode=dev
+- data_repr.kwargs.num_workers=2
+- regularizer=cosine
+- decodability=cluster_self_distillation

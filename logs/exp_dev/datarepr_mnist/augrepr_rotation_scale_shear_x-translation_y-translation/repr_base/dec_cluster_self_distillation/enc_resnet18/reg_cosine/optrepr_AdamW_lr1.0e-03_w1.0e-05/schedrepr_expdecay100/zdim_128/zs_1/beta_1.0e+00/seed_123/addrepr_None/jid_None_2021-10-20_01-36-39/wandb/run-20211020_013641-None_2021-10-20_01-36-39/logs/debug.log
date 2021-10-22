@@ -1,0 +1,28 @@
+2021-10-20 01:36:41,696 INFO    MainThread:3568263 [wandb_setup.py:_flush():69] setting env: {}
+2021-10-20 01:36:41,696 WARNING MainThread:3568263 [wandb_setup.py:_flush():69] could not save program above cwd: /atlas/u/yanndubs/ISSL/main.py
+2021-10-20 01:36:41,696 INFO    MainThread:3568263 [wandb_setup.py:_flush():69] setting login settings: {'anonymous': 'allow'}
+2021-10-20 01:36:41,697 INFO    MainThread:3568263 [wandb_init.py:_log_setup():357] Logging user logs to /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/logs/debug.log
+2021-10-20 01:36:41,697 INFO    MainThread:3568263 [wandb_init.py:_log_setup():358] Logging internal logs to /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_01-36-39/wandb/run-20211020_013641-None_2021-10-20_01-36-39/logs/debug-internal.log
+2021-10-20 01:36:41,697 INFO    MainThread:3568263 [wandb_init.py:init():390] calling init triggers
+2021-10-20 01:36:41,697 INFO    MainThread:3568263 [wandb_init.py:init():395] wandb.init called with sweep_config: {}
+config: {}
+2021-10-20 01:36:41,697 INFO    MainThread:3568263 [wandb_init.py:init():435] starting backend
+2021-10-20 01:36:41,697 INFO    MainThread:3568263 [backend.py:_multiprocessing_setup():70] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2021-10-20 01:36:41,725 INFO    MainThread:3568263 [backend.py:ensure_launched():135] starting backend process...
+2021-10-20 01:36:41,743 INFO    MainThread:3568263 [backend.py:ensure_launched():139] started backend process with pid: 3568485
+2021-10-20 01:36:41,748 INFO    MainThread:3568263 [wandb_init.py:init():440] backend started and connected
+2021-10-20 01:36:41,750 INFO    MainThread:3568263 [wandb_init.py:init():499] updated telemetry
+2021-10-20 01:36:41,750 INFO    MainThread:3568263 [wandb_init.py:init():522] communicating current version
+2021-10-20 01:36:43,622 INFO    MainThread:3568263 [wandb_init.py:init():527] got version response upgrade_message: "wandb version 0.12.5 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2021-10-20 01:36:43,623 INFO    MainThread:3568263 [wandb_init.py:init():535] communicating run to backend with 30 second timeout
+2021-10-20 01:36:43,857 INFO    MainThread:3568263 [wandb_init.py:init():562] starting run threads in backend
+2021-10-20 01:36:48,863 INFO    MainThread:3568263 [wandb_run.py:_console_start():1651] atexit reg
+2021-10-20 01:36:48,864 INFO    MainThread:3568263 [wandb_run.py:_redirect():1525] redirect: SettingsConsole.REDIRECT
+2021-10-20 01:36:48,864 INFO    MainThread:3568263 [wandb_run.py:_redirect():1530] Redirecting console.
+2021-10-20 01:36:48,866 INFO    MainThread:3568263 [wandb_run.py:_redirect():1586] Redirects installed.
+2021-10-20 01:36:48,867 INFO    MainThread:3568263 [wandb_init.py:init():587] run started, returning control to user process
+2021-10-20 01:36:48,867 INFO    MainThread:3568263 [wandb_run.py:_config_callback():878] config_cb None None {'n_param': 16118986}
+2021-10-20 01:37:19,663 INFO    MainThread:3568263 [wandb_run.py:_atexit_cleanup():1621] got exitcode: 255
+2021-10-20 01:37:19,664 INFO    MainThread:3568263 [wandb_run.py:_restore():1593] restore
+2021-10-20 01:37:21,955 INFO    MainThread:3568263 [wandb_run.py:_restore():1593] restore

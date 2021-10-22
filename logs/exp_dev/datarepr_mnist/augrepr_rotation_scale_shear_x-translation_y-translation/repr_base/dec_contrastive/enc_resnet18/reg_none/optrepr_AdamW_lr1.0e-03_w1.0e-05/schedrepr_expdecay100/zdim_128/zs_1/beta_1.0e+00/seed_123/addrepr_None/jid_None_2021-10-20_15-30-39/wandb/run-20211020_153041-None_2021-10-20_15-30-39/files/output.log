@@ -1,0 +1,272 @@
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.setup has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.setup.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+[[36m2021-10-20 15:30:49,408[39m][[34m__main__[39m][[32mINFO[39m] - Train representor ...
+   | Name                                      | Type              | Params
+---------------------------------------------------------------------------------
+0  | p_ZlX                                     | CondDist          | 11.2 M
+1  | p_ZlX.mapper                              | ResNet            | 11.2 M
+2  | p_ZlX.mapper.resnet                       | ResNet            | 11.2 M
+3  | p_ZlX.mapper.resnet.conv1                 | Conv2d            | 576
+4  | p_ZlX.mapper.resnet.bn1                   | BatchNorm2d       | 128
+5  | p_ZlX.mapper.resnet.relu                  | ReLU              | 0
+6  | p_ZlX.mapper.resnet.maxpool               | Identity          | 0
+7  | p_ZlX.mapper.resnet.layer1                | Sequential        | 147 K
+8  | p_ZlX.mapper.resnet.layer1.0              | BasicBlock        | 74.0 K
+9  | p_ZlX.mapper.resnet.layer1.0.conv1        | Conv2d            | 36.9 K
+10 | p_ZlX.mapper.resnet.layer1.0.bn1          | BatchNorm2d       | 128
+11 | p_ZlX.mapper.resnet.layer1.0.relu         | ReLU              | 0
+12 | p_ZlX.mapper.resnet.layer1.0.conv2        | Conv2d            | 36.9 K
+13 | p_ZlX.mapper.resnet.layer1.0.bn2          | BatchNorm2d       | 128
+14 | p_ZlX.mapper.resnet.layer1.1              | BasicBlock        | 74.0 K
+15 | p_ZlX.mapper.resnet.layer1.1.conv1        | Conv2d            | 36.9 K
+16 | p_ZlX.mapper.resnet.layer1.1.bn1          | BatchNorm2d       | 128
+17 | p_ZlX.mapper.resnet.layer1.1.relu         | ReLU              | 0
+18 | p_ZlX.mapper.resnet.layer1.1.conv2        | Conv2d            | 36.9 K
+19 | p_ZlX.mapper.resnet.layer1.1.bn2          | BatchNorm2d       | 128
+20 | p_ZlX.mapper.resnet.layer2                | Sequential        | 525 K
+21 | p_ZlX.mapper.resnet.layer2.0              | BasicBlock        | 230 K
+22 | p_ZlX.mapper.resnet.layer2.0.conv1        | Conv2d            | 73.7 K
+23 | p_ZlX.mapper.resnet.layer2.0.bn1          | BatchNorm2d       | 256
+24 | p_ZlX.mapper.resnet.layer2.0.relu         | ReLU              | 0
+25 | p_ZlX.mapper.resnet.layer2.0.conv2        | Conv2d            | 147 K
+26 | p_ZlX.mapper.resnet.layer2.0.bn2          | BatchNorm2d       | 256
+27 | p_ZlX.mapper.resnet.layer2.0.downsample   | Sequential        | 8.4 K
+28 | p_ZlX.mapper.resnet.layer2.0.downsample.0 | Conv2d            | 8.2 K
+29 | p_ZlX.mapper.resnet.layer2.0.downsample.1 | BatchNorm2d       | 256
+30 | p_ZlX.mapper.resnet.layer2.1              | BasicBlock        | 295 K
+31 | p_ZlX.mapper.resnet.layer2.1.conv1        | Conv2d            | 147 K
+32 | p_ZlX.mapper.resnet.layer2.1.bn1          | BatchNorm2d       | 256
+33 | p_ZlX.mapper.resnet.layer2.1.relu         | ReLU              | 0
+34 | p_ZlX.mapper.resnet.layer2.1.conv2        | Conv2d            | 147 K
+35 | p_ZlX.mapper.resnet.layer2.1.bn2          | BatchNorm2d       | 256
+36 | p_ZlX.mapper.resnet.layer3                | Sequential        | 2.1 M
+37 | p_ZlX.mapper.resnet.layer3.0              | BasicBlock        | 919 K
+38 | p_ZlX.mapper.resnet.layer3.0.conv1        | Conv2d            | 294 K
+39 | p_ZlX.mapper.resnet.layer3.0.bn1          | BatchNorm2d       | 512
+40 | p_ZlX.mapper.resnet.layer3.0.relu         | ReLU              | 0
+41 | p_ZlX.mapper.resnet.layer3.0.conv2        | Conv2d            | 589 K
+42 | p_ZlX.mapper.resnet.layer3.0.bn2          | BatchNorm2d       | 512
+43 | p_ZlX.mapper.resnet.layer3.0.downsample   | Sequential        | 33.3 K
+44 | p_ZlX.mapper.resnet.layer3.0.downsample.0 | Conv2d            | 32.8 K
+45 | p_ZlX.mapper.resnet.layer3.0.downsample.1 | BatchNorm2d       | 512
+46 | p_ZlX.mapper.resnet.layer3.1              | BasicBlock        | 1.2 M
+47 | p_ZlX.mapper.resnet.layer3.1.conv1        | Conv2d            | 589 K
+48 | p_ZlX.mapper.resnet.layer3.1.bn1          | BatchNorm2d       | 512
+49 | p_ZlX.mapper.resnet.layer3.1.relu         | ReLU              | 0
+50 | p_ZlX.mapper.resnet.layer3.1.conv2        | Conv2d            | 589 K
+51 | p_ZlX.mapper.resnet.layer3.1.bn2          | BatchNorm2d       | 512
+52 | p_ZlX.mapper.resnet.layer4                | Sequential        | 8.4 M
+53 | p_ZlX.mapper.resnet.layer4.0              | BasicBlock        | 3.7 M
+54 | p_ZlX.mapper.resnet.layer4.0.conv1        | Conv2d            | 1.2 M
+55 | p_ZlX.mapper.resnet.layer4.0.bn1          | BatchNorm2d       | 1.0 K
+56 | p_ZlX.mapper.resnet.layer4.0.relu         | ReLU              | 0
+57 | p_ZlX.mapper.resnet.layer4.0.conv2        | Conv2d            | 2.4 M
+58 | p_ZlX.mapper.resnet.layer4.0.bn2          | BatchNorm2d       | 1.0 K
+59 | p_ZlX.mapper.resnet.layer4.0.downsample   | Sequential        | 132 K
+60 | p_ZlX.mapper.resnet.layer4.0.downsample.0 | Conv2d            | 131 K
+61 | p_ZlX.mapper.resnet.layer4.0.downsample.1 | BatchNorm2d       | 1.0 K
+62 | p_ZlX.mapper.resnet.layer4.1              | BasicBlock        | 4.7 M
+63 | p_ZlX.mapper.resnet.layer4.1.conv1        | Conv2d            | 2.4 M
+64 | p_ZlX.mapper.resnet.layer4.1.bn1          | BatchNorm2d       | 1.0 K
+65 | p_ZlX.mapper.resnet.layer4.1.relu         | ReLU              | 0
+66 | p_ZlX.mapper.resnet.layer4.1.conv2        | Conv2d            | 2.4 M
+67 | p_ZlX.mapper.resnet.layer4.1.bn2          | BatchNorm2d       | 1.0 K
+68 | p_ZlX.mapper.resnet.avgpool               | AdaptiveAvgPool2d | 0
+69 | p_ZlX.mapper.resnet.fc                    | Linear            | 65.7 K
+70 | Z_processor                               | Identity          | 0
+71 | loss_decodability                         | ContrastiveISSL   | 16.5 K
+72 | loss_decodability.predictor               | FlattenLinear     | 16.5 K
+73 | evaluator                                 | OnlineEvaluator   | 4.5 M
+74 | evaluator.model                           | FlattenMLP        | 4.5 M
+75 | evaluator.model.pre_block                 | Sequential        | 266 K
+76 | evaluator.model.pre_block.0               | Linear            | 262 K
+77 | evaluator.model.pre_block.1               | BatchNorm1d       | 4.1 K
+78 | evaluator.model.pre_block.2               | ReLU              | 0
+79 | evaluator.model.pre_block.3               | Identity          | 0
+80 | evaluator.model.hidden_block              | Sequential        | 4.2 M
+81 | evaluator.model.hidden_block.0            | Linear            | 4.2 M
+82 | evaluator.model.hidden_block.1            | BatchNorm1d       | 4.1 K
+83 | evaluator.model.hidden_block.2            | ReLU              | 0
+84 | evaluator.model.hidden_block.3            | Identity          | 0
+85 | evaluator.model.post_block                | Linear            | 20.5 K
+---------------------------------------------------------------------------------
+15.7 M    Trainable params
+0         Non-trainable params
+15.7 M    Total params
+62.940    Total estimated model params size (MB)
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, train dataloader, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, val dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+
+Epoch 0: 100%|██████████| 13/13 [00:12<00:00,  1.15it/s, loss=4.05, v_num=0-39]
+
+
+Epoch 1: 100%|███████████| 13/13 [00:05<00:00,  2.38it/s, loss=3.3, v_num=0-39]
+
+Epoch 2:   0%|          | 0/13 [00:00<00:00, 1177.18it/s, loss=3.3, v_num=0-39]
+
+
+Epoch 2: 100%|██████████| 13/13 [00:07<00:00,  1.91it/s, loss=3.15, v_num=0-39]
+Saving latest checkpoint...
+[[36m2021-10-20 15:31:59,203[39m][[34m__main__[39m][[32mINFO[39m] - Evaluate compressor ...
+Testing: 0it [00:00, ?it/s]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py:678: LightningDeprecationWarning: `trainer.test(test_dataloaders)` is deprecated in v1.4 and will be removed in v1.6. Use `trainer.test(dataloaders)` instead.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, test dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+Testing: 100%|███████████████████████████████████| 2/2 [00:00<00:00,  3.65it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/repr/I_q_zm': 1.0852992534637451,
+ 'test/repr/beta': 1.0,
+ 'test/repr/decodability': 5.151070594787598,
+ 'test/repr/eval_acc': 0.119140625,
+ 'test/repr/eval_err': 0.880859375,
+ 'test/repr/eval_loss': 2.5886335372924805,
+ 'test/repr/hat_H_m': 6.236369609832764,
+ 'test/repr/loss': 5.151070594787598,
+ 'test/repr/n_negatives': 511.0,
+ 'test/repr/regularize': 0.0}
+--------------------------------------------------------------------------------
+Testing: 100%|███████████████████████████████████| 2/2 [00:00<00:00,  2.70it/s]
+[[36m2021-10-20 15:32:00,311[39m][[34m__main__[39m][[32mINFO[39m] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_15-30-39/results_representor.csv.
+[[36m2021-10-20 15:32:00,311[39m][[34m__main__[39m][[32mINFO[39m] - Finalizing representor.
+[[36m2021-10-20 15:32:00,582[39m][[34m__main__[39m][[32mINFO[39m] - Stage : Predictor
+[[36m2021-10-20 15:32:00,613[39m][[34m__main__[39m][[32mINFO[39m] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_mlp_h2048_l2/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None.
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torchvision/transforms/transforms.py:280: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+  warnings.warn(
+[[36m2021-10-20 15:32:02,607[39m][[34m__main__[39m][[32mINFO[39m] - Train predictor ...
+Epoch 0: 100%|█████████████████████████████████| 26/26 [00:01<00:00, 24.40it/s]
+Validating:   0%|                                        | 0/4 [00:00<?, ?it/s]
+Using native 16bit precision.
+GPU available: True, used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+   | Name                                                  | Type              | Params
+---------------------------------------------------------------------------------------------
+0  | representor                                           | ISSLModule        | 0
+1  | representor.p_ZlX                                     | CondDist          | 0
+2  | representor.p_ZlX.mapper                              | ResNet            | 0
+3  | representor.p_ZlX.mapper.resnet                       | ResNet            | 0
+4  | representor.p_ZlX.mapper.resnet.conv1                 | Conv2d            | 0
+5  | representor.p_ZlX.mapper.resnet.bn1                   | BatchNorm2d       | 0
+6  | representor.p_ZlX.mapper.resnet.relu                  | ReLU              | 0
+7  | representor.p_ZlX.mapper.resnet.maxpool               | Identity          | 0
+8  | representor.p_ZlX.mapper.resnet.layer1                | Sequential        | 0
+9  | representor.p_ZlX.mapper.resnet.layer1.0              | BasicBlock        | 0
+10 | representor.p_ZlX.mapper.resnet.layer1.0.conv1        | Conv2d            | 0
+11 | representor.p_ZlX.mapper.resnet.layer1.0.bn1          | BatchNorm2d       | 0
+12 | representor.p_ZlX.mapper.resnet.layer1.0.relu         | ReLU              | 0
+13 | representor.p_ZlX.mapper.resnet.layer1.0.conv2        | Conv2d            | 0
+14 | representor.p_ZlX.mapper.resnet.layer1.0.bn2          | BatchNorm2d       | 0
+15 | representor.p_ZlX.mapper.resnet.layer1.1              | BasicBlock        | 0
+16 | representor.p_ZlX.mapper.resnet.layer1.1.conv1        | Conv2d            | 0
+17 | representor.p_ZlX.mapper.resnet.layer1.1.bn1          | BatchNorm2d       | 0
+18 | representor.p_ZlX.mapper.resnet.layer1.1.relu         | ReLU              | 0
+19 | representor.p_ZlX.mapper.resnet.layer1.1.conv2        | Conv2d            | 0
+20 | representor.p_ZlX.mapper.resnet.layer1.1.bn2          | BatchNorm2d       | 0
+21 | representor.p_ZlX.mapper.resnet.layer2                | Sequential        | 0
+22 | representor.p_ZlX.mapper.resnet.layer2.0              | BasicBlock        | 0
+23 | representor.p_ZlX.mapper.resnet.layer2.0.conv1        | Conv2d            | 0
+24 | representor.p_ZlX.mapper.resnet.layer2.0.bn1          | BatchNorm2d       | 0
+25 | representor.p_ZlX.mapper.resnet.layer2.0.relu         | ReLU              | 0
+26 | representor.p_ZlX.mapper.resnet.layer2.0.conv2        | Conv2d            | 0
+27 | representor.p_ZlX.mapper.resnet.layer2.0.bn2          | BatchNorm2d       | 0
+28 | representor.p_ZlX.mapper.resnet.layer2.0.downsample   | Sequential        | 0
+29 | representor.p_ZlX.mapper.resnet.layer2.0.downsample.0 | Conv2d            | 0
+30 | representor.p_ZlX.mapper.resnet.layer2.0.downsample.1 | BatchNorm2d       | 0
+31 | representor.p_ZlX.mapper.resnet.layer2.1              | BasicBlock        | 0
+32 | representor.p_ZlX.mapper.resnet.layer2.1.conv1        | Conv2d            | 0
+33 | representor.p_ZlX.mapper.resnet.layer2.1.bn1          | BatchNorm2d       | 0
+34 | representor.p_ZlX.mapper.resnet.layer2.1.relu         | ReLU              | 0
+35 | representor.p_ZlX.mapper.resnet.layer2.1.conv2        | Conv2d            | 0
+36 | representor.p_ZlX.mapper.resnet.layer2.1.bn2          | BatchNorm2d       | 0
+37 | representor.p_ZlX.mapper.resnet.layer3                | Sequential        | 0
+38 | representor.p_ZlX.mapper.resnet.layer3.0              | BasicBlock        | 0
+39 | representor.p_ZlX.mapper.resnet.layer3.0.conv1        | Conv2d            | 0
+40 | representor.p_ZlX.mapper.resnet.layer3.0.bn1          | BatchNorm2d       | 0
+41 | representor.p_ZlX.mapper.resnet.layer3.0.relu         | ReLU              | 0
+42 | representor.p_ZlX.mapper.resnet.layer3.0.conv2        | Conv2d            | 0
+43 | representor.p_ZlX.mapper.resnet.layer3.0.bn2          | BatchNorm2d       | 0
+44 | representor.p_ZlX.mapper.resnet.layer3.0.downsample   | Sequential        | 0
+45 | representor.p_ZlX.mapper.resnet.layer3.0.downsample.0 | Conv2d            | 0
+46 | representor.p_ZlX.mapper.resnet.layer3.0.downsample.1 | BatchNorm2d       | 0
+47 | representor.p_ZlX.mapper.resnet.layer3.1              | BasicBlock        | 0
+48 | representor.p_ZlX.mapper.resnet.layer3.1.conv1        | Conv2d            | 0
+49 | representor.p_ZlX.mapper.resnet.layer3.1.bn1          | BatchNorm2d       | 0
+50 | representor.p_ZlX.mapper.resnet.layer3.1.relu         | ReLU              | 0
+51 | representor.p_ZlX.mapper.resnet.layer3.1.conv2        | Conv2d            | 0
+52 | representor.p_ZlX.mapper.resnet.layer3.1.bn2          | BatchNorm2d       | 0
+53 | representor.p_ZlX.mapper.resnet.layer4                | Sequential        | 0
+54 | representor.p_ZlX.mapper.resnet.layer4.0              | BasicBlock        | 0
+55 | representor.p_ZlX.mapper.resnet.layer4.0.conv1        | Conv2d            | 0
+56 | representor.p_ZlX.mapper.resnet.layer4.0.bn1          | BatchNorm2d       | 0
+57 | representor.p_ZlX.mapper.resnet.layer4.0.relu         | ReLU              | 0
+58 | representor.p_ZlX.mapper.resnet.layer4.0.conv2        | Conv2d            | 0
+59 | representor.p_ZlX.mapper.resnet.layer4.0.bn2          | BatchNorm2d       | 0
+60 | representor.p_ZlX.mapper.resnet.layer4.0.downsample   | Sequential        | 0
+61 | representor.p_ZlX.mapper.resnet.layer4.0.downsample.0 | Conv2d            | 0
+62 | representor.p_ZlX.mapper.resnet.layer4.0.downsample.1 | BatchNorm2d       | 0
+63 | representor.p_ZlX.mapper.resnet.layer4.1              | BasicBlock        | 0
+64 | representor.p_ZlX.mapper.resnet.layer4.1.conv1        | Conv2d            | 0
+65 | representor.p_ZlX.mapper.resnet.layer4.1.bn1          | BatchNorm2d       | 0
+66 | representor.p_ZlX.mapper.resnet.layer4.1.relu         | ReLU              | 0
+67 | representor.p_ZlX.mapper.resnet.layer4.1.conv2        | Conv2d            | 0
+68 | representor.p_ZlX.mapper.resnet.layer4.1.bn2          | BatchNorm2d       | 0
+69 | representor.p_ZlX.mapper.resnet.avgpool               | AdaptiveAvgPool2d | 0
+70 | representor.p_ZlX.mapper.resnet.fc                    | Linear            | 0
+71 | representor.Z_processor                               | Identity          | 0
+72 | representor.loss_decodability                         | ContrastiveISSL   | 0
+73 | representor.loss_decodability.predictor               | FlattenLinear     | 0
+74 | representor.evaluator                                 | OnlineEvaluator   | 0
+75 | representor.evaluator.model                           | FlattenMLP        | 0
+76 | representor.evaluator.model.pre_block                 | Sequential        | 0
+77 | representor.evaluator.model.pre_block.0               | Linear            | 0
+78 | representor.evaluator.model.pre_block.1               | BatchNorm1d       | 0
+79 | representor.evaluator.model.pre_block.2               | ReLU              | 0
+80 | representor.evaluator.model.pre_block.3               | Identity          | 0
+81 | representor.evaluator.model.hidden_block              | Sequential        | 0
+82 | representor.evaluator.model.hidden_block.0            | Linear            | 0
+83 | representor.evaluator.model.hidden_block.1            | BatchNorm1d       | 0
+84 | representor.evaluator.model.hidden_block.2            | ReLU              | 0
+85 | representor.evaluator.model.hidden_block.3            | Identity          | 0
+86 | representor.evaluator.model.post_block                | Linear            | 0
+87 | predictor                                             | FlattenMLP        | 4.5 M
+88 | predictor.pre_block                                   | Sequential        | 266 K
+89 | predictor.pre_block.0                                 | Linear            | 262 K
+90 | predictor.pre_block.1                                 | BatchNorm1d       | 4.1 K
+91 | predictor.pre_block.2                                 | ReLU              | 0
+92 | predictor.pre_block.3                                 | Identity          | 0
+93 | predictor.hidden_block                                | Sequential        | 4.2 M
+94 | predictor.hidden_block.0                              | Linear            | 4.2 M
+95 | predictor.hidden_block.1                              | BatchNorm1d       | 4.1 K
+96 | predictor.hidden_block.2                              | ReLU              | 0
+97 | predictor.hidden_block.3                              | Identity          | 0
+98 | predictor.post_block                                  | Linear            | 20.5 K
+---------------------------------------------------------------------------------------------
+4.5 M     Trainable params
+0         Non-trainable params
+4.5 M     Total params
+17.941    Total estimated model params size (MB)
+
+Epoch 0, global step 21: val/pred/loss reached 2.44941 (best 2.44941), saving model to "/atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_mlp_h2048_l2/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_15-30-39/epoch=0-step=21.ckpt" as top 1
+
+
+Epoch 2: 100%|█████████████| 26/26 [00:01<00:00, 22.26it/s, loss=2, v_num=0-39]
+
+Epoch 2: 100%|█████████████| 26/26 [00:02<00:00, 10.75it/s, loss=2, v_num=0-39]
+Saving latest checkpoint...
+[[36m2021-10-20 15:32:11,952[39m][[34m__main__[39m][[32mINFO[39m] - Evaluate predictor ...
+Testing: 100%|███████████████████████████████████| 3/3 [00:00<00:00, 10.54it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/pred/acc': 0.3333333432674408,
+ 'test/pred/err': 0.6666666865348816,
+ 'test/pred/loss': 1.9242013692855835}
+--------------------------------------------------------------------------------
+Testing: 100%|███████████████████████████████████| 3/3 [00:00<00:00,  8.01it/s]
+[[36m2021-10-20 15:32:12,493[39m][[34m__main__[39m][[32mINFO[39m] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_mlp_h2048_l2/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_15-30-39/results_predictor.csv.
+[[36m2021-10-20 15:32:12,493[39m][[34m__main__[39m][[32mINFO[39m] - Finalizing predictor.
+[[36m2021-10-20 15:32:12,716[39m][[34m__main__[39m][[32mINFO[39m] - Stage : Shutdown
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]

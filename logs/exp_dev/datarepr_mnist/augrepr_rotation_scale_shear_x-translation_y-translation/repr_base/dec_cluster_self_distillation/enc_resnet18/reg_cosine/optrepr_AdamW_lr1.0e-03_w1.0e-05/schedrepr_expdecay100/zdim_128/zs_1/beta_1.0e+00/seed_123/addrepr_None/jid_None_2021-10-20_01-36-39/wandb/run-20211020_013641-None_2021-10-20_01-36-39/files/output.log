@@ -1,0 +1,81 @@
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.setup has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.setup.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+[[36m2021-10-20 01:36:48,867[39m][[34m__main__[39m][[32mINFO[39m] - Train representor ...
+Exception in thread Thread-3:
+Traceback (most recent call last):
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/threading.py", line 973, in _bootstrap_inner
+    self.run()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/threading.py", line 910, in run
+    self._target(*self._args, **self._kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/wandb_run.py", line 215, in check_status
+Exception in thread Thread-4:
+Traceback (most recent call last):
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/threading.py", line 973, in _bootstrap_inner
+    self.run()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/threading.py", line 910, in run
+    status_response = self._interface.communicate_stop_status()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 737, in communicate_stop_status
+    self._target(*self._args, **self._kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/wandb_run.py", line 197, in check_network_status
+    status_response = self._interface.communicate_network_status()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 749, in communicate_network_status
+    resp = self._communicate(req, timeout=timeout, local=True)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 539, in _communicate
+    return self._communicate_async(rec, local=local).get(timeout=timeout)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 544, in _communicate_async
+    raise Exception("The wandb backend process has shutdown")
+Exception: The wandb backend process has shutdown
+    resp = self._communicate(req, timeout=timeout, local=True)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 539, in _communicate
+    return self._communicate_async(rec, local=local).get(timeout=timeout)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 544, in _communicate_async
+    raise Exception("The wandb backend process has shutdown")
+Exception: The wandb backend process has shutdown
+Traceback (most recent call last):
+  File "/atlas/u/yanndubs/ISSL/main.py", line 683, in <module>
+    main()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/main.py", line 48, in decorated_main
+    _run_hydra(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/utils.py", line 377, in _run_hydra
+    run_and_report(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/utils.py", line 211, in run_and_report
+    return func()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/utils.py", line 378, in <lambda>
+    lambda: hydra.run(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/_internal/hydra.py", line 98, in run
+    ret = run_job(
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/hydra/core/utils.py", line 160, in run_job
+    ret.return_value = task_function(task_cfg)
+  File "/atlas/u/yanndubs/ISSL/main.py", line 102, in main
+    repr_trainer.fit(representor, datamodule=repr_datamodule)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 552, in fit
+    self._run(model)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 873, in _run
+    self.accelerator.setup(self, model)  # note: this sets up self.lightning_module
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/gpu.py", line 42, in setup
+    return super().setup(trainer, model)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 86, in setup
+    self.setup_training_type_plugin(model)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/accelerators/accelerator.py", line 339, in setup_training_type_plugin
+    self.training_type_plugin.setup(model)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/training_type/single_device.py", line 67, in setup
+    self.model_to_device()
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/plugins/training_type/single_device.py", line 64, in model_to_device
+    self._model.to(self.root_device)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/mixins/device_dtype_mixin.py", line 109, in to
+    return super().to(*args, **kwargs)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 852, in to
+    return self._apply(convert)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 530, in _apply
+    module._apply(fn)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 530, in _apply
+    module._apply(fn)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 530, in _apply
+    module._apply(fn)
+  [Previous line repeated 1 more time]
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 552, in _apply
+    param_applied = fn(param)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 850, in convert
+    return t.to(device, dtype if t.is_floating_point() or t.is_complex() else None, non_blocking)
+KeyboardInterrupt

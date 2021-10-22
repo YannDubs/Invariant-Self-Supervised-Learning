@@ -1,0 +1,375 @@
+2021-10-20 23:03:44,545 INFO    MainThread:2483038 [internal.py:wandb_internal():86] W&B internal server running at pid: 2483038, started at: 2021-10-20 23:03:44.544246
+2021-10-20 23:03:44,548 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: check_version
+2021-10-20 23:03:44,549 INFO    WriterThread:2483038 [datastore.py:open_for_write():77] open: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/run-None_2021-10-20_23-03-40.wandb
+2021-10-20 23:03:44,553 DEBUG   SenderThread:2483038 [sender.py:send():185] send: header
+2021-10-20 23:03:44,553 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: check_version
+2021-10-20 23:03:44,636 DEBUG   SenderThread:2483038 [sender.py:send():185] send: run
+2021-10-20 23:03:44,640 INFO    SenderThread:2483038 [sender.py:_maybe_setup_resume():427] checking resume status for issl/tmp/None_2021-10-20_23-03-40
+2021-10-20 23:03:44,728 DEBUG   SenderThread:2483038 [git.py:repo():33] git repository is invalid
+2021-10-20 23:03:44,868 INFO    SenderThread:2483038 [dir_watcher.py:__init__():169] watching files in: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files
+2021-10-20 23:03:44,868 INFO    SenderThread:2483038 [sender.py:_start_run_threads():746] run started: None_2021-10-20_23-03-40 with start time 1634796222
+2021-10-20 23:03:44,869 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: run_start
+2021-10-20 23:03:44,869 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:03:44,872 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:03:44,876 DEBUG   HandlerThread:2483038 [meta.py:__init__():40] meta init
+2021-10-20 23:03:44,876 DEBUG   HandlerThread:2483038 [meta.py:__init__():54] meta init done
+2021-10-20 23:03:44,877 DEBUG   HandlerThread:2483038 [meta.py:probe():211] probe
+2021-10-20 23:03:44,884 DEBUG   HandlerThread:2483038 [git.py:repo():33] git repository is invalid
+2021-10-20 23:03:44,885 DEBUG   HandlerThread:2483038 [meta.py:_save_code():90] save code
+2021-10-20 23:03:44,885 WARNING HandlerThread:2483038 [meta.py:_save_code():92] unable to save code -- program entry not found
+2021-10-20 23:03:44,885 DEBUG   HandlerThread:2483038 [meta.py:_save_pip():58] save pip
+2021-10-20 23:03:44,887 DEBUG   HandlerThread:2483038 [meta.py:_save_pip():72] save pip done
+2021-10-20 23:03:44,887 DEBUG   HandlerThread:2483038 [meta.py:_save_conda():79] save conda
+2021-10-20 23:03:45,883 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/requirements.txt
+2021-10-20 23:03:45,883 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:03:45,884 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/conda-environment.yaml
+2021-10-20 23:03:49,876 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:03:50,483 DEBUG   HandlerThread:2483038 [meta.py:_save_conda():87] save conda done
+2021-10-20 23:03:50,483 DEBUG   HandlerThread:2483038 [meta.py:probe():249] probe done
+2021-10-20 23:03:50,880 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/conda-environment.yaml
+2021-10-20 23:03:50,880 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_created():217] file/dir created: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-metadata.json
+2021-10-20 23:03:52,887 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:03:54,714 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:03:54,717 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:03:54,815 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:03:54,815 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:03:54,816 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:03:54,816 DEBUG   SenderThread:2483038 [sender.py:send():185] send: config
+2021-10-20 23:03:54,816 DEBUG   SenderThread:2483038 [sender.py:send():185] send: files
+2021-10-20 23:03:54,817 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-metadata.json with policy now
+2021-10-20 23:03:55,178 INFO    Thread-11 :2483038 [upload_job.py:push():137] Uploaded file /tmp/tmp2utbrbq2wandb/1idd6w41-wandb-metadata.json
+2021-10-20 23:04:09,817 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:04:09,820 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:04:13,342 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:04:15,100 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml
+2021-10-20 23:04:23,697 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:23,702 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:23,703 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:23,825 DEBUG   SenderThread:2483038 [sender.py:send():185] send: config
+2021-10-20 23:04:24,016 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:24,021 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:24,021 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:24,021 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:24,021 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:24,021 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:24,021 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:24,032 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:24,269 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:24,919 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:04:24,920 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:04:26,277 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:34,930 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,935 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,935 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,939 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:34,939 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:34,939 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:34,960 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:35,295 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:36,000 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,000 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,001 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:36,003 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,003 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:36,004 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:36,006 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:36,297 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:36,297 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:38,441 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:40,016 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:04:40,016 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:04:40,506 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:40,507 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:40,526 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:40,526 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:40,526 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:40,539 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:40,581 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:42,594 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:43,705 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:43,706 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:43,706 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:43,708 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:43,709 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:43,710 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:43,912 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:04:44,597 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:45,625 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:45,625 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:45,625 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:45,625 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:45,625 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:45,627 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:46,717 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:46,718 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:46,718 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml
+2021-10-20 23:04:49,922 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:49,925 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:49,925 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:49,925 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:49,925 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:49,938 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:50,892 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:52,894 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:53,092 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:53,094 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:53,094 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:53,096 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:53,096 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:53,098 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:53,895 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:54,443 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:54,444 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:04:54,444 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:04:54,446 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:04:54,446 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:04:54,447 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:04:54,896 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:54,897 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:04:55,154 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:04:55,154 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:04:56,961 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:04:59,112 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:01,785 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:01,789 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:01,790 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:05:01,796 DEBUG   SenderThread:2483038 [sender.py:send():185] send: config
+2021-10-20 23:05:02,330 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:02,716 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,717 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,717 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:05:02,719 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,719 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,719 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:05:02,720 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:05:02,722 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:05:02,813 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,819 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:02,819 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:05:02,819 DEBUG   SenderThread:2483038 [sender.py:send():185] send: history
+2021-10-20 23:05:02,820 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:05:02,821 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:05:03,483 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:05:04,484 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:04,863 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:04,866 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:04,866 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:05:04,867 DEBUG   SenderThread:2483038 [sender.py:send():185] send: config
+2021-10-20 23:05:06,494 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:10,257 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:05:10,258 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:05:14,417 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:05:16,549 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:16,549 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:16,549 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:05:16,549 DEBUG   SenderThread:2483038 [sender.py:send():185] send: config
+2021-10-20 23:05:17,481 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:17,483 DEBUG   SenderThread:2483038 [sender.py:send():185] send: metric
+2021-10-20 23:05:17,483 WARNING SenderThread:2483038 [sender.py:send_metric():837] Seen metric with glob (shouldnt happen)
+2021-10-20 23:05:17,486 DEBUG   SenderThread:2483038 [sender.py:send():185] send: config
+2021-10-20 23:05:17,515 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml
+2021-10-20 23:05:18,516 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:23,524 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:25,343 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:05:25,344 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:05:40,429 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:05:40,430 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:05:44,759 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:05:47,556 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml
+2021-10-20 23:05:53,563 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:05:55,512 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:05:55,513 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:06:10,605 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:06:10,606 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:06:15,191 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:06:25,695 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:06:25,696 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:06:40,792 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:06:40,793 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:06:45,630 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:06:55,881 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:06:55,882 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:07:10,975 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:07:10,976 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:07:16,072 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:07:26,073 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:07:26,074 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:07:41,166 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:07:41,167 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:07:46,500 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:07:56,261 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:07:56,262 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:08:11,357 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:08:11,358 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:08:16,938 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:08:26,452 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:08:26,453 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:08:41,545 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:08:41,546 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:08:47,375 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:08:56,643 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:08:56,644 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:09:11,742 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:09:11,743 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:09:17,814 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:09:26,838 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:09:26,839 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:09:41,931 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:09:41,931 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:09:48,253 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:09:57,024 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:09:57,025 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:10:12,119 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:10:12,120 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:10:18,689 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:10:22,047 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:24,050 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:26,053 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:27,214 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:10:27,214 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:10:28,056 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:30,058 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:32,061 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:36,066 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:38,069 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:40,072 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:42,074 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:42,307 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: stop_status
+2021-10-20 23:10:42,307 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: stop_status
+2021-10-20 23:10:44,138 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:46,141 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:48,144 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:49,126 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:10:50,146 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:52,149 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:54,152 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:56,155 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:58,157 INFO    Thread-8  :2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:10:59,523 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:10:59,523 DEBUG   SenderThread:2483038 [sender.py:send():185] send: telemetry
+2021-10-20 23:10:59,523 DEBUG   SenderThread:2483038 [sender.py:send():185] send: exit
+2021-10-20 23:10:59,524 INFO    SenderThread:2483038 [sender.py:send_exit():294] handling exit code: 0
+2021-10-20 23:10:59,524 INFO    SenderThread:2483038 [sender.py:send_exit():296] handling runtime: 434
+2021-10-20 23:10:59,526 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:10:59,526 INFO    SenderThread:2483038 [sender.py:send_exit():306] send defer
+2021-10-20 23:10:59,527 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:10:59,528 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:10:59,528 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 0
+2021-10-20 23:10:59,529 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:10:59,529 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 0
+2021-10-20 23:10:59,529 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 1
+2021-10-20 23:10:59,529 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:10:59,530 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 1
+2021-10-20 23:10:59,594 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:10:59,594 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 1
+2021-10-20 23:10:59,595 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 2
+2021-10-20 23:10:59,595 DEBUG   SenderThread:2483038 [sender.py:send():185] send: stats
+2021-10-20 23:10:59,595 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:10:59,595 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 2
+2021-10-20 23:10:59,595 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:10:59,595 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 2
+2021-10-20 23:10:59,596 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 3
+2021-10-20 23:10:59,596 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:10:59,596 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 3
+2021-10-20 23:10:59,596 DEBUG   SenderThread:2483038 [sender.py:send():185] send: summary
+2021-10-20 23:10:59,597 INFO    SenderThread:2483038 [sender.py:_save_file():879] saving file wandb-summary.json with policy end
+2021-10-20 23:10:59,598 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:10:59,598 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 3
+2021-10-20 23:10:59,598 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 4
+2021-10-20 23:10:59,598 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:10:59,598 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 4
+2021-10-20 23:10:59,598 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:10:59,598 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 4
+2021-10-20 23:10:59,631 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:10:59,774 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 5
+2021-10-20 23:10:59,774 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:10:59,774 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:10:59,774 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 5
+2021-10-20 23:10:59,775 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:10:59,775 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 5
+2021-10-20 23:10:59,775 INFO    SenderThread:2483038 [dir_watcher.py:finish():283] shutting down directory watcher
+2021-10-20 23:10:59,876 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,160 INFO    SenderThread:2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:11:00,161 INFO    SenderThread:2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:11:00,161 INFO    SenderThread:2483038 [dir_watcher.py:_on_file_modified():230] file/dir modified: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml
+2021-10-20 23:11:00,162 INFO    SenderThread:2483038 [dir_watcher.py:finish():313] scan: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files
+2021-10-20 23:11:00,163 INFO    SenderThread:2483038 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/conda-environment.yaml conda-environment.yaml
+2021-10-20 23:11:00,163 INFO    SenderThread:2483038 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json wandb-summary.json
+2021-10-20 23:11:00,164 INFO    SenderThread:2483038 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml config.yaml
+2021-10-20 23:11:00,173 INFO    SenderThread:2483038 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-metadata.json wandb-metadata.json
+2021-10-20 23:11:00,179 INFO    SenderThread:2483038 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/requirements.txt requirements.txt
+2021-10-20 23:11:00,181 INFO    SenderThread:2483038 [dir_watcher.py:finish():327] scan save: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log output.log
+2021-10-20 23:11:00,181 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 6
+2021-10-20 23:11:00,181 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,188 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:11:00,188 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 6
+2021-10-20 23:11:00,189 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:11:00,189 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 6
+2021-10-20 23:11:00,189 INFO    SenderThread:2483038 [file_pusher.py:finish():177] shutting down file pusher
+2021-10-20 23:11:00,284 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,285 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,388 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,388 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,490 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,491 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,529 INFO    Thread-12 :2483038 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/conda-environment.yaml
+2021-10-20 23:11:00,544 INFO    Thread-13 :2483038 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/wandb-summary.json
+2021-10-20 23:11:00,553 INFO    Thread-16 :2483038 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/output.log
+2021-10-20 23:11:00,553 INFO    Thread-14 :2483038 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/config.yaml
+2021-10-20 23:11:00,556 INFO    Thread-15 :2483038 [upload_job.py:push():137] Uploaded file /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/files/requirements.txt
+2021-10-20 23:11:00,593 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,593 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,696 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,696 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,757 INFO    Thread-7  :2483038 [sender.py:transition_state():319] send defer: 7
+2021-10-20 23:11:00,758 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:11:00,758 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 7
+2021-10-20 23:11:00,758 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:11:00,758 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 7
+2021-10-20 23:11:00,799 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:00,940 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 8
+2021-10-20 23:11:00,940 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:00,941 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:11:00,941 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 8
+2021-10-20 23:11:00,942 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:11:00,942 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 8
+2021-10-20 23:11:00,942 INFO    SenderThread:2483038 [sender.py:transition_state():319] send defer: 9
+2021-10-20 23:11:00,943 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: defer
+2021-10-20 23:11:00,943 DEBUG   SenderThread:2483038 [sender.py:send():185] send: final
+2021-10-20 23:11:00,944 INFO    HandlerThread:2483038 [handler.py:handle_request_defer():143] handle defer: 9
+2021-10-20 23:11:00,944 DEBUG   SenderThread:2483038 [sender.py:send():185] send: footer
+2021-10-20 23:11:00,944 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: defer
+2021-10-20 23:11:00,944 INFO    SenderThread:2483038 [sender.py:send_request_defer():315] handle sender defer: 9
+2021-10-20 23:11:01,043 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: poll_exit
+2021-10-20 23:11:01,044 DEBUG   SenderThread:2483038 [sender.py:send_request():199] send_request: poll_exit
+2021-10-20 23:11:01,044 INFO    SenderThread:2483038 [file_pusher.py:join():182] waiting for file pusher
+2021-10-20 23:11:01,224 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: get_summary
+2021-10-20 23:11:01,227 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: sampled_history
+2021-10-20 23:11:01,231 DEBUG   HandlerThread:2483038 [handler.py:handle_request():126] handle_request: shutdown
+2021-10-20 23:11:01,231 INFO    HandlerThread:2483038 [handler.py:finish():683] shutting down handler
+2021-10-20 23:11:01,944 INFO    WriterThread:2483038 [datastore.py:close():281] close: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_23-03-40/wandb/run-20211020_230342-None_2021-10-20_23-03-40/run-None_2021-10-20_23-03-40.wandb
+2021-10-20 23:11:02,223 INFO    SenderThread:2483038 [sender.py:finish():986] shutting down sender
+2021-10-20 23:11:02,223 INFO    SenderThread:2483038 [file_pusher.py:finish():177] shutting down file pusher
+2021-10-20 23:11:02,223 INFO    SenderThread:2483038 [file_pusher.py:join():182] waiting for file pusher
+2021-10-20 23:11:02,227 INFO    MainThread:2483038 [internal.py:handle_exit():76] Internal process exited

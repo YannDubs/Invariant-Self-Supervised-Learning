@@ -1,0 +1,254 @@
+experiment: debug_${now:%Y-%m-%d_%H-%M-%S}
+job_id: ${time}
+seed: 123
+timeout: 60
+time: ${hydra:job.num}_${now:%Y-%m-%d_%H-%M-%S}
+long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/reg_${regularizer.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_shape}/zs_1/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr}
+long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/augpred_${list2str:${data_pred.kwargs.dataset_kwargs.a_augmentations}}//optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/addpred_${other.add_pred}
+is_only_repr: false
+is_return: false
+monitor_return: []
+monitor_direction: []
+is_no_save: ${is_return}
+paths:
+  base_dir: ${hydra:runtime.cwd}
+  data: ${paths.base_dir}/data
+  work: ${hydra.runtime.cwd}/outputs/${now:%Y-%m-%d_%H-%M-%S}
+  results: ${paths.base_dir}/results/${long_name}/jid_${job_id}
+  logs: ${paths.base_dir}/logs/${long_name}/jid_${job_id}
+  checkpoint: ${paths.base_dir}/checkpoints/${long_name}/jid_${job_id}
+  pretrained:
+    save: ${paths.base_dir}/pretrained/${long_name}/jid_${job_id}
+    load: ${paths.base_dir}/pretrained/${long_name}/*
+    staggered: null
+other:
+  is_debug: true
+  is_quick: true
+  hydra_job_id: ${hydra:job.id}
+  add_repr: null
+  add_pred: null
+  git_hash: null
+stage: ???
+long_name: ???
+checkpoint: {}
+data: {}
+evaluation:
+  is_eval_on_test: true
+  representor:
+    ckpt_path: null
+    is_evaluate: ${representor.is_train}
+    is_online_eval: true
+  predictor:
+    ckpt_path: null
+    is_evaluate: ${predictor.is_train}
+    is_eval_train: false
+callbacks:
+  is_force_no_additional_callback: false
+  LearningRateMonitor:
+    is_use: false
+    kwargs:
+      logging_interval: epoch
+  GPUStatsMonitor:
+    is_use: true
+trainer:
+  max_epochs: 200
+  progress_bar_refresh_rate: 10000
+  resume_from_checkpoint: null
+  gradient_clip_val: 3
+  reload_dataloaders_every_n_epochs: 0
+  log_every_n_steps: 500
+  val_check_interval: 1.0
+  gpus: 1
+  num_nodes: 1
+  precision: 16
+  accumulate_grad_batches: 1
+  sync_batchnorm: false
+  fast_dev_run: true
+  overfit_batches: 0.0
+  weights_summary: full
+  profiler: simple
+data_repr:
+  mode: ???
+  length: ???
+  shape: ???
+  target_shape: ???
+  balancing_weights: ???
+  aux_shape: ???
+  aux_is_clf: ???
+  target_is_clf: ???
+  max_steps: ???
+  normalized: ???
+  is_aux_already_represented: ???
+  name: ${.dataset}
+  dataset: mnist
+  kwargs:
+    data_dir: ${paths.data}
+    batch_size: 128
+    reload_dataloaders_every_n_epochs: ${trainer.reload_dataloaders_every_n_epochs}
+    num_workers: 2
+    dataset_kwargs:
+      is_normalize: false
+      a_augmentations:
+      - x-translation
+      - y-translation
+      - rotation
+      - scale
+      - shear
+      aux_target: augmentation
+    val_size: 0.05
+encoder:
+  name: resnet18
+  z_shape: 128
+  is_normalize_Z: true
+  kwargs:
+    in_shape: ${data.shape}
+    out_shape: ${encoder.z_shape}
+    architecture: resnet
+    arch_kwargs:
+      base: resnet18
+    fam_kwargs: {}
+    family: deterministic
+Z_processor:
+  kwargs:
+    in_shape: ${encoder.z_shape}
+    out_shape: ${Z_processor.kwargs.in_shape}
+    architecture: identity
+online_evaluator:
+  name: mlp_h${.kwargs.arch_kwargs.hid_dim}_l${.kwargs.arch_kwargs.n_hid_layers}
+  kwargs:
+    in_shape: ${encoder.z_shape}
+    out_shape: ${data.target_shape}
+    architecture: mlp
+    arch_kwargs:
+      hid_dim: 2048
+      norm_layer: batchnorm
+      n_hid_layers: 2
+      activation: ReLU
+      dropout_p: 0.0
+    is_classification: ${data.target_is_clf}
+optimizer_issl:
+  name: ${optimizer_issl.mode}_lr${format:${optimizer_issl.kwargs.lr},.1e}_w${format:${optimizer_issl.kwargs.weight_decay},.1e}
+  mode: AdamW
+  kwargs:
+    lr: 0.001
+    weight_decay: 1.0e-05
+scheduler_issl:
+  name: expdecay100
+  modes:
+  - expdecay
+  kwargs:
+    expdecay:
+      decay_factor: 100
+      epochs: ${trainer.max_epochs}
+optimizer_eval:
+  name: ${optimizer_eval.mode}_lr${format:${optimizer_eval.kwargs.lr},.1e}_w${format:${optimizer_eval.kwargs.weight_decay},.1e}
+  mode: AdamW
+  kwargs:
+    lr: 0.0003
+    weight_decay: 1.0e-05
+scheduler_eval:
+  name: expdecay100
+  modes:
+  - expdecay
+  kwargs:
+    expdecay:
+      decay_factor: 100
+      epochs: ${trainer.max_epochs}
+checkpoint_repr:
+  name: bestValLoss
+  kwargs:
+    dirpath: ${paths.checkpoint}
+    monitor: val/${stage}/loss
+    mode: min
+    verbose: true
+    save_last: true
+    save_top_k: 1
+    save_weights_only: false
+update_trainer_repr: {}
+data_pred:
+  mode: ???
+  length: ???
+  shape: ???
+  target_shape: ???
+  balancing_weights: ???
+  aux_shape: ???
+  aux_is_clf: ???
+  target_is_clf: ???
+  max_steps: ???
+  normalized: ???
+  is_aux_already_represented: ???
+  name: data_repr
+  dataset: ???
+predictor:
+  name: mlp_probe
+  is_train: true
+  arch: mlp
+  arch_kwargs:
+    hid_dim: 2048
+    norm_layer: batchnorm
+    n_hid_layers: 2
+    activation: ReLU
+    dropout_p: 0.0
+optimizer_pred:
+  name: ${optimizer_pred.mode}_lr${format:${optimizer_pred.kwargs.lr},.1e}_w${format:${optimizer_pred.kwargs.weight_decay},.1e}
+  mode: AdamW
+  kwargs:
+    lr: 0.0003
+    weight_decay: 1.0e-05
+scheduler_pred:
+  name: unifmultistep100
+  modes:
+  - UniformMultiStepLR
+  kwargs:
+    UniformMultiStepLR:
+      decay_factor: 100
+      k_steps: 3
+      epochs: ${trainer.max_epochs}
+checkpoint_pred:
+  name: bestValLoss
+  kwargs:
+    dirpath: ${paths.checkpoint}
+    monitor: val/${stage}/loss
+    mode: min
+    verbose: true
+    save_last: true
+    save_top_k: 1
+    save_weights_only: false
+update_trainer_pred: {}
+user: ${oc.env:USER}
+wandb_entity: issl
+logger:
+  name: null
+  is_can_plot_img: false
+  kwargs:
+    save_dir: ${paths.logs}
+    name: ${job_id}
+hypopt: {}
+representor:
+  name: base
+  is_on_the_fly: true
+  is_train: true
+  is_use_init: false
+  loss:
+    beta: 1
+    beta_anneal: linear
+decodability:
+  name: ${decodability.kwargs.mode}
+  is_reconstruct: true
+  kwargs:
+    mode: generative
+    z_shape: ${encoder.z_shape}
+    a_shape: ${data.aux_shape}
+    decoder_kwargs:
+      architecture: linear
+    normalized: ${data.normalized}
+    pred_loss_kwargs:
+      is_classification: ${data.aux_is_clf}
+regularizer:
+  name: ${.kwargs.loss}
+  factor_beta: 1
+  kwargs:
+    loss: cosine
+    mode: coarsener
+finetune:
+  name: none

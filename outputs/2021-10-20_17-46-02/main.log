@@ -1,0 +1,10 @@
+[2021-10-20 17:46:02,920][__main__][INFO] - Stage : Startup
+[2021-10-20 17:46:02,928][__main__][INFO] - Workdir : /atlas/u/yanndubs/ISSL/outputs/2021-10-20_17-46-02.
+[2021-10-20 17:46:02,936][__main__][INFO] - Stage : Representor
+[2021-10-20 17:46:02,962][__main__][INFO] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None.
+[2021-10-20 17:46:12,601][__main__][INFO] - Train representor ...
+[2021-10-20 17:47:24,900][__main__][INFO] - Evaluate compressor ...
+[2021-10-20 17:47:26,684][__main__][INFO] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02/results_representor.csv.
+[2021-10-20 17:47:26,685][__main__][INFO] - Finalizing representor.
+[2021-10-20 17:47:26,837][__main__][INFO] - Stage : Shutdown
+[2021-10-20 17:47:33,482][__main__][INFO] - Finished.

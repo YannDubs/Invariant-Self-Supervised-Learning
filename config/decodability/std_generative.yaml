@@ -1,0 +1,6 @@
+defaults:
+  - generative
+
+kwargs:
+  decoder_kwargs:
+    architecture: cnn

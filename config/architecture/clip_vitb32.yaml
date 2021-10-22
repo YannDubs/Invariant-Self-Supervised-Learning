@@ -1,0 +1,5 @@
+defaults:
+  - base
+
+kwargs:
+  architecture: clip_vitb32

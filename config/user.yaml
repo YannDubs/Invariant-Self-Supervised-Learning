@@ -1,0 +1,7 @@
+# @package _global_
+
+### USER SPECIFIC ###
+#! change for your usecase
+user: ${oc.env:USER} # automatically change if USER is not defined
+wandb_entity: issl # team name or user
+#####################

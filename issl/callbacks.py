@@ -1,0 +1,258 @@
+from __future__ import annotations
+
+import logging
+from typing import Any, Optional
+
+import einops
+import matplotlib.pyplot as plt
+import pytorch_lightning as pl
+import torch
+from pytorch_lightning.callbacks import Callback
+from pytorch_lightning.callbacks.finetuning import BaseFinetuning
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.utilities import rank_zero_only
+
+from .helpers import (
+    UnNormalizer,
+    is_colored_img,
+    plot_config,
+    tensors_to_fig,
+)
+
+try:
+    import wandb
+except ImportError:
+    pass
+
+logger = logging.getLogger(__name__)
+
+
+def save_img(pl_module, trainer, img, name, caption):
+    """Save an image on logger. Currently only  wandb."""
+    experiment = trainer.logger.experiment
+    if isinstance(trainer.logger, WandbLogger):
+        wandb_img = wandb.Image(img, caption=caption)
+        experiment.log({name: [wandb_img]}, commit=False)
+
+    else:
+        err = f"Plotting images is only available on  Wandb but you are using {type(trainer.logger)}."
+        raise ValueError(err)
+
+
+def is_plot(trainer, plot_interval):
+    is_plot_interval = (trainer.current_epoch + 1) % plot_interval == 0
+    is_last_epoch = trainer.current_epoch == trainer.max_epochs - 1
+    return is_plot_interval or is_last_epoch
+
+
+class PlottingCallback(Callback):
+    """Base classes for callbacks that plot.
+
+    Parameters
+    ----------
+    plot_interval : int, optional
+        Every how many epochs to plot.
+
+    plot_config_kwargs : dict, optional
+            General config for plotting, e.g. arguments to matplotlib.rc, sns.plotting_context,
+            matplotlib.set ...
+    """
+
+    def __init__(self, plot_interval: int = 10, plot_config_kwargs: dict = {}) -> None:
+        super().__init__()
+        self.plot_interval = plot_interval
+        self.plot_config_kwargs = plot_config_kwargs
+
+    # noinspection PyBroadException
+    @rank_zero_only  # only plot on one machine
+    def on_train_epoch_end(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule, outputs: Any
+    ) -> None:
+        if is_plot(trainer, self.plot_interval):
+            try:
+                for fig, kwargs in self.yield_figs_kwargs(trainer, pl_module):
+                    if "caption" not in kwargs:
+                        kwargs["caption"] = f"ep: {trainer.current_epoch}"
+
+                    save_img(pl_module, trainer, fig, **kwargs)
+                    plt.close(fig)
+            except:
+                logger.exception(f"Couldn't plot for {type(PlottingCallback)}, error:")
+
+    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        raise NotImplementedError()
+
+
+class ReconstructImages(PlottingCallback):
+    """Logs some reconstructed images.
+
+    Notes
+    -----
+    - the model should return a dictionary after each training step, containing
+    a tensor "Y_hat" and a tensor "Y" both of image shape.
+    - this will log one reconstructed image (+real) after each training epoch.
+    """
+
+    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        cfg = pl_module.hparams
+        #! waiting for torch lightning #1243
+        x_hat = pl_module._save["Y_hat"].float()
+        x = pl_module._save["X"].float()
+
+        if is_colored_img(x):
+            if cfg.data.kwargs.dataset_kwargs.is_normalize:
+                # undo normalization for plotting
+                unnormalizer = UnNormalizer(cfg.data.dataset)
+                x = unnormalizer(x)
+
+        yield x_hat, dict(name="rec_img")
+
+        yield x, dict(name="real_img")
+
+
+class LatentDimInterpolator(PlottingCallback):
+    """Logs interpolated images.
+
+    Parameters
+    ----------
+    z_dim : int 
+        Number of dimensions for latents.
+
+    range_start : float, optional
+        Start of the interpolating range.
+
+    range_end : float, optional
+        End of the interpolating range.
+
+    n_per_lat : int, optional
+        Number of traversal to do for each latent.
+
+    n_lat_traverse : int, optional
+        Number of latent to traverse for traversal 1_d. Max is `z_dim`.
+
+    kwargs :
+        Additional arguments to PlottingCallback.
+    """
+
+    def __init__(
+        self,
+        z_dim: int,
+        range_start: float = -5,
+        range_end: float = 5,
+        n_per_lat: int = 7,
+        n_lat_traverse: int = 5,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.z_dim = z_dim
+        self.range_start = range_start
+        self.range_end = range_end
+        self.n_per_lat = n_per_lat
+        self.n_lat_traverse = n_lat_traverse
+
+    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        with torch.no_grad():
+            pl_module.eval()
+            with plot_config(**self.plot_config_kwargs, font_scale=2):
+                traversals_2d = self.latent_traverse_2d(pl_module)
+
+            with plot_config(**self.plot_config_kwargs, font_scale=1.5):
+                traversals_1d = self.latent_traverse_1d(pl_module)
+
+        pl_module.train()
+
+        yield traversals_2d, dict(name="traversals_2d")
+        yield traversals_1d, dict(name="traversals_1d")
+
+    def _traverse_line(
+        self, idx: int, pl_module: pl.LightningModule, z: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        """Return a (size, latent_size) latent sample, corresponding to a traversal
+        of a latent variable indicated by idx."""
+
+        if z is None:
+            z = torch.zeros(1, self.n_per_lat, self.z_dim, device=pl_module.device)
+
+        traversals = torch.linspace(
+            self.range_start,
+            self.range_end,
+            steps=self.n_per_lat,
+            device=pl_module.device,
+        )
+        for i in range(self.n_per_lat):
+            z[:, i, idx] = traversals[i]
+
+        z = einops.rearrange(z, "r c ... -> (r c) ...")
+        img = pl_module.distortion_estimator.q_YlZ(z)
+
+        # put back to [0,1]
+        img = torch.sigmoid(img)
+        return img
+
+    def latent_traverse_2d(self, pl_module: pl.LightningModule) -> plt.Figure:
+        """Traverses the first 2 latents TOGETHER."""
+        traversals = torch.linspace(
+            self.range_start,
+            self.range_end,
+            steps=self.n_per_lat,
+            device=pl_module.device,
+        )
+        z_2d = torch.zeros(
+            self.n_per_lat, self.n_per_lat, self.z_dim, device=pl_module.device
+        )
+        for i in range(self.n_per_lat):
+            z_2d[i, :, 0] = traversals[i]  # fill first latent
+
+        imgs = self._traverse_line(1, pl_module, z=z_2d)  # fill 2nd latent and rec.
+        fig = tensors_to_fig(
+            imgs,
+            n_cols=self.n_per_lat,
+            x_labels=["1st Latent"],
+            y_labels=["2nd Latent"],
+        )
+
+        return fig
+
+    def latent_traverse_1d(self, pl_module: pl.LightningModule) -> plt.Figure:
+        """Traverses the first `self.n_lat` latents separately."""
+        n_lat_traverse = min(self.n_lat_traverse, self.z_dim)
+        imgs = [self._traverse_line(i, pl_module) for i in range(n_lat_traverse)]
+        imgs = torch.cat(imgs, dim=0)
+        fig = tensors_to_fig(
+            imgs,
+            n_cols=self.n_per_lat,
+            x_labels=["Sweeps"],
+            y_labels=[f"Lat. {i}" for i in range(n_lat_traverse)],
+        )
+        return fig
+
+
+class Freezer(BaseFinetuning):
+    """Freeze entire model.
+
+    Parameters
+    ----------
+    model_name : string
+        Name of the module to freeze from pl module. Can use dots.
+    """
+
+    def __init__(
+        self, model_name,
+    ):
+        super().__init__()
+        self.model_name = model_name.split(".")
+
+    def get_model(self, pl_module):
+        model = pl_module
+
+        for model_name in self.model_name:
+            model = getattr(model, model_name)
+
+        return model
+
+    def freeze_before_training(self, pl_module):
+        model = self.get_model(pl_module)
+        self.freeze(modules=model, train_bn=False)
+
+    def finetune_function(self, pl_module, current_epoch, optimizer, optimizer_idx):
+        pass

@@ -1,0 +1,9 @@
+defaults:
+  - sk_logistic
+
+name: sk_logisticCV
+model:
+  _target_: sklearn.linear_model.LogisticRegressionCV
+  Cs: 5 #amount to test
+  cv: "validation" # use the validation set
+  refit: True

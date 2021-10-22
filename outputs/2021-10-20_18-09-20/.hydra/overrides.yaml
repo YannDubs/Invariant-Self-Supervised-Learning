@@ -1,0 +1,5 @@
+- mode=dev
+- data_repr.kwargs.num_workers=2
+- experiment=dev
+- representor.is_train=False
+- paths.pretrained.load=/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29

@@ -1,0 +1,191 @@
+hydra:
+  run:
+    dir: ${paths.work}
+  sweep:
+    dir: ${paths.work}
+    subdir: ${hydra.job.num}_${hydra.job.id}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      colorlog:
+        (): colorlog.ColoredFormatter
+        format: '[%(cyan)s%(asctime)s%(reset)s][%(purple)sHYDRA%(reset)s] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: colorlog
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+      colorlog:
+        (): colorlog.ColoredFormatter
+        format: '[%(cyan)s%(asctime)s%(reset)s][%(blue)s%(name)s%(reset)s][%(log_color)s%(levelname)s%(reset)s]
+          - %(message)s'
+        log_colors:
+          DEBUG: purple
+          INFO: green
+          WARNING: yellow
+          ERROR: red
+          CRITICAL: red
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: colorlog
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra: []
+    task:
+    - mode=dev
+    - data_repr.kwargs.num_workers=2
+    - experiment=dev
+    - representor.is_train=False
+    - paths.pretrained.load=/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29
+    - evaluation.representor.is_evaluate=True
+    - predictor=sk_svm
+    - evaluation.representor.is_evaluate=False
+    - representor.is_on_the_fly=False
+  job:
+    name: main
+    override_dirname: data_repr.kwargs.num_workers=2,evaluation.representor.is_evaluate=False,evaluation.representor.is_evaluate=True,experiment=dev,mode=dev,paths.pretrained.load=/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29,predictor=sk_svm,representor.is_on_the_fly=False,representor.is_train=False
+    id: ???
+    num: ???
+    config_name: main
+    env_set:
+      NCCL_DEBUG: INFO
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.1.1
+    cwd: /atlas/u/yanndubs/ISSL
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /atlas/u/yanndubs/ISSL/config
+      schema: file
+      provider: main
+    - path: hydra_plugins.hydra_colorlog.conf
+      schema: pkg
+      provider: hydra-colorlog
+    - path: ''
+      schema: structured
+      provider: schema
+    choices:
+      predictor: sk_svm
+      scheduler@scheduler_pred: unifmultistep100
+      optimizer@optimizer_pred: AdamW_lr3e-4_w1e-5
+      checkpoint@checkpoint_pred: bestValLoss
+      architecture@predictor: mlp_h2048_l2
+      data@data_pred: data_repr
+      finetune: none
+      regularizer: none
+      decodability: contrastive
+      representor: base
+      scheduler@scheduler_eval: expdecay100
+      optimizer@optimizer_eval: AdamW_lr3e-4_w1e-5
+      scheduler@scheduler_issl: expdecay100
+      optimizer@optimizer_issl: AdamW_lr1e-3_w1e-5
+      checkpoint@checkpoint_repr: bestValLoss
+      architecture@online_evaluator: mlp_h2048_l2
+      architecture@encoder: resnet18
+      data@data_repr: mnist
+      mode: dev
+      hypopt: none
+      server: none
+      logger: wandb
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: colorlog
+      hydra/hydra_logging: colorlog
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false

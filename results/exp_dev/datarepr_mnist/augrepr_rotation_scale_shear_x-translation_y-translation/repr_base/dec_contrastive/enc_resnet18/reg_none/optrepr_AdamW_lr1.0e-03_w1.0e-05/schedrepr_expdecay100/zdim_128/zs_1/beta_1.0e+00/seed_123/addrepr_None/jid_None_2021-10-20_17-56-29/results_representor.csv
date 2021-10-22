@@ -1,0 +1,11 @@
+,test
+repr/I_q_zm,1.0852992534637451
+repr/beta,1.0
+repr/decodability,5.151070594787598
+repr/eval_acc,0.119140625
+repr/eval_err,0.880859375
+repr/eval_loss,2.5886335372924805
+repr/hat_H_m,6.236369609832764
+repr/loss,5.151070594787598
+repr/n_negatives,511.0
+repr/regularize,0.0

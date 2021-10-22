@@ -1,0 +1,352 @@
+experiment: dev
+job_id: None_2021-10-20_17-46-02
+seed: 123
+timeout: 60
+time: None_2021-10-20_17-46-02
+long_name_repr: exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None
+long_name_pred: exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_mlp_h2048_l2/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None
+is_return: false
+monitor_return: []
+monitor_direction: []
+is_no_save: false
+paths:
+  base_dir: /atlas/u/yanndubs/ISSL
+  data: /atlas/u/yanndubs/ISSL/data
+  work: /atlas/u/yanndubs/ISSL/outputs/2021-10-20_17-46-02
+  results: /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+  logs: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+  checkpoint: /atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+  pretrained:
+    save: /atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+    load: /atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/*
+    staggered: null
+other:
+  is_debug: false
+  is_quick: true
+  hydra_job_id: null
+  add_repr: null
+  add_pred: null
+  git_hash: null
+stage: repr
+long_name: exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None
+checkpoint:
+  name: bestValLoss
+  kwargs:
+    dirpath: /atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+    monitor: val/repr/loss
+    mode: min
+    verbose: true
+    save_last: true
+    save_top_k: 1
+    save_weights_only: false
+data:
+  mode: image
+  length: 2850
+  shape:
+  - 1
+  - 32
+  - 32
+  target_shape:
+  - 10
+  balancing_weights: {}
+  aux_shape:
+  - 1
+  - 32
+  - 32
+  aux_is_clf: true
+  target_is_clf: true
+  max_steps: 33
+  normalized: null
+  is_aux_already_represented: false
+  name: mnist
+  dataset: mnist
+  kwargs:
+    data_dir: /atlas/u/yanndubs/ISSL/data
+    batch_size: 256
+    reload_dataloaders_every_n_epochs: 0
+    num_workers: 2
+    dataset_kwargs:
+      is_normalize: false
+      a_augmentations:
+      - x-translation
+      - y-translation
+      - rotation
+      - scale
+      - shear
+      aux_target: augmentation
+    val_size: 0.05
+evaluation:
+  is_eval_on_test: true
+  representor:
+    ckpt_path: best
+    is_evaluate: true
+    is_online_eval: true
+  predictor:
+    ckpt_path: best
+    is_evaluate: true
+    is_eval_train: false
+callbacks:
+  is_force_no_additional_callback: false
+  LearningRateMonitor:
+    is_use: true
+    kwargs:
+      logging_interval: epoch
+  GPUStatsMonitor:
+    is_use: false
+trainer:
+  max_epochs: 3
+  progress_bar_refresh_rate: 10000
+  resume_from_checkpoint: null
+  gradient_clip_val: 3
+  reload_dataloaders_every_n_epochs: 0
+  log_every_n_steps: 10
+  val_check_interval: 1.0
+  gpus: 1
+  num_nodes: 1
+  precision: 16
+  accumulate_grad_batches: 1
+  sync_batchnorm: false
+  fast_dev_run: false
+  overfit_batches: 0.0
+  weights_summary: full
+  profiler: null
+  num_sanity_val_steps: 0
+  limit_val_batches: 0.2
+  limit_train_batches: 0.05
+  limit_test_batches: 0.05
+data_repr:
+  mode: ???
+  length: ???
+  shape: ???
+  target_shape: ???
+  balancing_weights: ???
+  aux_shape: ???
+  aux_is_clf: ???
+  target_is_clf: ???
+  max_steps: ???
+  normalized: ???
+  is_aux_already_represented: ???
+  name: mnist
+  dataset: mnist
+  kwargs:
+    data_dir: /atlas/u/yanndubs/ISSL/data
+    batch_size: 256
+    reload_dataloaders_every_n_epochs: 0
+    num_workers: 2
+    dataset_kwargs:
+      is_normalize: false
+      a_augmentations:
+      - x-translation
+      - y-translation
+      - rotation
+      - scale
+      - shear
+      aux_target: augmentation
+    val_size: 0.05
+encoder:
+  name: resnet18
+  z_shape: 128
+  is_normalize_Z: true
+  kwargs:
+    in_shape:
+    - 1
+    - 32
+    - 32
+    out_shape: 128
+    architecture: resnet
+    arch_kwargs:
+      base: resnet18
+    fam_kwargs: {}
+    family: deterministic
+Z_processor:
+  kwargs:
+    in_shape: 128
+    out_shape: 128
+    architecture: identity
+online_evaluator:
+  name: mlp_h2048_l2
+  kwargs:
+    in_shape: 128
+    out_shape:
+    - 10
+    architecture: mlp
+    arch_kwargs:
+      hid_dim: 2048
+      norm_layer: batchnorm
+      n_hid_layers: 2
+      activation: ReLU
+      dropout_p: 0.0
+    is_classification: true
+optimizer_issl:
+  name: AdamW_lr1.0e-03_w1.0e-05
+  mode: AdamW
+  kwargs:
+    lr: 0.001
+    weight_decay: 1.0e-05
+scheduler_issl:
+  name: expdecay100
+  modes:
+  - expdecay
+  kwargs:
+    expdecay:
+      decay_factor: 100
+      epochs: 3
+optimizer_eval:
+  name: AdamW_lr3.0e-04_w1.0e-05
+  mode: AdamW
+  kwargs:
+    lr: 0.0003
+    weight_decay: 1.0e-05
+scheduler_eval:
+  name: expdecay100
+  modes:
+  - expdecay
+  kwargs:
+    expdecay:
+      decay_factor: 100
+      epochs: 3
+checkpoint_repr:
+  name: bestValLoss
+  kwargs:
+    dirpath: /atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+    monitor: val/repr/loss
+    mode: min
+    verbose: true
+    save_last: true
+    save_top_k: 1
+    save_weights_only: false
+update_trainer_repr: {}
+data_pred:
+  mode: ???
+  length: ???
+  shape: ???
+  target_shape: ???
+  balancing_weights: ???
+  aux_shape: ???
+  aux_is_clf: ???
+  target_is_clf: ???
+  max_steps: ???
+  normalized: ???
+  is_aux_already_represented: ???
+  name: mnist
+  dataset: mnist
+  kwargs:
+    data_dir: /atlas/u/yanndubs/ISSL/data
+    batch_size: 128
+    reload_dataloaders_every_n_epochs: 0
+    num_workers: 2
+    dataset_kwargs:
+      is_normalize: false
+      a_augmentations:
+      - x-translation
+      - y-translation
+      - rotation
+      - scale
+      - shear
+      aux_target: augmentation
+    val_size: 0.05
+    val_batch_size: 128
+predictor:
+  name: mlp_h2048_l2
+  is_skip: true
+  is_train: true
+  kwargs:
+    arch_kwargs:
+      hid_dim: 2048
+      norm_layer: batchnorm
+      n_hid_layers: 2
+      activation: ReLU
+      dropout_p: 0.0
+      out_shape:
+      - 10
+    architecture: mlp
+  is_sklearn: false
+optimizer_pred:
+  name: AdamW_lr3.0e-04_w1.0e-05
+  mode: AdamW
+  kwargs:
+    lr: 0.0003
+    weight_decay: 1.0e-05
+scheduler_pred:
+  name: unifmultistep100
+  modes:
+  - UniformMultiStepLR
+  kwargs:
+    UniformMultiStepLR:
+      decay_factor: 100
+      k_steps: 3
+      epochs: 3
+checkpoint_pred:
+  name: bestValLoss
+  kwargs:
+    dirpath: /atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+    monitor: val/repr/loss
+    mode: min
+    verbose: true
+    save_last: true
+    save_top_k: 1
+    save_weights_only: false
+update_trainer_pred: {}
+user: yanndubs
+wandb_entity: issl
+logger:
+  name: wandb
+  is_can_plot_img: true
+  kwargs:
+    save_dir: /atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-46-02
+    name: None_2021-10-20_17-46-02
+    project: tmp
+    entity: issl
+    group: dev
+    offline: false
+    reinit: false
+    id: None_2021-10-20_17-46-02
+    tags:
+    - dev
+    - quick
+    anonymous: true
+  wandb_kwargs:
+    tags:
+    - dev
+    - quick
+    anonymous: true
+    project: tmp
+hypopt: {}
+data_feat:
+  kwargs:
+    batch_size: 128
+    val_batch_size: 128
+representor:
+  name: base
+  is_on_the_fly: true
+  is_train: true
+  is_use_init: false
+  loss:
+    beta: 1
+    beta_anneal: linear
+decodability:
+  name: contrastive
+  is_reconstruct: false
+  kwargs:
+    mode: contrastive
+    z_shape: 128
+    is_train_temperature: true
+    is_normalize_proj: true
+    effective_batch_size: null
+    is_aux_already_represented: false
+    is_project: true
+    src_tgt_comparison: all
+    is_proj_pred_same: true
+    predictor_kwargs:
+      architecture: linear
+      out_shape: 128
+    projector_kwargs:
+      architecture: mlp
+      out_shape: 128
+regularizer:
+  name: none
+  factor_beta: 1
+  kwargs:
+    mode: null
+finetune:
+  name: none

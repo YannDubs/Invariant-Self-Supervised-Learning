@@ -1,0 +1,246 @@
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.setup has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.setup.
+  rank_zero_deprecation(
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+[[36m2021-10-20 21:58:35,138[39m][[34m__main__[39m][[32mINFO[39m] - Train representor ...
+Epoch 0:   0%|                                                   | 0/13 [00:00<00:00, 177.15it/s]
+   | Name                                      | Type                        | Params
+-------------------------------------------------------------------------------------------
+0  | p_ZlX                                     | CondDist                    | 11.2 M
+1  | p_ZlX.mapper                              | ResNet                      | 11.2 M
+2  | p_ZlX.mapper.resnet                       | ResNet                      | 11.2 M
+3  | p_ZlX.mapper.resnet.conv1                 | Conv2d                      | 576
+4  | p_ZlX.mapper.resnet.bn1                   | BatchNorm2d                 | 128
+5  | p_ZlX.mapper.resnet.relu                  | ReLU                        | 0
+6  | p_ZlX.mapper.resnet.maxpool               | Identity                    | 0
+7  | p_ZlX.mapper.resnet.layer1                | Sequential                  | 147 K
+8  | p_ZlX.mapper.resnet.layer1.0              | BasicBlock                  | 74.0 K
+9  | p_ZlX.mapper.resnet.layer1.0.conv1        | Conv2d                      | 36.9 K
+10 | p_ZlX.mapper.resnet.layer1.0.bn1          | BatchNorm2d                 | 128
+11 | p_ZlX.mapper.resnet.layer1.0.relu         | ReLU                        | 0
+12 | p_ZlX.mapper.resnet.layer1.0.conv2        | Conv2d                      | 36.9 K
+13 | p_ZlX.mapper.resnet.layer1.0.bn2          | BatchNorm2d                 | 128
+14 | p_ZlX.mapper.resnet.layer1.1              | BasicBlock                  | 74.0 K
+15 | p_ZlX.mapper.resnet.layer1.1.conv1        | Conv2d                      | 36.9 K
+16 | p_ZlX.mapper.resnet.layer1.1.bn1          | BatchNorm2d                 | 128
+17 | p_ZlX.mapper.resnet.layer1.1.relu         | ReLU                        | 0
+18 | p_ZlX.mapper.resnet.layer1.1.conv2        | Conv2d                      | 36.9 K
+19 | p_ZlX.mapper.resnet.layer1.1.bn2          | BatchNorm2d                 | 128
+20 | p_ZlX.mapper.resnet.layer2                | Sequential                  | 525 K
+21 | p_ZlX.mapper.resnet.layer2.0              | BasicBlock                  | 230 K
+22 | p_ZlX.mapper.resnet.layer2.0.conv1        | Conv2d                      | 73.7 K
+23 | p_ZlX.mapper.resnet.layer2.0.bn1          | BatchNorm2d                 | 256
+24 | p_ZlX.mapper.resnet.layer2.0.relu         | ReLU                        | 0
+25 | p_ZlX.mapper.resnet.layer2.0.conv2        | Conv2d                      | 147 K
+26 | p_ZlX.mapper.resnet.layer2.0.bn2          | BatchNorm2d                 | 256
+27 | p_ZlX.mapper.resnet.layer2.0.downsample   | Sequential                  | 8.4 K
+28 | p_ZlX.mapper.resnet.layer2.0.downsample.0 | Conv2d                      | 8.2 K
+29 | p_ZlX.mapper.resnet.layer2.0.downsample.1 | BatchNorm2d                 | 256
+30 | p_ZlX.mapper.resnet.layer2.1              | BasicBlock                  | 295 K
+31 | p_ZlX.mapper.resnet.layer2.1.conv1        | Conv2d                      | 147 K
+32 | p_ZlX.mapper.resnet.layer2.1.bn1          | BatchNorm2d                 | 256
+33 | p_ZlX.mapper.resnet.layer2.1.relu         | ReLU                        | 0
+34 | p_ZlX.mapper.resnet.layer2.1.conv2        | Conv2d                      | 147 K
+35 | p_ZlX.mapper.resnet.layer2.1.bn2          | BatchNorm2d                 | 256
+36 | p_ZlX.mapper.resnet.layer3                | Sequential                  | 2.1 M
+37 | p_ZlX.mapper.resnet.layer3.0              | BasicBlock                  | 919 K
+38 | p_ZlX.mapper.resnet.layer3.0.conv1        | Conv2d                      | 294 K
+39 | p_ZlX.mapper.resnet.layer3.0.bn1          | BatchNorm2d                 | 512
+40 | p_ZlX.mapper.resnet.layer3.0.relu         | ReLU                        | 0
+41 | p_ZlX.mapper.resnet.layer3.0.conv2        | Conv2d                      | 589 K
+42 | p_ZlX.mapper.resnet.layer3.0.bn2          | BatchNorm2d                 | 512
+43 | p_ZlX.mapper.resnet.layer3.0.downsample   | Sequential                  | 33.3 K
+44 | p_ZlX.mapper.resnet.layer3.0.downsample.0 | Conv2d                      | 32.8 K
+45 | p_ZlX.mapper.resnet.layer3.0.downsample.1 | BatchNorm2d                 | 512
+46 | p_ZlX.mapper.resnet.layer3.1              | BasicBlock                  | 1.2 M
+47 | p_ZlX.mapper.resnet.layer3.1.conv1        | Conv2d                      | 589 K
+48 | p_ZlX.mapper.resnet.layer3.1.bn1          | BatchNorm2d                 | 512
+49 | p_ZlX.mapper.resnet.layer3.1.relu         | ReLU                        | 0
+50 | p_ZlX.mapper.resnet.layer3.1.conv2        | Conv2d                      | 589 K
+51 | p_ZlX.mapper.resnet.layer3.1.bn2          | BatchNorm2d                 | 512
+52 | p_ZlX.mapper.resnet.layer4                | Sequential                  | 8.4 M
+53 | p_ZlX.mapper.resnet.layer4.0              | BasicBlock                  | 3.7 M
+54 | p_ZlX.mapper.resnet.layer4.0.conv1        | Conv2d                      | 1.2 M
+55 | p_ZlX.mapper.resnet.layer4.0.bn1          | BatchNorm2d                 | 1.0 K
+56 | p_ZlX.mapper.resnet.layer4.0.relu         | ReLU                        | 0
+57 | p_ZlX.mapper.resnet.layer4.0.conv2        | Conv2d                      | 2.4 M
+58 | p_ZlX.mapper.resnet.layer4.0.bn2          | BatchNorm2d                 | 1.0 K
+59 | p_ZlX.mapper.resnet.layer4.0.downsample   | Sequential                  | 132 K
+60 | p_ZlX.mapper.resnet.layer4.0.downsample.0 | Conv2d                      | 131 K
+61 | p_ZlX.mapper.resnet.layer4.0.downsample.1 | BatchNorm2d                 | 1.0 K
+62 | p_ZlX.mapper.resnet.layer4.1              | BasicBlock                  | 4.7 M
+63 | p_ZlX.mapper.resnet.layer4.1.conv1        | Conv2d                      | 2.4 M
+64 | p_ZlX.mapper.resnet.layer4.1.bn1          | BatchNorm2d                 | 1.0 K
+65 | p_ZlX.mapper.resnet.layer4.1.relu         | ReLU                        | 0
+66 | p_ZlX.mapper.resnet.layer4.1.conv2        | Conv2d                      | 2.4 M
+67 | p_ZlX.mapper.resnet.layer4.1.bn2          | BatchNorm2d                 | 1.0 K
+68 | p_ZlX.mapper.resnet.avgpool               | AdaptiveAvgPool2d           | 0
+69 | p_ZlX.mapper.resnet.fc                    | Linear                      | 65.7 K
+70 | Z_processor                               | Identity                    | 0
+71 | loss_decodability                         | ClusterSelfDistillationISSL | 400 K
+72 | loss_decodability.predictor               | FlattenLinear               | 16.5 K
+73 | loss_decodability.Mx_logits               | Linear                      | 384 K
+74 | loss_regularizer                          | CoarseningRegularizer       | 0
+75 | evaluator                                 | OnlineEvaluator             | 4.5 M
+76 | evaluator.model                           | FlattenMLP                  | 4.5 M
+77 | evaluator.model.pre_block                 | Sequential                  | 266 K
+78 | evaluator.model.pre_block.0               | Linear                      | 262 K
+79 | evaluator.model.pre_block.1               | BatchNorm1d                 | 4.1 K
+80 | evaluator.model.pre_block.2               | ReLU                        | 0
+81 | evaluator.model.pre_block.3               | Identity                    | 0
+82 | evaluator.model.hidden_block              | Sequential                  | 4.2 M
+83 | evaluator.model.hidden_block.0            | Linear                      | 4.2 M
+84 | evaluator.model.hidden_block.1            | BatchNorm1d                 | 4.1 K
+85 | evaluator.model.hidden_block.2            | ReLU                        | 0
+86 | evaluator.model.hidden_block.3            | Identity                    | 0
+87 | evaluator.model.post_block                | Linear                      | 20.5 K
+-------------------------------------------------------------------------------------------
+16.1 M    Trainable params
+0         Non-trainable params
+16.1 M    Total params
+64.476    Total estimated model params size (MB)
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, train dataloader, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, val dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+
+Epoch 0: 100%|█████████████████████████████| 13/13 [00:11<00:00,  1.17it/s, loss=5.4, v_num=8-25]
+
+Epoch 1: 100%|█████████████████████████████| 13/13 [00:04<00:00,  3.21it/s, loss=5.4, v_num=8-25]
+
+Validating:   0%|                                                          | 0/2 [00:00<?, ?it/s]
+
+
+Epoch 2: 100%|████████████████████████████| 13/13 [00:03<00:00,  3.57it/s, loss=5.14, v_num=8-25]
+Epoch 2, global step 32: val/repr/loss was not in top 1
+
+Epoch 2: 100%|████████████████████████████| 13/13 [00:06<00:00,  2.30it/s, loss=5.14, v_num=8-25]
+[[36m2021-10-20 21:59:45,769[39m][[34m__main__[39m][[32mINFO[39m] - Saved best checkpoint to /atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_21-58-25/best_representor.ckpt.
+[[36m2021-10-20 21:59:45,771[39m][[34m__main__[39m][[32mINFO[39m] - Evaluate representor ...
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:00<00:00,  3.01it/s]
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, test dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/torchvision/transforms/transforms.py:280: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:00<00:00,  3.01it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/repr/beta': 1.0,
+ 'test/repr/decodability': 8.121394157409668,
+ 'test/repr/eval_acc': 0.109375,
+ 'test/repr/eval_err': 0.890625,
+ 'test/repr/eval_loss': 2.830190658569336,
+ 'test/repr/fit_pMlz_qMlz': 8.121394157409668,
+ 'test/repr/loss': 8.177770614624023,
+ 'test/repr/regularize': 0.05637681484222412}
+--------------------------------------------------------------------------------
+Testing: 100%|█████████████████████████████████████████████████████| 2/2 [00:00<00:00,  2.33it/s]
+[[36m2021-10-20 21:59:47,070[39m][[34m__main__[39m][[32mINFO[39m] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_21-58-25/results_representor.csv.
+[[36m2021-10-20 21:59:47,071[39m][[34m__main__[39m][[32mINFO[39m] - Finalizing representor.
+[[36m2021-10-20 21:59:47,293[39m][[34m__main__[39m][[32mINFO[39m] - Stage : Predictor
+[[36m2021-10-20 21:59:47,331[39m][[34m__main__[39m][[32mINFO[39m] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:376: UserWarning: Your predict_dataloader has `shuffle=True`, it is best practice to turn this off for val/test/predict dataloaders.
+  rank_zero_warn(
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/trainer/data_loading.py:105: UserWarning: The dataloader, predict dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 40 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+Predicting: 11it [00:00, ?it/s]
+Predicting: 100%|██████████████████████████████████████████████| 891/891 [00:11<00:00, 77.71it/s]
+Predicting: 11it [00:00, ?it/s]
+/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/site-packages/pytorch_lightning/core/datamodule.py:423: LightningDeprecationWarning: DataModule.teardown has already been called, so it will not be called again. In v1.6 this behavior will change to always call DataModule.teardown.
+  rank_zero_deprecation(
+Predicting: 100%|████████████████████████████████████████████████| 47/47 [00:00<00:00, 42.30it/s]
+
+Predicting: 100%|██████████████████████████████████████████████| 157/157 [00:02<00:00, 64.34it/s]
+> /atlas/u/yanndubs/ISSL/main.py(155)main()
+-> is_sklearn = pred_cfg.predictor.is_sklearn
+(Pdb) data --KeyboardInterrupt--
+(Pdb) l
+150  	    pred_cfg = set_cfg(cfg, stage)
+151  	    pred_datamodule = instantiate_datamodule_(pred_cfg, pre_representor=pre_representor)
+152  	    pred_cfg = omegaconf2namespace(pred_cfg)
+153  	
+154  	    breakpoint()
+155  ->	    is_sklearn = pred_cfg.predictor.is_sklearn
+156  	    if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
+157  	        if is_sklearn:
+158  	            assert not repr_cfg.representor.is_on_the_fly
+159  	            predictor = SklearnPredictor(pred_cfg)
+160  	            pred_trainer = SklearnTrainer(pred_cfg.predictor)
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(156)main()
+-> if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(157)main()
+-> if is_sklearn:
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(158)main()
+-> assert not repr_cfg.representor.is_on_the_fly
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/main.py(159)main()
+-> predictor = SklearnPredictor(pred_cfg)
+(Pdb)  SklearnPredictor(pred_cfg)
+*** hydra.errors.InstantiationException: Top level config has to be OmegaConf DictConfig, plain dict, or a Structured Config class or instance
+
+(Pdb) pred_cfg
+NamespaceMap(experiment='dev', job_id='None_2021-10-20_21-58-25', seed=123, timeout=60, time='None_2021-10-20_21-58-25', long_name_repr='exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None', long_name_pred='exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None', is_return=False, monitor_return=[], monitor_direction=[], is_no_save=False, paths=NamespaceMap(base_dir='/atlas/u/yanndubs/ISSL', data='/atlas/u/yanndubs/ISSL/data', work='/atlas/u/yanndubs/ISSL/outputs/2021-10-20_21-58-25', results='/atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', logs='/atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', checkpoint='/atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', pretrained=NamespaceMap(save='/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', load='/atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/*')), other=NamespaceMap(is_debug=False, is_quick=True, hydra_job_id=None, add_repr=None, add_pred=None, git_hash=None), stage='pred', long_name='exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None', checkpoint=NamespaceMap(name='bestValLoss', kwargs=NamespaceMap(dirpath='/atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', monitor='val/pred/loss', mode='min', verbose=True, save_last=True, save_top_k=1, save_weights_only=False)), data=NamespaceMap(mode='vector', length=2850, shape=[128], target_shape=[10], balancing_weights=NamespaceMap(), aux_shape=None, aux_is_clf=None, target_is_clf=True, max_steps=66, normalized=None, is_aux_already_represented=False, name='mnist', dataset='mnist', kwargs=NamespaceMap(data_dir='/atlas/u/yanndubs/ISSL/data', batch_size=128, reload_dataloaders_every_n_epochs=0, num_workers=2, dataset_kwargs=NamespaceMap(is_normalize=False, a_augmentations=['x-translation', 'y-translation', 'rotation', 'scale', 'shear'], aux_target=None), val_size=0.05, val_batch_size=128)), evaluation=NamespaceMap(is_eval_on_test=True, representor=NamespaceMap(ckpt_path='best', is_evaluate=True, is_online_eval=True), predictor=NamespaceMap(ckpt_path='best', is_evaluate=True, is_eval_train=False)), callbacks=NamespaceMap(is_force_no_additional_callback=False, LearningRateMonitor=NamespaceMap(is_use=True, kwargs=NamespaceMap(logging_interval='epoch')), GPUStatsMonitor=NamespaceMap(is_use=False)), trainer=NamespaceMap(max_epochs=3, progress_bar_refresh_rate=10000, resume_from_checkpoint=None, gradient_clip_val=3, reload_dataloaders_every_n_epochs=0, log_every_n_steps=10, val_check_interval=1.0, gpus=1, num_nodes=1, precision=16, accumulate_grad_batches=1, sync_batchnorm=False, fast_dev_run=False, overfit_batches=0.0, weights_summary='full', profiler=None, num_sanity_val_steps=0, limit_val_batches=0.2, limit_train_batches=0.05, limit_test_batches=0.05), data_repr=NamespaceMap(mode='???', length='???', shape='???', target_shape='???', balancing_weights='???', aux_shape='???', aux_is_clf='???', target_is_clf='???', max_steps='???', normalized='???', is_aux_already_represented='???', name='mnist', dataset='mnist', kwargs=NamespaceMap(data_dir='/atlas/u/yanndubs/ISSL/data', batch_size=256, reload_dataloaders_every_n_epochs=0, num_workers=2, dataset_kwargs=NamespaceMap(is_normalize=False, a_augmentations=['x-translation', 'y-translation', 'rotation', 'scale', 'shear'], aux_target='augmentation'), val_size=0.05)), encoder=NamespaceMap(name='resnet18', z_shape=128, is_normalize_Z=True, kwargs=NamespaceMap(in_shape=[128], out_shape=128, architecture='resnet', arch_kwargs=NamespaceMap(base='resnet18'), fam_kwargs=NamespaceMap(), family='deterministic')), Z_processor=NamespaceMap(kwargs=NamespaceMap(in_shape=128, out_shape=128, architecture='identity')), online_evaluator=NamespaceMap(name='mlp_h2048_l2', kwargs=NamespaceMap(in_shape=128, out_shape=[10], architecture='mlp', arch_kwargs=NamespaceMap(hid_dim=2048, norm_layer='batchnorm', n_hid_layers=2, activation='ReLU', dropout_p=0.0), is_classification=True)), optimizer_issl=NamespaceMap(name='AdamW_lr1.0e-03_w1.0e-05', mode='AdamW', kwargs=NamespaceMap(lr=0.001, weight_decay=1e-05)), scheduler_issl=NamespaceMap(name='expdecay100', modes=['expdecay'], kwargs=NamespaceMap(expdecay=NamespaceMap(decay_factor=100, epochs=3))), optimizer_eval=NamespaceMap(name='AdamW_lr3.0e-04_w1.0e-05', mode='AdamW', kwargs=NamespaceMap(lr=0.0003, weight_decay=1e-05)), scheduler_eval=NamespaceMap(name='expdecay100', modes=['expdecay'], kwargs=NamespaceMap(expdecay=NamespaceMap(decay_factor=100, epochs=3))), checkpoint_repr=NamespaceMap(name='bestValLoss', kwargs=NamespaceMap(dirpath='/atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', monitor='val/pred/loss', mode='min', verbose=True, save_last=True, save_top_k=1, save_weights_only=False)), update_trainer_repr=NamespaceMap(), data_pred=NamespaceMap(mode='???', length='???', shape='???', target_shape='???', balancing_weights='???', aux_shape='???', aux_is_clf='???', target_is_clf='???', max_steps='???', normalized='???', is_aux_already_represented='???', name='mnist', dataset='mnist', kwargs=NamespaceMap(data_dir='/atlas/u/yanndubs/ISSL/data', batch_size=128, reload_dataloaders_every_n_epochs=0, num_workers=2, dataset_kwargs=NamespaceMap(is_normalize=False, a_augmentations=['x-translation', 'y-translation', 'rotation', 'scale', 'shear'], aux_target='augmentation'), val_size=0.05, val_batch_size=128)), predictor=NamespaceMap(name='sk_svm', is_skip=False, is_train=True, kwargs=NamespaceMap(arch_kwargs=NamespaceMap(hid_dim=2048, norm_layer='batchnorm', n_hid_layers=2, activation='ReLU', dropout_p=0.0), architecture='mlp'), is_sklearn=True, is_scale=False, scaler=NamespaceMap(__target__='sklearn.preprocessing.StandardScaler'), metrics=['accuracy_score', 'balanced_accuracy_score'], model=NamespaceMap(__target__='sklearn.svm.LinearSVC', dual=False, C=1, class_weight=None, random_state=123)), optimizer_pred=NamespaceMap(name='AdamW_lr3.0e-04_w1.0e-05', mode='AdamW', kwargs=NamespaceMap(lr=0.0003, weight_decay=1e-05)), scheduler_pred=NamespaceMap(name='unifmultistep100', modes=['UniformMultiStepLR'], kwargs=NamespaceMap(UniformMultiStepLR=NamespaceMap(decay_factor=100, k_steps=3, epochs=3))), checkpoint_pred=NamespaceMap(name='bestValLoss', kwargs=NamespaceMap(dirpath='/atlas/u/yanndubs/ISSL/checkpoints/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', monitor='val/pred/loss', mode='min', verbose=True, save_last=True, save_top_k=1, save_weights_only=False)), update_trainer_pred=NamespaceMap(), user='yanndubs', wandb_entity='issl', logger=NamespaceMap(name='wandb', is_can_plot_img=True, kwargs=NamespaceMap(save_dir='/atlas/u/yanndubs/ISSL/logs/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_cluster_self_distillation/enc_resnet18/reg_cosine/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/datapred_mnist/pred_sk_svm/optpred_AdamW_lr3.0e-04_w1.0e-05/schedpred_unifmultistep100/addpred_None/jid_None_2021-10-20_21-58-25', name='None_2021-10-20_21-58-25', project='issl', entity='issl', group='dev', offline=False, reinit=False, id='None_2021-10-20_21-58-25'), wandb_kwargs=NamespaceMap(tags=['dev', 'quick'], anonymous=True, project='tmp')), hypopt=NamespaceMap(), data_feat=NamespaceMap(kwargs=NamespaceMap(batch_size=128, val_batch_size=128)), representor=NamespaceMap(name='base', is_on_the_fly=False, is_train=True, is_use_init=False, loss=NamespaceMap(beta=1, beta_anneal='linear')), decodability=NamespaceMap(name='cluster_self_distillation', is_reconstruct=False, kwargs=NamespaceMap(mode='cluster_self_distillation', z_shape=128, loss=None, is_ema=False, is_process_Mx=False, is_stop_grad=True, is_aux_already_represented=False, is_normalize_proj=True, is_proj_pred_same=True, predictor_kwargs=NamespaceMap(architecture='linear', out_shape=128), projector_kwargs=NamespaceMap(architecture='flatten', out_shape=128), n_Mx=3000, freeze_Mx_epochs=1, src_tgt_comparison='symmetric', temperature=0.1, queue_size=30, sinkhorn_kwargs=NamespaceMap(eps=0.05))), regularizer=NamespaceMap(name='cosine', factor_beta=1, kwargs=NamespaceMap(loss='cosine', mode='coarsener', is_aux_already_represented=False)), finetune=NamespaceMap(name='none'))
+(Pdb) s
+--Call--
+> /atlas/u/yanndubs/ISSL/issl/predictors.py(207)__init__()
+-> def __init__(self, cfg):
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/issl/predictors.py(208)__init__()
+-> steps = []
+(Pdb) n
+> /atlas/u/yanndubs/ISSL/issl/predictors.py(210)__init__()
+-> if cfg.predictor.is_scale:
+
+(Pdb) cfg.predictor
+NamespaceMap(name='sk_svm', is_skip=False, is_train=True, kwargs=NamespaceMap(arch_kwargs=NamespaceMap(hid_dim=2048, norm_layer='batchnorm', n_hid_layers=2, activation='ReLU', dropout_p=0.0), architecture='mlp'), is_sklearn=True, is_scale=False, scaler=NamespaceMap(__target__='sklearn.preprocessing.StandardScaler'), metrics=['accuracy_score', 'balanced_accuracy_score'], model=NamespaceMap(__target__='sklearn.svm.LinearSVC', dual=False, C=1, class_weight=None, random_state=123))
+
+(Pdb) cfg.predictor,is_scale
+*** NameError: name 'is_scale' is not defined
+(Pdb) cfg.predictor.is_scale
+False
+(Pdb) l
+205  	    """Sklearn predictor."""
+206  	
+207  	    def __init__(self, cfg):
+208  	        steps = []
+209  	
+210  ->	        if cfg.predictor.is_scale:
+211  	            steps += [("scaler", instantiate(cfg.predictor.scaler))]
+212  	
+213  	        steps += [("model", instantiate(cfg.predictor.model))]
+214  	
+215  	        super().__init__(steps)
+(Pdb) cfg.predictor.scaler
+NamespaceMap(__target__='sklearn.preprocessing.StandardScaler')
+(Pdb) instantiate(cfg.predictor.scaler)
+*** hydra.errors.InstantiationException: Top level config has to be OmegaConf DictConfig, plain dict, or a Structured Config class or instance
+(Pdb) cfg.predictor.model
+NamespaceMap(__target__='sklearn.svm.LinearSVC', dual=False, C=1, class_weight=None, random_state=123)
+(Pdb) dict(cfg.predictor.model)
+{'__target__': 'sklearn.svm.LinearSVC', 'dual': False, 'C': 1, 'class_weight': None, 'random_state': 123}
+
+
+(Pdb) instantiate(dict(cfg.predictor.model))
+{'__target__': 'sklearn.svm.LinearSVC', 'dual': False, 'C': 1, 'class_weight': None, 'random_state': 123}
+
+(Pdb) !instantiate(dict(cfg.predictor.model))
+{'__target__': 'sklearn.svm.LinearSVC', 'dual': False, 'C': 1, 'class_weight': None, 'random_state': 123}
+(Pdb) !instantiate(dict(cfg.predictor.model))
+{'__target__': 'sklearn.svm.LinearSVC', 'dual': False, 'C': 1, 'class_weight': None, 'random_state': 123}
+(Pdb)
+
+(Pdb) q
+Traceback (most recent call last):
+  File "/atlas/u/yanndubs/ISSL/main.py", line 159, in main
+    predictor = SklearnPredictor(pred_cfg)
+  File "/atlas/u/yanndubs/ISSL/issl/predictors.py", line 210, in __init__
+    if cfg.predictor.is_scale:
+  File "/atlas/u/yanndubs/ISSL/issl/predictors.py", line 210, in __init__
+    if cfg.predictor.is_scale:
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/bdb.py", line 88, in trace_dispatch
+    return self.dispatch_line(frame)
+  File "/sailhome/yanndubs/anaconda3/envs/issl/lib/python3.9/bdb.py", line 113, in dispatch_line
+    if self.quitting: raise BdbQuit
+bdb.BdbQuit
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

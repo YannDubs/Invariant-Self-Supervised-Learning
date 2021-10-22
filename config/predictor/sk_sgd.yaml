@@ -1,0 +1,12 @@
+defaults:
+  - base_sklearn
+
+name: sk_sgd
+model:
+  _target_: sklearn.linear_model.SGDClassifier
+  loss: "log"
+  alpha: 0.0001 # regularizer weight (higher means more regularization)
+  class_weight: null # might want to use "balanced"
+  random_state: ${seed}
+  learning_rate: "optimal" # also should consider "adaptive"
+  n_jobs: -1

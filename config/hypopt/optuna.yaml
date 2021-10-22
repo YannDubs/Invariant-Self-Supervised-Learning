@@ -1,0 +1,10 @@
+# @package _global_
+hydra:
+  sweeper:
+    sampler:
+      seed: ${seed}
+    direction: ${monitor_direction}
+    study_name: main
+    storage: sqlite:///${hydra.runtime.cwd}/results/exp_${experiment}/optuna.db
+    n_trials: 100
+    n_jobs: 10

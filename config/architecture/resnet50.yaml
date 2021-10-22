@@ -1,0 +1,8 @@
+defaults:
+  - base
+
+name: resnet50
+kwargs:
+  architecture: resnet
+  arch_kwargs:
+    base: resnet50

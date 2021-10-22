@@ -1,0 +1,2 @@
+- mode=debug
+- data_repr.kwargs.num_workers=2

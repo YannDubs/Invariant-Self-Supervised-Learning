@@ -1,0 +1,7 @@
+defaults:
+  - base
+
+name: bestValLoss
+kwargs:
+  monitor: val/${stage}/loss
+  mode: "min"

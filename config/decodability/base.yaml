@@ -1,0 +1,12 @@
+# @package _global_
+
+decodability:
+  name: ${decodability.kwargs.mode}
+  is_reconstruct: False # by default cannot reconstruct images
+  kwargs:
+    mode: ???
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target: "augmentation" # by default will perform R[A|Z] if you want R[M(X)|Z] use "representative"

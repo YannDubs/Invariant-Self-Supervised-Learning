@@ -1,0 +1,24 @@
+{
+    "os": "Linux-4.15.0-70-generic-x86_64-with-glibc2.23",
+    "python": "3.9.6",
+    "heartbeatAt": "2021-10-20T08:04:11.251567",
+    "startedAt": "2021-10-20T08:04:08.928783",
+    "docker": null,
+    "gpu": "GeForce RTX 2080 Ti",
+    "gpu_count": 1,
+    "cpu_count": 40,
+    "cuda": "11.0.228",
+    "args": [
+        "mode=dev",
+        "data_repr.kwargs.num_workers=2",
+        "regularizer=cosine",
+        "decodability=cluster_self_distillation",
+        "experiment=dev",
+        "representor.is_on_the_fly=False"
+    ],
+    "state": "running",
+    "program": "/atlas/u/yanndubs/ISSL/main.py",
+    "host": "atlas20.stanford.edu",
+    "username": "yanndubs",
+    "executable": "/sailhome/yanndubs/anaconda3/envs/issl/bin/python"
+}

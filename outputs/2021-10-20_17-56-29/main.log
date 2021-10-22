@@ -1,0 +1,11 @@
+[2021-10-20 17:56:29,907][__main__][INFO] - Stage : Startup
+[2021-10-20 17:56:29,911][__main__][INFO] - Workdir : /atlas/u/yanndubs/ISSL/outputs/2021-10-20_17-56-29.
+[2021-10-20 17:56:29,917][__main__][INFO] - Stage : Representor
+[2021-10-20 17:56:29,942][__main__][INFO] - Name : exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None.
+[2021-10-20 17:56:37,948][__main__][INFO] - Train representor ...
+[2021-10-20 17:57:50,783][__main__][INFO] - Saved best checkpoint to /atlas/u/yanndubs/ISSL/pretrained/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29/best_representor.ckpt.
+[2021-10-20 17:57:50,784][__main__][INFO] - Evaluate representor ...
+[2021-10-20 17:57:53,520][__main__][INFO] - Logging results to /atlas/u/yanndubs/ISSL/results/exp_dev/datarepr_mnist/augrepr_rotation_scale_shear_x-translation_y-translation/repr_base/dec_contrastive/enc_resnet18/reg_none/optrepr_AdamW_lr1.0e-03_w1.0e-05/schedrepr_expdecay100/zdim_128/zs_1/beta_1.0e+00/seed_123/addrepr_None/jid_None_2021-10-20_17-56-29/results_representor.csv.
+[2021-10-20 17:57:53,521][__main__][INFO] - Finalizing representor.
+[2021-10-20 17:57:53,698][__main__][INFO] - Stage : Shutdown
+[2021-10-20 17:58:00,960][__main__][INFO] - Finished.
