@@ -6,12 +6,14 @@ import urllib.request
 import zipfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset, Subset
 from torchvision.datasets.folder import default_loader
-from torchvision.transforms import functional as F_trnsf
+from torchvision.transforms import Compose, functional as F_trnsf
 from tqdm import tqdm
 
 from issl.helpers import to_numpy
@@ -19,11 +21,67 @@ from issl.helpers import to_numpy
 logger = logging.getLogger(__name__)
 
 
+def subset2dataset(subset):
+    """Return the underlying dataset. Contains val when val is subset of train."""
+    dataset = subset
+    while isinstance(dataset, Subset):
+        dataset = dataset.dataset
+    return dataset
+
+
+class BalancedSubset(Subset):
+    """Split the dataset into a subset with possibility of stratifying.
+
+    Parameters
+    ----------
+    dataset : Dataset
+        Dataset to subset.
+
+    size : float or int, optional
+            If float, should be between 0.0 and 1.0 and represent the proportion of
+            the dataset to retain. If int, represents the absolute number or examples.
+
+    is_stratify : bool, optional
+        Whether to stratify splits based on class label. Only works if dataset has
+        a `targets` attribute are loaded.
+
+    seed : int, optional
+        Random seed.
+    """
+
+    def __init__(
+        self,
+        dataset: Dataset,
+        size: float = 0.1,
+        stratify: Any = None,
+        seed: Optional[int] = 123,
+    ):
+        _, subset_idcs = train_test_split(
+            range(len(dataset)), stratify=stratify, test_size=size, random_state=seed
+        )
+        super().__init__(dataset, subset_idcs)
+
+
 class ImgAugmentor:
-    def __init__(self, PIL_aug, base_transform, tensor_aug):
-        self.PIL_aug = PIL_aug
+    def __init__(
+        self,
+        base_transform: Callable,
+        augmentations: Sequence[str],
+        choices_PIL: dict,
+        choices_tens: dict,
+    ):
+        PIL_augment, tensor_augment = [], []
+        for aug in augmentations:
+            if aug in choices_PIL:
+                PIL_augment += [choices_PIL[aug]]
+            elif aug in choices_tens:
+                tensor_augment += [choices_tens[aug]]
+            else:
+                raise ValueError(f"Unknown `augmentation={aug}`.")
+
+        self.PIL_aug = Compose(PIL_augment)
         self.base_transform = base_transform
-        self.tensor_aug = tensor_aug
+        self.tensor_aug = Compose(tensor_augment)
 
     def __call__(self, img):
         img = self.PIL_aug(img)

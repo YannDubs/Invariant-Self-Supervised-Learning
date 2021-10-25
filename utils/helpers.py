@@ -6,20 +6,25 @@ import os
 import shutil
 import warnings
 from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Sequence, Union
+from typing import Any, Union
 
 import numpy as np
 import pl_bolts
 import pytorch_lightning as pl
 import sklearn
 import torch
+import wandb
 from joblib import dump, load
 from omegaconf import Container, OmegaConf
+from pl_bolts.datamodules import SklearnDataset
+from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
-from issl.helpers import NamespaceMap, namespace2dict
+from issl.helpers import NamespaceMap, mean, namespace2dict
+from utils.data.helpers import subset2dataset
 
 logger = logging.getLogger(__name__)
 
@@ -227,6 +232,10 @@ def log_dict(trainer: pl.Trainer, to_log: dict, is_param: bool) -> None:
 
 
 class SklearnDataModule(pl_bolts.datamodules.SklearnDataModule):
+    def __init__(self, *args, y_transform: Any = None, **kwargs):
+        self.y_transform = y_transform
+        super().__init__(*args, **kwargs)
+
     # so that same as ISSLDataModule
     def eval_dataloader(self, is_eval_on_test: bool, **kwargs) -> DataLoader:
         """Return the evaluation dataloader (test or val)."""
@@ -235,18 +244,38 @@ class SklearnDataModule(pl_bolts.datamodules.SklearnDataModule):
         else:
             return self.val_dataloader(**kwargs)
 
+    def _init_datasets(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        x_val: np.ndarray,
+        y_val: np.ndarray,
+        x_test: np.ndarray,
+        y_test: np.ndarray,
+    ) -> None:
+        self.train_dataset = SklearnDataset(X, y, y_transform=self.y_transform)
+        self.val_dataset = SklearnDataset(x_val, y_val, y_transform=self.y_transform)
+        self.test_dataset = SklearnDataset(x_test, y_test, y_transform=self.y_transform)
+
 
 class SklearnTrainer:
     """Wrapper around sklearn that mimics pytorch lightning trainer."""
 
-    def __init__(self, scores: Union[str, Sequence[str]]):
+    def __init__(self, hparams):
         self.model = None
         self.stage = None
+        self.hparams = deepcopy(hparams)
+        self.is_agg_target = self.hparams.data.aux_target == "agg_target"
+
+        scores = self.hparams.predictor.metrics
         if isinstance(scores, str):
             scores = [scores]
         self.scores = [getattr(sklearn.metrics, s) for s in scores]
 
     def fit(self, model: Pipeline, datamodule: SklearnDataModule):
+        if self.is_agg_target:
+            model = MultiOutputClassifier(model, n_jobs=-1)
+
         data = datamodule.train_dataset
         model.fit(data.X, data.Y)
         self.model = model
@@ -260,44 +289,75 @@ class SklearnTrainer:
         data = dataloaders.dataset
         if ckpt_path is not None and ckpt_path != "best":
             self.model = load(ckpt_path)
+
         y_hat = self.model.predict(data.X)
+
+        if self.is_agg_target:
+            y_hat_agg = y_hat[:, 1:]
+            y_agg = data.Y[:, 1:]
+            y_hat = y_hat[:, 0]
+            y = data.Y[:, 0]
+            n_agg_tgt = y_agg.shape[1]
+        else:
+            y = data.Y
+
+        results = {
+            f"test/{self.stage}/{self.hparams.data.name}/{score.__name__}": score(
+                y, y_hat
+            )
+            for score in self.scores
+        }
+
+        if self.is_agg_target:
+            results_agg = {
+                f"test/{self.stage}/{self.hparams.data.name}/{score.__name__}_agg": mean(
+                    [score(y_agg[:, i], y_hat_agg[:, i]) for i in range(n_agg_tgt)]
+                )
+                for score in self.scores
+            }
+            results.update(results_agg)
+
+        logger.info(results)
+
+        if wandb.run is not None:
+            # log to wandb if its active
+            wandb.run.log(results)
 
         # return a list of dict just like pl trainer (where usually the list is an element for each data loader)
         # here only works with one dataloader
-        return [
-            {
-                f"test/{self.stage}/{score.__name__}": score(data.Y, y_hat)
-                for score in self.scores
-            }
-        ]
+        return [results]
 
 
 def apply_representor(
     datamodule: pl.LightningDataModule,
     representor: pl.LightningModule,
     is_eval_on_test: bool = True,
+    is_agg_target: bool = False,
     **kwargs,
 ) -> pl.LightningDataModule:
     """Apply a representor on every example (precomputed) of a datamodule and return a new datamodule."""
-    train_dataset = datamodule.train_dataset
+
     # ensure that you will not be augmenting
-    if isinstance(train_dataset, Subset):
-        train_dataset.dataset.curr_split = "validation"
-    else:
-        train_dataset.curr_split = "validation"
+    train_dataset = datamodule.train_dataset
+    subset2dataset(train_dataset).curr_split = "validation"
 
     out_train = representor.predict(
         ckpt_path=None,  # use current model
         dataloaders=[
-            datamodule.train_dataloader(batch_size=64, train_dataset=train_dataset)
+            datamodule.train_dataloader(
+                batch_size=64, train_dataset=train_dataset, drop_last=False
+            )
         ],
     )
     out_val = representor.predict(
-        ckpt_path=None, dataloaders=[datamodule.val_dataloader(batch_size=64)]
+        ckpt_path=None,
+        dataloaders=[datamodule.val_dataloader(batch_size=64, drop_last=False)],
     )
     out_test = representor.predict(
         ckpt_path=None,
-        dataloaders=[datamodule.eval_dataloader(is_eval_on_test, batch_size=64)],
+        dataloaders=[
+            datamodule.eval_dataloader(is_eval_on_test, batch_size=64, drop_last=False)
+        ],
     )
 
     X_train, Y_train = zip(*out_train)
@@ -307,7 +367,12 @@ def apply_representor(
     # only select kwargs that can be given to sklearn
     sklearn_kwargs = dict()
     sklearn_kwargs["batch_size"] = kwargs.get("batch_size", 128)
-    sklearn_kwargs["num_workers"] = kwargs.get("num_workers", 4)
+    sklearn_kwargs["num_workers"] = kwargs.get("num_workers", 8)
+    sklearn_kwargs["random_state"] = kwargs.get("seed", 123)
+
+    if is_agg_target:
+        # separate the main target with the ones to aggregate over
+        sklearn_kwargs["y_transform"] = lambda y: (y[0:1], y[1:])
 
     # make a datamodule from features that are precomputed
     datamodule = SklearnDataModule(

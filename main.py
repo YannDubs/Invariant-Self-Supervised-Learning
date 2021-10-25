@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import logging
 import math
+import os
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -21,6 +22,7 @@ import pandas as pd
 import pl_bolts
 import pytorch_lightning as pl
 import torch
+from hydra import compose
 from omegaconf import Container, OmegaConf
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
@@ -81,6 +83,7 @@ except:
 
 @hydra.main(config_name="main", config_path="config")
 def main(cfg):
+    logger.info(os.uname().nodename)
 
     ############## STARTUP ##############
     logger.info("Stage : Startup")
@@ -145,57 +148,63 @@ def main(cfg):
         pre_representor = repr_trainer
 
     ############## DOWNSTREAM PREDICTOR ##############
-    logger.info("Stage : Predictor")
-    stage = "predictor"
-    pred_cfg = set_cfg(cfg, stage)
-    pred_datamodule = instantiate_datamodule_(pred_cfg, pre_representor=pre_representor)
-    pred_cfg = omegaconf2namespace(pred_cfg)
+    for data in cfg.data_pred.all_data:
+        logger.info(f"Stage : Predict {data}")
+        stage = "predictor"
+        pred_cfg = set_data_pred(cfg, data)
+        pred_cfg = set_cfg(pred_cfg, stage)
+        pred_datamodule = instantiate_datamodule_(
+            pred_cfg, pre_representor=pre_representor
+        )
+        pred_cfg = omegaconf2namespace(pred_cfg)
 
-    is_sklearn = pred_cfg.predictor.is_sklearn
-    if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
-        if is_sklearn:
-            assert not repr_cfg.representor.is_on_the_fly
-            predictor = SklearnPredictor(pred_cfg.predictor)
-            pred_trainer = SklearnTrainer(pred_cfg.predictor.metrics)
+        is_sklearn = pred_cfg.predictor.is_sklearn
+        if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
+            if is_sklearn:
+                assert not repr_cfg.representor.is_on_the_fly
+                predictor = SklearnPredictor(pred_cfg.predictor)
+                pred_trainer = SklearnTrainer(pred_cfg)
+            else:
+                predictor = Predictor(hparams=pred_cfg, representor=on_fly_representor)
+                pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+
+            logger.info(f"Train predictor on {data} ...")
+            pred_trainer.fit(predictor, datamodule=pred_datamodule)
+            save_pretrained(pred_cfg, pred_trainer, stage, is_sklearn=is_sklearn)
+
         else:
-            predictor = Predictor(hparams=pred_cfg, representor=on_fly_representor)
+            logger.info(f"Load pretrained predictor on {data} ...")
+            ReprPred = get_representor_predictor(on_fly_representor)
+            predictor = load_pretrained(pred_cfg, ReprPred, stage)
             pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+            placeholder_fit(pred_trainer, predictor, pred_datamodule)
+            pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
 
-        logger.info("Train predictor ...")
-        pred_trainer.fit(predictor, datamodule=pred_datamodule)
-        save_pretrained(pred_cfg, pred_trainer, stage, is_sklearn=is_sklearn)
+        if pred_cfg.evaluation.predictor.is_evaluate:
+            logger.info(f"Evaluate predictor on {data} ...")
+            is_eval_train = pred_cfg.evaluation.predictor.is_eval_train
+            pred_res = evaluate(
+                pred_trainer,
+                pred_datamodule,
+                pred_cfg,
+                stage,
+                is_eval_train=is_eval_train,
+                is_sklearn=is_sklearn,
+            )
+        else:
+            pred_res = load_results(pred_cfg, stage)
 
-    else:
-        logger.info("Load pretrained predictor ...")
-        ReprPred = get_representor_predictor(on_fly_representor)
-        predictor = load_pretrained(pred_cfg, ReprPred, stage)
-        pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
-        placeholder_fit(pred_trainer, predictor, pred_datamodule)
-        pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
-
-    if pred_cfg.evaluation.predictor.is_evaluate:
-        logger.info("Evaluate predictor ...")
-        is_eval_train = pred_cfg.evaluation.predictor.is_eval_train
-        pred_res = evaluate(
+        # TODO currently finalize_stage only stores the last predictor
+        # so if you return, will only return last result from last loop
+        finalize_stage_(
+            stage,
+            pred_cfg,
+            predictor,
             pred_trainer,
             pred_datamodule,
-            pred_cfg,
-            stage,
-            is_eval_train=is_eval_train,
-            is_sklearn=is_sklearn,
+            pred_res,
+            finalize_kwargs,
         )
-    else:
-        pred_res = load_results(pred_cfg, stage)
-
-    finalize_stage_(
-        stage,
-        pred_cfg,
-        predictor,
-        pred_trainer,
-        pred_datamodule,
-        pred_res,
-        finalize_kwargs,
-    )
 
     ############## SHUTDOWN ##############
 
@@ -214,16 +223,27 @@ def begin(cfg: Container) -> None:
 
     logger.info(f"Workdir : {cfg.paths.work}.")
 
-    if cfg.data_pred.name == "data_repr":
-        # by default same data for pred and repr
-        with omegaconf.open_dict(cfg):
-            cfg.data_pred.name = cfg.data_repr.name
-            cfg.data_pred = OmegaConf.merge(cfg.data_repr, cfg.data_pred)
 
-
-def get_stage_name(mode: str) -> str:
+def get_stage_name(stage: str) -> str:
     """Return the correct stage name given the mode (representor, predictor, ...)"""
-    return mode[:4]
+    return stage[:4]
+
+
+def set_data_pred(cfg: Container, data: str):
+    cfg = copy.deepcopy(cfg)  # not inplace
+    with omegaconf.open_dict(cfg):
+        # TODO should clean that but not sure how. Currently:
+        # 1/ reload hydra config with the current data as dflt config
+        cfg.dflt_data_pred = compose(
+            config_name="main", overrides=[f"+data@dflt_data_pred={data}"]
+        ).dflt_data_pred
+        # 2/ add any overrides
+        cfg.data_pred = OmegaConf.merge(cfg.dflt_data_pred, cfg.data_pred)
+
+        if cfg.data_pred.is_copy_repr:
+            cfg.data_pred.name = cfg.data_pred.name.format(name=cfg.data_repr.name)
+            cfg.data_pred = OmegaConf.merge(cfg.data_repr, cfg.data_pred)
+    return cfg
 
 
 def set_cfg(cfg: Container, stage: str) -> Container:
@@ -231,24 +251,18 @@ def set_cfg(cfg: Container, stage: str) -> Container:
     cfg = copy.deepcopy(cfg)  # not inplace
 
     with omegaconf.open_dict(cfg):
-        # TODO access omegaconf from string
         cfg.stage = get_stage_name(stage)
 
         cfg.long_name = cfg[f"long_name_{cfg.stage}"]
+        if stage == "representor":
+            # long name pred not yet instantiated because doesn't know the data name yet
+            del cfg[f"long_name_pred"]
 
         cfg.data = OmegaConf.merge(cfg.data, cfg[f"data_{cfg.stage}"])
         cfg.trainer = OmegaConf.merge(cfg.trainer, cfg[f"update_trainer_{cfg.stage}"])
         cfg.checkpoint = OmegaConf.merge(cfg.checkpoint, cfg[f"checkpoint_{cfg.stage}"])
 
         logger.info(f"Name : {cfg.long_name}.")
-
-        if stage == "representor":
-            pass
-        elif stage == "predictor":
-            # only need target
-            cfg.data.kwargs.dataset_kwargs.aux_target = None
-        else:
-            raise ValueError(f"Unknown stage={stage}.")
 
     if not cfg.is_no_save:
         # make sure all paths exist
@@ -270,6 +284,9 @@ def set_cfg(cfg: Container, stage: str) -> Container:
             elif stage == "predictor":  # improbable
                 cfg.predictor.is_train = False
                 cfg.evaluation.predictor.is_evaluate = False
+
+            else:
+                raise ValueError(f"Unknown stage={stage}.")
 
     return cfg
 
@@ -296,6 +313,7 @@ def instantiate_datamodule_(
     cfgd.balancing_weights = datamodule.balancing_weights
     cfgd.aux_shape = datamodule.aux_shape
     cfgd.mode = datamodule.mode
+    cfgd.aux_target = datamodule.aux_target
     cfgd.normalized = datamodule.normalized
     cfgd.is_aux_already_represented = datamodule.is_aux_already_represented
     if pre_representor is not None:
@@ -303,6 +321,7 @@ def instantiate_datamodule_(
             datamodule,
             pre_representor,
             is_eval_on_test=cfg.evaluation.is_eval_on_test,
+            is_agg_target=cfg.data.aux_target == "agg_target",
             **cfgd.kwargs,
         )
         datamodule.prepare_data()
@@ -352,11 +371,12 @@ def get_callbacks(
 
         if cfg.logger.is_can_plot_img and is_img_aux_target and is_reconstruct:
             # TODO will not currently work with latent images
-            callbacks += [
-                LatentDimInterpolator(prod(cfg.encoder.z_shape)),
-            ]
+            z_dim = cfg.encoder.z_shape
+            if not isinstance(z_dim, int):
+                z_dim = prod(z_dim)
+            callbacks += [LatentDimInterpolator(z_dim)]
 
-            if cfg.trainer.gpus == 1:
+            if cfg.trainer.gpus <= 1:
                 # TODO does not work (D)DP because of self.store
                 callbacks += [ReconstructImages()]
 
@@ -525,25 +545,12 @@ def evaluate(
 ) -> dict:
     """Evaluate the trainer by logging all the metrics from the test set from the best model."""
     test_res = dict()
+    to_save = dict()
     try:
-        eval_dataloader = datamodule.eval_dataloader(cfg.evaluation.is_eval_on_test)
         ckpt_path = cfg.evaluation[stage].ckpt_path
 
-        # logging correct stage
-        if is_sklearn:
-            trainer.stage = cfg.stage
-        else:
-            trainer.lightning_module.stage = cfg.stage
-
-        test_res = trainer.test(dataloaders=eval_dataloader, ckpt_path=ckpt_path)[0]
-
-        # ensure that select only correct stage
-        test_res = {k: v for k, v in test_res.items() if f"/{cfg.stage}/" in k}
-        log_dict(trainer, test_res, is_param=False)
-        test_res_rep = replace_keys(test_res, "test/", "")
-        to_save = dict(test=test_res_rep)
-
         if is_eval_train:
+            # first save the training ones because they will be under "test" in wandb
             try:
                 # also evaluate training set
                 train_dataloader = datamodule.train_dataloader()
@@ -558,6 +565,21 @@ def evaluate(
                 logger.exception(
                     "Failed to evaluate training set. Skipping this error:"
                 )
+
+        eval_dataloader = datamodule.eval_dataloader(cfg.evaluation.is_eval_on_test)
+
+        # logging correct stage
+        if is_sklearn:
+            trainer.stage = cfg.stage
+        else:
+            trainer.lightning_module.stage = cfg.stage
+
+        test_res = trainer.test(dataloaders=eval_dataloader, ckpt_path=ckpt_path)[0]
+
+        # ensure that select only correct stage
+        test_res = {k: v for k, v in test_res.items() if f"/{cfg.stage}/" in k}
+        log_dict(trainer, test_res, is_param=False)
+        to_save["test"] = replace_keys(test_res, "test/", "")
 
         # save results
         results = pd.DataFrame.from_dict(to_save)
@@ -608,7 +630,7 @@ def finalize_stage_(
     """Finalize the current stage."""
     logger.info(f"Finalizing {stage}.")
 
-    # no checkpoints during communication
+    # no checkpoints during representation
     assert (
         cfg.checkpoint.kwargs.dirpath != cfg.paths.pretrained.save
     ), "This will remove desired checkpoints"

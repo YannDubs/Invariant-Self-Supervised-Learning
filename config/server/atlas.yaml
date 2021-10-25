@@ -22,15 +22,17 @@ hydra:
     name: ${experiment}
 
     # slurm partition to use on the cluster
-    partition: t4v2 # rtx6000 # cpu,interactive,t4v1,t4v2,p100,rtx6000
+    partition: atlas
     comment: null
     constraint: null
-    exclude: null
+    exclude: atlas5,atlas6,atlas9
     array_parallelism: 30
 
-    max_num_timeout: 30 # allow resume from checkpointing
+    max_num_timeout: 3 # allow resume from checkpointing
     additional_parameters:
-      qos: normal # normal, high, deadline, nopreemption (this is the stream of execution )
+      gres: gpu:${trainer.gpus}
+      #job_name: ${experiment} # to test
+      #qos: normal # normal, high, deadline, nopreemption (this is the stream of execution )
 
 # NOTE:
 # I also had to change the command in submitit. specifically in submitit/slurm/slurm

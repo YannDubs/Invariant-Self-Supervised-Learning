@@ -1,0 +1,25 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: cosine
+  - override /decodability: generative
+
+representor:
+  name: gen_no_norm
+  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\Tilde{Z}]
+
+kwargs:
+  decoder_kwargs:
+    architecture: linear
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: ["label"]
+      train_x_augmentations: []
+
+encoder:
+  z_shape: 128
+  # you now used no norm everywhere. But need to understand what was going wrong with norm
+  is_normalize_Z: False

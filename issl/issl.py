@@ -70,7 +70,7 @@ class ISSLModule(pl.LightningModule):
         x, y = batch
 
         if isinstance(y, Sequence):
-            y = y[0]  # only return the real label assumed to be first
+            y = torch.stack([y[0]] + y[1], dim=-1)
 
         return self(x).cpu(), y.cpu()
 
@@ -116,6 +116,10 @@ class ISSLModule(pl.LightningModule):
     def step(self, batch: list) -> tuple[torch.Tensor, dict, dict]:
 
         x, (_, aux_target) = batch
+
+        if self.hparams.representor.is_switch_x_aux_trgt and self.stage == "repr":
+            # switch x and aux_target. Useful if want augmentations as inputs. Only turing representations.
+            x, aux_target = aux_target, x
 
         # batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
         p_Zlx = self.p_ZlX(x)
@@ -209,7 +213,11 @@ class ISSLModule(pl.LightningModule):
             raise ValueError(f"Unknown curr_opt={curr_opt}.")
 
         self.log_dict(
-            {f"train/{self.stage}/{k}": v for k, v in logs.items()}, sync_dist=True
+            {
+                f"train/{self.stage}/{self.hparams.data.name}/{k}": v
+                for k, v in logs.items()
+            },
+            sync_dist=True,
         )
         return loss
 
@@ -224,7 +232,11 @@ class ISSLModule(pl.LightningModule):
             logs.update(online_logs)
 
         self.log_dict(
-            {f"{step}/{self.stage}/{k}": v for k, v in logs.items()}, sync_dist=True,
+            {
+                f"{step}/{self.stage}/{self.hparams.data.name}/{k}": v
+                for k, v in logs.items()
+            },
+            sync_dist=True,
         )
         return loss
 

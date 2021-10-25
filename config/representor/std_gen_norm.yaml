@@ -1,12 +1,11 @@
 # @package _global_
 defaults:
   - base@representor
-  - override /regularizer: cosine
+  - override /regularizer: none
   - override /decodability: generative
 
 representor:
-  name: gen_no_V
-  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\Tilde{Z}]
+  name: std_gen_norm
 
 kwargs:
   decoder_kwargs:
@@ -15,10 +14,11 @@ kwargs:
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "augmentation"
-      a_augmentations: ["label"]
+      aux_target:  "input"
+      a_augmentations: []
       train_x_augmentations: []
 
 encoder:
   z_shape: 128
-  is_normalize_Z: False
+  is_normalize_Z: True
+

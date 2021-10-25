@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from numbers import Number
-from typing import Any, Optional, Union, dict, tuple
+from typing import Any, Optional, Union
 
 import einops
 import torch

@@ -3,5 +3,5 @@ defaults:
 
 name: bestValLoss
 kwargs:
-  monitor: val/${stage}/loss
+  monitor: val/${stage}/${data.name}/loss
   mode: "min"

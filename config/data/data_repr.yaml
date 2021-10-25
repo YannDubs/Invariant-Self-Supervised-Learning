@@ -1,5 +1,6 @@
 defaults:
   - base_runtime
 
-name: data_repr # will copy all from data feat
+is_copy_repr: True
+name: data_repr
 dataset: ???

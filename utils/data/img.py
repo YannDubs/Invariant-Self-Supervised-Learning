@@ -116,7 +116,7 @@ class ISSLImgDataset(ISSLDataset):
         Augmentations to use for the source input, i.e., p(X|img). I.e. standard augmentations that are
         used to essentially increase the dataset size. This is different from p(A|img). Can be a set of string as in 
         `a_augmentations` or "a_augmentations". In the latter case, will use the same as `"a_augmentations"` which is
-        standard in ISSL but not theoretically necessary.
+        standard in ISSL but not theoretically necessary. Note that this cannot be "label" or "perm_label".
 
     val_x_augmentations : set of str or "train_x_augmentations" or "a_augmentations", optional
         list of augmentation to use during evaluation.
@@ -241,17 +241,9 @@ class ISSLImgDataset(ISSLDataset):
             self.augmentations["PIL"],
             self.augmentations["tensor"],
         )
-        PIL_augment, tensor_augment = [], []
-        for aug in augmentations:
-            if aug in choices_PIL:
-                PIL_augment += [choices_PIL[aug]]
-            elif aug in choices_tens:
-                tensor_augment += [choices_tens[aug]]
-            else:
-                raise ValueError(f"Unknown `augmentation={aug}`.")
 
         augmentor = ImgAugmentor(
-            Compose(PIL_augment), self.base_transform, Compose(tensor_augment)
+            self.base_transform, augmentations, choices_PIL, choices_tens
         )
         return augmentor
 
@@ -280,7 +272,7 @@ class ISSLImgDataset(ISSLDataset):
             PIL={
                 "rotation--": RandomRotation(15),
                 "y-translation--": RandomAffine(0, translate=(0, 0.15)),
-                "y-translation--": RandomAffine(0, translate=(0.15, 0)),
+                "x-translation--": RandomAffine(0, translate=(0.15, 0)),
                 "shear--": RandomAffine(0, shear=15),
                 "scale--": RandomAffine(0, scale=(0.8, 1.2)),
                 "D4-group": Compose(
@@ -428,7 +420,6 @@ class ISSLImgDataModule(ISSLDataModule):
         dataset = self.Dataset(
             self.data_dir, download=False, curr_split="train", **dataset_kwargs,
         )
-
         n_val = int_or_ratio(self.val_size, len(dataset))
         train, valid = random_split(
             dataset,
@@ -514,6 +505,8 @@ class MnistDataset(ISSLImgDataset, MNIST):
 
     def get_img_from_target(self, target: int) -> Any:
         """Accelerate image from target as all the data is loaded in memory."""
+        # TODO there's small chance that actually augmenting to validation
+        # if underlying augmentation data is splitted. ~Ok as we don't this for prediction
         if self.perm_label_aug is not None:
             # modify the target you are looking for, using the permuter
             target = self.perm_label_aug(target)
@@ -1086,6 +1079,7 @@ class ExternalImgDataset(ISSLImgDataset):
                 # remove all files and directories that are not needed
                 remove_rf(f)
 
+    @property
     def __len__(self) -> int:
         return self.length
 

@@ -1,0 +1,9 @@
+defaults:
+  - base_runtime
+
+is_copy_repr: True
+name: "{name}_${.kwargs.subset_train_size}" # when using is_copy_repr name will be formatted
+dataset: ???
+
+kwargs:
+  subset_train_size: ???

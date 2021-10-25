@@ -1,7 +1,8 @@
 # @package _global_
 defaults:
-  - override /decodability: generative
+  - base@representor
   - override /regularizer: none
+  - override /decodability: generative
 
 representor:
   name: std_gen

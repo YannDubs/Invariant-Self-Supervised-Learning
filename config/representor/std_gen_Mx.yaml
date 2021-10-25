@@ -5,18 +5,17 @@ defaults:
   - override /decodability: generative
 
 representor:
-  name: gen_std_aug
-  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\Tilde{Z}]
+  name: std_gen_Mx
 
 kwargs:
   decoder_kwargs:
-    architecture: linear
+    architecture: cnn
 
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "augmentation"
-      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      aux_target:  "representative"
+      a_augmentations: ["label"]
       train_x_augmentations: []
 
 encoder:

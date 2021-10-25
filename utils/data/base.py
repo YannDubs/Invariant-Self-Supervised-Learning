@@ -9,9 +9,13 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Optional, Union
 
-import torch
+import numpy as np
+import numpy.typing as npt
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
+
+from issl.helpers import tmp_seed
+from utils.data.helpers import BalancedSubset, subset2dataset
 
 DIR = Path(__file__).parents[2].joinpath("data")
 
@@ -24,10 +28,11 @@ class ISSLDataset(abc.ABC):
 
     Parameters
     -----------
-    aux_target : {"input", "representative", "augmentation", "target", None}, optional
+    aux_target : {"input", "representative", "augmentation", "target", "agg_target", None}, optional
         Auxiliary target to append to the target. This will be used to minimize R[aux_target|Z]. `"input"` is the input
-        example X, "representative" is a representative of the equivalence class, `"augmentation"` is some
-        augmented source A(x). "target" is the target. `None` appends nothing.
+        example X, "representative" is a representative of the equivalence class, `"sample_p_Alx"` is some
+        augmented source A(x). "target" is the target. "agg_target" is the aggregated targets (`n_agg_tasks` of them).
+        `None` appends nothing.
 
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|x). I.e. this should define the
@@ -39,6 +44,11 @@ class ISSLDataset(abc.ABC):
     normalization : str, optional
         Name of the normalization. If `None`, uses the default from the dataset. Only used if
         `is_normalize`.
+
+    n_agg_tasks : int, optional
+        Number of aggregated tasks to add if `aux_target="agg_target"`. Will make `n_agg_tasks` random
+        binary classification tasks. Note that for the theory to work you should not treat it as a multi task problem,
+        but train a separate model for each aggregated task.
 
     seed : int, optional
         Pseudo random seed.
@@ -53,19 +63,23 @@ class ISSLDataset(abc.ABC):
         a_augmentations: Sequence[str] = {},
         is_normalize: bool = False,
         normalization: Optional[str] = None,
+        n_agg_tasks: int = 10,
         seed: int = 123,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-
         self.aux_target = aux_target
         self.a_augmentations = a_augmentations
         self.seed = seed
         self.is_normalize = is_normalize
+        self.n_agg_tasks = n_agg_tasks
 
         self.normalization = (
             self.dataset_name if normalization is None else normalization
         )
+
+        if self.aux_target == "agg_target":
+            self.agg_tgt_mapper = self.get_agg_tgt_mapper()
 
     @property
     @abc.abstractmethod
@@ -100,13 +114,30 @@ class ISSLDataset(abc.ABC):
         """Return dictionary giving the shape `input`, `target`."""
         ...
 
+    def get_agg_tgt_mapper(self) -> list[npt.ArrayLike]:
+        """Update the number of aggregated tasks to add."""
+        agg_tgt_mapper = []
+        n_Mx = self.get_shapes()[0][0]
+
+        assert (n_Mx > 2) and (self.n_agg_tasks > 0)
+        with tmp_seed(self.seed):
+            while len(agg_tgt_mapper) < self.n_agg_tasks:
+                mapper = np.random.randint(0, 2, size=n_Mx)
+                if len(np.unique(mapper)) == 1:
+                    continue  # don't add all constants
+                agg_tgt_mapper.append(mapper)
+
+        return agg_tgt_mapper
+
     def __getitem__(self, index: int) -> tuple[Any, Any]:
+
         x, target, Mx = self.get_x_target_Mx(index)
 
-        if self.aux_target is None:
-            targets = target
+        if self.aux_target is not None:
+            aux_target = self.get_aux_target(x, target, Mx)
+            targets = [target, aux_target]
         else:
-            targets = [target, self.get_aux_target(x, target, Mx)]
+            targets = target
 
         return x, targets
 
@@ -125,25 +156,30 @@ class ISSLDataset(abc.ABC):
         elif self.aux_target == "target":
             # duplicate but makes code simpler
             to_add = target
+        elif self.aux_target == "agg_target":
+            # add aggregated targets
+            to_add = [m[target] for m in self.agg_tgt_mapper]
         else:
             raise ValueError(f"Unknown aux_target={self.aux_target}")
 
         return to_add
 
-    def get_is_clf(self) -> tuple[bool, bool]:
+    def get_is_clf(self) -> tuple[bool, Optional[bool]]:
         """Return `is_clf` for the target and aux_target."""
         is_clf = self.is_clfs
         is_clf["representative"] = is_clf["input"]
         is_clf["augmentation"] = is_clf["input"]
+        is_clf["agg_target"] = True  # agg_target has to be clf
         is_clf[None] = None
 
         return is_clf["target"], is_clf[self.aux_target]
 
-    def get_shapes(self) -> tuple[tuple[int, ...], tuple[int, ...]]:
-        """Return `shapes` for the target and aux_target."""
+    def get_shapes(self,) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
+        """Return `shapes` for the target, aux_target, all agg_target."""
         shapes = self.shapes
         shapes["representative"] = shapes["input"]
         shapes["augmentation"] = shapes["input"]
+        shapes["agg_target"] = (2,) * self.n_agg_tasks  # binary clf
         shapes[None] = None
 
         return shapes["target"], shapes[self.aux_target]
@@ -186,6 +222,12 @@ class ISSLDataModule(LightningDataModule):
     reload_dataloaders_every_n_epochs : bool, optional
         Whether to reload (all) dataloaders at each epoch.
 
+    subset_train_size : float or int, optional
+        Will subset the training data in a balanced fashion. If float, should be
+        between 0.0 and 1.0 and represent the proportion of the dataset to retain.
+        If int, represents the absolute number or examples. If `None` does not
+        subset the data.
+
     dataset_kwargs : dict, optional
         Additional arguments for the dataset.
     """
@@ -195,11 +237,12 @@ class ISSLDataModule(LightningDataModule):
         data_dir: Union[Path, str] = DIR,
         val_size: float = 0.1,
         test_size: int = None,
-        num_workers: int = 16,
+        num_workers: int = 8,
         batch_size: int = 128,
         val_batch_size: Optional[int] = None,
         seed: int = 123,
         reload_dataloaders_every_n_epochs: bool = False,
+        subset_train_size: Optional[float] = None,
         dataset_kwargs: dict = {},
     ) -> None:
         super().__init__()
@@ -210,8 +253,9 @@ class ISSLDataModule(LightningDataModule):
         self.batch_size = batch_size
         self.val_batch_size = batch_size if val_batch_size is None else val_batch_size
         self.seed = seed
-        self.dataset_kwargs = dataset_kwargs
         self.reload_dataloaders_every_n_epochs = reload_dataloaders_every_n_epochs
+        self.subset_train_size = subset_train_size
+        self.dataset_kwargs = dataset_kwargs
 
     @property
     def Dataset(self) -> Any:
@@ -239,13 +283,27 @@ class ISSLDataModule(LightningDataModule):
         """Says what is the mode/type of data. E.g. images, distributions, ...."""
         raise NotImplementedError()
 
+    def get_train_dataset_subset(self, **dataset_kwargs):
+        train_dataset = self.get_train_dataset(**dataset_kwargs)
+        if self.subset_train_size is not None:
+            # targets need to exist
+            # TODO: clean all the mess with subset
+            if isinstance(train_dataset, Subset):
+                dataset = train_dataset.dataset
+                # only take the targets that are selected
+                stratify = dataset.targets[train_dataset.indices]
+            else:
+                stratify = train_dataset.targets
+
+            train_dataset = BalancedSubset(
+                train_dataset, self.subset_train_size, stratify=stratify, seed=self.seed
+            )
+        return train_dataset
+
     @property
     def dataset(self) -> ISSLDataset:
         """Return the underlying (train) dataset. Contains val when val is subset of train."""
-        dataset = self.train_dataset
-        if isinstance(dataset, torch.utils.data.Subset):
-            dataset = dataset.dataset
-        return dataset
+        return subset2dataset(self.train_dataset)
 
     def set_info_(self) -> None:
         """Sets some information from the dataset."""
@@ -265,7 +323,7 @@ class ISSLDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None) -> None:
         """Prepare the datasets for the current stage."""
         if stage == "fit" or stage is None:
-            self.train_dataset = self.get_train_dataset(**self.dataset_kwargs)
+            self.train_dataset = self.get_train_dataset_subset(**self.dataset_kwargs)
             self.set_info_()
             self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
 
@@ -282,7 +340,7 @@ class ISSLDataModule(LightningDataModule):
         data_kwargs = kwargs.pop("dataset_kwargs", {})
         if self.reload_dataloaders_every_n_epochs or len(data_kwargs) > 0:
             curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
-            train_dataset = self.get_train_dataset(**curr_kwargs)
+            train_dataset = self.get_train_dataset_subset(**curr_kwargs)
 
         if train_dataset is None:
             train_dataset = self.train_dataset

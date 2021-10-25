@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import logging
 from collections.abc import Callable, Sequence
 from typing import Any, Optional, Union
@@ -8,11 +9,14 @@ import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
 from sklearn.pipeline import Pipeline
+from torch import nn
 from torchmetrics.functional import accuracy
 
 from .architectures import get_Architecture
 from .helpers import (
+    aggregate_dicts,
     append_optimizer_scheduler_,
+    mean,
     namespace2dict,
     prediction_loss,
     weights_init,
@@ -50,6 +54,7 @@ class Predictor(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(hparams)
         self.is_clf = self.hparams.data.target_is_clf
+        self.is_agg_target = self.hparams.data.aux_target == "agg_target"
 
         if representor is not None:
             # ensure not saved in checkpoint and frozen
@@ -66,9 +71,19 @@ class Predictor(pl.LightningModule):
         Architecture = get_Architecture(cfg_pred.architecture, **cfg_pred.arch_kwargs)
         self.predictor = Architecture(pred_in_shape)
 
+        if self.is_agg_target:
+            cfgp = copy.deepcopy(cfg_pred)
+            cfgp.arch_kwargs.out_shape = 2
+            Arch_binary = get_Architecture(cfgp.architecture, **cfgp.arch_kwargs)
+            self.agg_predictors = nn.ModuleList(
+                [Arch_binary(pred_in_shape) for _ in self.hparams.data.aux_shape]
+            )
+
         self.stage = self.hparams.stage
 
-    def forward(self, x: torch.Tensor, is_logits: bool = True) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, is_logits: bool = True
+    ) -> tuple[torch.Tensor, list]:
         """Perform prediction for `x`.
 
         Parameters
@@ -83,10 +98,10 @@ class Predictor(pl.LightningModule):
         Returns
         -------
         Y_pred : torch.Tensor of shape=[batch_size, *target_shape]
+            First is for predicting the task, all others are for the agg tasks.
 
-        if is_return_logs:
-            logs : dict
-                dictionary of values to log.
+        Y_preds_agg : list of tensors of shape=[batch_size, *target_shape]
+            First is for predicting the task, all others are for the agg tasks.
         """
         with torch.no_grad():
             # shape: [batch_size,  *z.out_shape]
@@ -95,7 +110,22 @@ class Predictor(pl.LightningModule):
         z = z.detach()  # shouldn't be needed
 
         # shape: [batch_size,  *target_shape]
-        Y_pred = self.predictor(z)
+        Y_pred = self.apply_predictor(self.predictor, z, is_logits)
+
+        if self.is_agg_target:
+            # currently not in parallel. Waiting for pytorch/issues/36459
+            Ys_pred_agg = [
+                self.apply_predictor(p, z, is_logits) for p in self.agg_predictors
+            ]
+        else:
+            Ys_pred_agg = []
+
+        return Y_pred, Ys_pred_agg
+
+    def apply_predictor(
+        self, predictor: nn.Module, z: torch.Tensor, is_logits: bool
+    ) -> torch.Tensor:
+        Y_pred = predictor(z)
 
         if not is_logits and self.is_clf:
             out = Y_pred.softmax(-1)
@@ -104,16 +134,54 @@ class Predictor(pl.LightningModule):
 
         return out
 
-    def predict_step(
-        self, batch: torch.Tensor, batch_idx: int, dataloader_idx: Optional[int] = None
-    ):
-        """
-        Predict function, this will represent the data and also return the correct label.
-        Which is useful in case you want to create a represented dataset.
-        """
+    def step(self, batch: torch.Tensor) -> tuple[torch.Tensor, dict]:
         x, y = batch
-        y_hat = self(x)
-        return y_hat.cpu(), y.cpu()
+
+        if self.is_agg_target:
+            y, y_agg = y
+
+        # list of Y_hat. Each Y_hat shape: [batch_size,  *target_shape]
+        Y_hat, Ys_hat_agg = self(x)
+
+        # Shape: [batch, 1]
+        loss, logs = self.loss(Y_hat, y)
+
+        if self.is_agg_target:
+            loss_agg = []
+            logs_agg = []
+            for i in range(len(self.agg_predictors)):
+                curr_loss, curr_logs = self.loss(Ys_hat_agg[i], y_agg[:, i])
+                loss_agg.append(curr_loss)
+                logs_agg.append(curr_logs)
+
+            for k, v in aggregate_dicts(logs_agg, operation=mean).items():
+                logs[f"{k}_agg"] = v  # agg is avg over all agg_tasks
+
+            loss = loss + sum(loss_agg)  # sum all losses
+
+        if not self.training and len(self.hparams.data.balancing_weights) > 0:
+            # for some datasets we have to evaluate using the mean per class loss / accuracy
+            # we don't train it using that (because shouldn't have access to those weights during train)
+            # but we compute it during evaluation. Not adding for agg task, although could.
+            self.add_balanced_logs_(loss, y, Y_hat, logs)
+
+        # Shape: []
+        loss = loss.mean()
+
+        return loss, logs
+
+    def loss(self, Y_hat: torch.Tensor, y: torch.Tensor,) -> tuple[torch.Tensor, dict]:
+        """Compute the MSE or cross entropy loss."""
+
+        loss = prediction_loss(Y_hat, y, self.is_clf)
+
+        logs = dict()
+        logs["loss"] = loss.mean()
+        if self.is_clf:
+            logs["acc"] = accuracy(Y_hat.argmax(dim=-1), y)
+            logs["err"] = 1 - logs["acc"]
+
+        return loss, logs
 
     def add_balanced_logs_(
         self, loss: torch.Tensor, y: torch.Tensor, Y_hat: torch.Tensor, logs: dict
@@ -132,45 +200,16 @@ class Predictor(pl.LightningModule):
             logs["balanced_acc"] = balanced_acc
             logs["balanced_err"] = 1 - logs["balanced_acc"]
 
-    def step(self, batch: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        x, y = batch
-
-        # shape: [batch_size,  *target_shape]
-        Y_hat = self(x)
-
-        # Shape: [batch, 1]
-        loss, logs = self.loss(Y_hat, y)
-
-        if not self.training and len(self.hparams.data.balancing_weights) > 0:
-            # for some datasets we have to evaluate using the mean per class loss / accuracy
-            # we don't train it using that (because shouldn't have access to those weights during train)
-            # but we compute it during evaluation
-            self.add_balanced_logs_(loss, y, Y_hat, logs)
-
-        # Shape: []
-        loss = loss.mean()
-
-        logs["loss"] = loss
-        if self.is_clf:
-            logs["acc"] = accuracy(Y_hat.argmax(dim=-1), y)
-            logs["err"] = 1 - logs["acc"]
-
-        return loss, logs
-
-    def loss(self, Y_hat: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        """Compute the MSE or cross entropy loss."""
-
-        loss = prediction_loss(Y_hat, y, self.is_clf)
-        logs = dict()
-
-        return loss, logs
-
     def training_step(
         self, batch: torch.Tensor, batch_idx: torch.Tensor
     ) -> Optional[torch.Tensor]:
         loss, logs = self.step(batch)
         self.log_dict(
-            {f"train/{self.stage}/{k}": v for k, v in logs.items()}, sync_dist=True
+            {
+                f"train/{self.stage}/{self.hparams.data.name}/{k}": v
+                for k, v in logs.items()
+            },
+            sync_dist=True,
         )
         return loss
 
@@ -180,7 +219,11 @@ class Predictor(pl.LightningModule):
         loss, logs = self.step(batch)
 
         self.log_dict(
-            {f"{mode}/{self.stage}/{k}": v for k, v in logs.items()}, sync_dist=True,
+            {
+                f"{mode}/{self.stage}/{self.hparams.data.name}/{k}": v
+                for k, v in logs.items()
+            },
+            sync_dist=True,
         )
         return loss
 

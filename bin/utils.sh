@@ -71,6 +71,9 @@ if  [[ "$mode" == "dev" || "$mode" == "test" || "$mode" == "debug" ]]; then
     vector)
       add_kwargs="${add_kwargs} hydra.launcher.partition=interactive hydra.launcher.additional_parameters.qos=nopreemption"
       ;;
+    atlas)
+      # pass
+      ;;
     qvector)
       add_kwargs="${add_kwargs} hydra.launcher.partition=interactive hydra.launcher.additional_parameters.qos=nopreemption"
       ;;

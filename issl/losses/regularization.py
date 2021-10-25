@@ -1,6 +1,7 @@
 """Regularizers for H[Z] and thus improve downstream sample efficiency."""
 from __future__ import annotations
 
+from collections import Sequence
 from typing import Any, Optional
 
 import einops
@@ -8,12 +9,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from issl import get_marginalDist
 from issl.helpers import kl_divergence
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
     if mode == "coarsener":
         return CoarseningRegularizer(**kwargs)
+    elif mode == "prior":
+        return PriorRegularizer(**kwargs)
     elif mode is None:
         return None
     else:
@@ -81,7 +85,7 @@ class CoarseningRegularizer(nn.Module):
         Parameters
         ----------
         z : Tensor shape=[batch_size, z_dim]
-            Reconstructed representations.
+            Samples from the encoder.
 
         a : Tensor shape=[batch_size, *x_shape]
             Augmented sample.
@@ -125,3 +129,49 @@ class CoarseningRegularizer(nn.Module):
         logs = dict()
         other = dict()
         return loss, logs, other
+
+
+class PriorRegularizer(nn.Module):
+    """Regularizer of the mutual information I[Z,X] by using a  prior."""
+
+    def __init__(self, family: str, z_shape: Sequence[int]):
+        super().__init__()
+        # TODO: make it work with z_shape instead of z_dim
+        self.q_Z = get_marginalDist(family, z_shape)
+
+    def forward(
+        self, z, a, p_Zlx: torch.distributions.TransformedDistribution, parent,
+    ) -> tuple[torch.Tensor, dict, dict]:
+        """Contrast examples and compute the upper bound on R[A|Z].
+
+        Parameters
+        ----------
+        z : Tensor shape=[batch_size, z_dim]
+            Samples from the encoder.
+            
+        p_Zlx : torch.Distribution
+            Encoded distribution.
+
+        Returns
+        -------
+        kl : torch.Tensor shape=[batch_shape]
+            Estimate of the kl divergence.
+
+        logs : dict
+            Additional values to log.
+
+        other : dict
+            Additional values to return.
+        """
+        # batch shape: [] ; event shape: [z_shape]
+        q_Z = self.q_Z()
+
+        # E_x[KL[p(Z|x) || q(Z)]]. shape: [batch_size]
+        kl = kl_divergence(p_Zlx, q_Z, z_samples=z)
+
+        logs = dict(I_q_ZX=kl.mean(), H_ZlX=p_Zlx.entropy().mean(0))
+
+        # upper bound on H[Z] (cross entropy)
+        logs["H_q_Z"] = logs["I_q_ZX"] + logs["H_ZlX"]
+        other = dict()
+        return kl, logs, other

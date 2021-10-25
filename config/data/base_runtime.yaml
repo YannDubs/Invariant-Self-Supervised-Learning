@@ -10,6 +10,7 @@ aux_shape: ???
 aux_is_clf: ???
 target_is_clf: ???
 max_steps: ??? # max number of steps for training
+aux_target: ???
 normalized: ???
 is_aux_already_represented: ???
 #########################################################

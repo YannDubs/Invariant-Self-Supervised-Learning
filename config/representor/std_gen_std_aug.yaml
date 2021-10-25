@@ -5,12 +5,12 @@ defaults:
   - override /decodability: generative
 
 representor:
-  name: gen_std_aug
-  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\Tilde{Z}]
+  name: std_gen_aug
+  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
 
 kwargs:
   decoder_kwargs:
-    architecture: linear
+    architecture: cnn
 
 data_repr:
   kwargs:

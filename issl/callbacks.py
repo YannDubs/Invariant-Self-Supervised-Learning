@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 import einops
 import matplotlib.pyplot as plt
@@ -66,7 +66,7 @@ class PlottingCallback(Callback):
     # noinspection PyBroadException
     @rank_zero_only  # only plot on one machine
     def on_train_epoch_end(
-        self, trainer: pl.Trainer, pl_module: pl.LightningModule, outputs: Any
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule,
     ) -> None:
         if is_plot(trainer, self.plot_interval):
             try:
@@ -94,20 +94,25 @@ class ReconstructImages(PlottingCallback):
     """
 
     def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+
         cfg = pl_module.hparams
         #! waiting for torch lightning #1243
-        x_hat = pl_module._save["Y_hat"].float()
+        a_hat = pl_module._save["A_hat"].float()
+        a = pl_module._save["A"].float()
         x = pl_module._save["X"].float()
 
         if is_colored_img(x):
-            if cfg.data.kwargs.dataset_kwargs.is_normalize:
+            if cfg.data.normalized:
                 # undo normalization for plotting
-                unnormalizer = UnNormalizer(cfg.data.dataset)
+                unnormalizer = UnNormalizer(cfg.data.normalized)
                 x = unnormalizer(x)
+                a = unnormalizer(a)
 
-        yield x_hat, dict(name="rec_img")
+        yield a_hat, dict(name="rec_img")
 
-        yield x, dict(name="real_img")
+        yield a, dict(name="trgt_img")
+
+        yield x, dict(name="input_img")
 
 
 class LatentDimInterpolator(PlottingCallback):
@@ -151,6 +156,7 @@ class LatentDimInterpolator(PlottingCallback):
         self.n_lat_traverse = n_lat_traverse
 
     def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+
         with torch.no_grad():
             pl_module.eval()
             with plot_config(**self.plot_config_kwargs, font_scale=2):
@@ -183,7 +189,7 @@ class LatentDimInterpolator(PlottingCallback):
             z[:, i, idx] = traversals[i]
 
         z = einops.rearrange(z, "r c ... -> (r c) ...")
-        img = pl_module.distortion_estimator.q_YlZ(z)
+        img = pl_module.loss_decodability.suff_stat_AlZ(z)
 
         # put back to [0,1]
         img = torch.sigmoid(img)

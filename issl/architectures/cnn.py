@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Sequence
-from typing import Any, Optional, tuple
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn

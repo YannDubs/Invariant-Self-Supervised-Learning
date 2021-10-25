@@ -14,19 +14,18 @@ defaults:
   - architecture@encoder: resnet18
   - architecture@online_evaluator: mlp_h2048_l2
   - checkpoint@checkpoint_repr: bestValLoss
-  - optimizer@optimizer_issl: AdamW_lr1e-3_w1e-5 # larger learning rate gives smaller rate but smaller acc. should stick to using adam if not changing the  beta will effectively change the lr
-  - scheduler@scheduler_issl: expdecay100
+  - optimizer@optimizer_issl: AdamW_lr1e-3_w1e-5 # larger learning rate will decrease I[Z,X] usually
+  - scheduler@scheduler_issl: unifmultistep100
   - optimizer@optimizer_eval: AdamW_lr3e-4_w1e-5
-  - scheduler@scheduler_eval: expdecay100 # ensure that can always keep up with the changing representation
-  - representor: base
+  - scheduler@scheduler_eval: unifmultistep100 # ensure that can always keep up with the changing representation
   - decodability: contrastive
   - regularizer: none
   - finetune: none # change if using pretrained representor.
+  - representor: base
 
   # PREDICTOR #
-  - data@data_pred: data_repr # use same as data_repr
-  - checkpoint@checkpoint_pred: bestValLoss  # really important if using cosine scheduler
-  - optimizer@optimizer_pred: AdamW_lr3e-4_w1e-5
+  - checkpoint@checkpoint_pred: bestTrainLoss # by default no validation set for predictors
+  - optimizer@optimizer_pred: AdamW_lr3e-4_w0
   - scheduler@scheduler_pred: unifmultistep100
   - predictor: pytorch
 
@@ -83,7 +82,7 @@ evaluation:
   predictor:
     ckpt_path: "best"
     is_evaluate: ${predictor.is_train}
-    is_eval_train: False # whether to evaluate the predictor on train
+    is_eval_train: True # whether to evaluate the predictor on train. Can be slow
 
 callbacks: # can use any callback name of issl.callbacks, pl_bolts.callbacks, pl.callbacks
   is_force_no_additional_callback: false # force empty callback
@@ -102,13 +101,13 @@ trainer:
   resume_from_checkpoint: null # string to checkpoint if you want to resume
   gradient_clip_val: 3 # 0 means no clip
   reload_dataloaders_every_n_epochs: 0
-  log_every_n_steps: 500
+  log_every_n_steps: 200
   val_check_interval: 1.0 # decrease for subepoch checkpointing
 
   # ENGINEERING / SPEED #
   gpus: 1
   num_nodes: 1  # number gpu nodes
-  precision: 16 # use 16 bit for speed # TODO "b16" once use pytorhc lightnin 1.5
+  precision: 16 # use 16 bit for speed # TODO "b16" once use pytorch lightning 1.5
   accumulate_grad_batches: 1
   sync_batchnorm: false # whether to synchronize batch norm over GPUs
 
@@ -120,7 +119,10 @@ trainer:
 
 ########## REPRESENTOR ##########
 ### DATA ###
-data_repr: {}
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target: ???
 
 ### MODELS ###
 encoder:
@@ -174,7 +176,16 @@ update_trainer_repr: {}
 
 ########## PREDICTOR ##########
 ### DATA ###
-data_pred: {}
+# everything you want to override would go here
+data_pred:
+  all_data: [data_repr]
+
+# all the defaults arguments go here.
+dflt_data_pred:
+  is_copy_repr: False
+  kwargs:
+    dataset_kwargs:
+      aux_target: null
 
 ### MODEL ###
 predictor:

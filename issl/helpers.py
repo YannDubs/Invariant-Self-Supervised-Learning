@@ -9,7 +9,7 @@ from argparse import Namespace
 from collections.abc import MutableMapping, MutableSet, Sequence
 from functools import reduce
 from queue import Queue
-from typing import Any, Optional, dict
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -213,6 +213,16 @@ def prod(iterable: Sequence[float]) -> float:
 def mean(array):
     """Take mean of array like."""
     return sum(array) / len(array)
+
+
+def aggregate_dicts(dicts, operation=mean):
+    """
+    Aggregate a sequence of dictionaries to a single dictionary using `operation`. `Operation` should
+    reduce a list of all values with the same key. Keys that are not found in one dictionary will
+    be mapped to `None`, `operation` can then chose how to deal with those.
+    """
+    all_keys = set().union(*[el.keys() for el in dicts])
+    return {k: operation([dic.get(k, None) for dic in dicts]) for k in all_keys}
 
 
 def kl_divergence(p, q, z_samples=None, is_lower_var=False):
@@ -456,7 +466,7 @@ def prediction_loss(
     """
     # shape : [batch_size, *Y_shape]
     if is_classification:
-        loss = F.cross_entropy(Y_hat, y.long(), reduction="none")
+        loss = F.cross_entropy(Y_hat, y.squeeze().long(), reduction="none")
     else:
         loss = F.mse_loss(Y_hat, y, reduction="none")
 
