@@ -1,11 +1,11 @@
 # @package _global_
 defaults:
   - base@representor
-  - override /regularizer: cosine
+  - override /regularizer: kl
   - override /decodability: contrastive
 
 representor:
-  name: std_cntr_reg
+  name: std_cntr_stoch
 
 kwargs:
   decoder_kwargs:
@@ -36,5 +36,7 @@ decodability:
 
 encoder:
   z_shape: 1024
-  is_normalize_Z: True
+  is_normalize_Z: False # normalization has complicated effect with stochastic remove for now for understanding
+  kwargs:
+    family: diag_gaussian
 

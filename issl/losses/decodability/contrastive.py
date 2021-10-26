@@ -93,7 +93,13 @@ class ContrastiveISSL(nn.Module):
         is_project: bool = True,
         src_tgt_comparison: str = "all",
         is_proj_pred_same: bool = True,
-        projector_kwargs: dict[str, Any] = {"architecture": "mlp", "out_shape": 128},
+        projector_kwargs: dict[str, Any] = {
+            "architecture": "mlp",
+            "hid_dim": 2048,
+            "n_hid_layers": 2,
+            "norm_layer": "batch",
+            "out_shape": 128,
+        },
         predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
     ) -> None:
         super().__init__()

@@ -26,7 +26,7 @@ $add_kwargs
 # every arguments that you are sweeping over
 kwargs_multi="
 representor=std_gen,gen
-encoder.z_shape=10,16,32,128,512
+encoder.z_shape=5,10,16,32,128,512
 seed=1
 "
 

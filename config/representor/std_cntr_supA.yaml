@@ -8,9 +8,6 @@ representor:
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "representative"
+      aux_target:  "augmentation"
       a_augmentations: ["label"] # should have a data standard augmentation
       train_x_augmentations: []
-
-
-

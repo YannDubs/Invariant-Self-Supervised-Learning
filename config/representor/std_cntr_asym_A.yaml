@@ -3,7 +3,7 @@ defaults:
   - std_cntr
 
 representor:
-  name: std_cntr_asym_aug
+  name: std_cntr_asym_A
 
 decodability:
   kwargs:

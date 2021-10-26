@@ -3,7 +3,7 @@ defaults:
   - std_cntr
 
 representor:
-  name: std_cntr_asym_aug
+  name: std_cntr_asym_permMx
 
 decodability:
   kwargs:
@@ -12,5 +12,6 @@ decodability:
 data_repr:
   kwargs:
     dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: ["perm_label"]
       train_x_augmentations: []
-

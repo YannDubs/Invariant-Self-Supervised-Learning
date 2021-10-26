@@ -18,7 +18,6 @@ architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
-encoder.z_shape=128
 timeout=$time
 $add_kwargs
 "
@@ -26,9 +25,8 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_cntr
-optimizer_issl.kwargs.lr=3e-3
-encoder.z_shape=10,16,32,128,512
+representor=std_cntr,cntr
+encoder.z_shape=5,10,16,32,128,1024,4096
 seed=1
 "
 
