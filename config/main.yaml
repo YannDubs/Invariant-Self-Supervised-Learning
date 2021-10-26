@@ -13,7 +13,7 @@ defaults:
   - data@data_repr: mnist
   - architecture@encoder: resnet18
   - architecture@online_evaluator: mlp_h2048_l2
-  - checkpoint@checkpoint_repr: bestValLoss
+  - checkpoint@checkpoint_repr: bestTrainLoss
   - optimizer@optimizer_issl: AdamW_lr1e-3_w1e-5 # larger learning rate will decrease I[Z,X] usually
   - scheduler@scheduler_issl: unifmultistep100
   - optimizer@optimizer_eval: AdamW_lr3e-4_w1e-5

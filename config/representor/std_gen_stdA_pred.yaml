@@ -5,19 +5,18 @@ defaults:
   - override /decodability: generative
 
 representor:
-  name: std_gen_mlp
+  name: std_gen_stdA
+  is_switch_x_aux_trgt: False # R[A|Z]
 
 kwargs:
   decoder_kwargs:
-    architecture: mlp
-    hid_dim: 2048
-    n_hid_layers: 2
+    architecture: cnn
 
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "input"
-      a_augmentations: []
+      aux_target:  "augmentation"
+      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
       train_x_augmentations: []
 
 encoder:

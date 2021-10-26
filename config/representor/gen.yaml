@@ -6,7 +6,6 @@ defaults:
 
 representor:
   name: gen
-  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\Tilde{Z}]
 
 kwargs:
   decoder_kwargs:
@@ -15,7 +14,7 @@ kwargs:
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "augmentation"
+      aux_target:  "representative"
       a_augmentations: ["label"]
       train_x_augmentations: []
 

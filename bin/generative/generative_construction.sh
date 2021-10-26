@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"generative_construction"
+experiment=$prfx"_construction"
 notes="
 **Goal**: Ablation study to understand how to improve generative ISSL compared to standard for linear classification.
 "
@@ -26,14 +26,10 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=vae,std_gen_V,std_gen_stoch,std_gen_std_aug,std_gen_reg,std_gen_norm,std_gen_Mx,std_gen_mlp,std_gen_aug,std_gen_A_pred,std_gen
+representor=vae,std_gen_V,std_gen_supA,std_gen_stoch,std_gen_stdA_pred,std_gen_stdA,std_gen_reg,std_gen_permMx,std_gen_permA,std_gen_norm,std_gen_Mx,std_gen_mlp,std_gen
 seed=1
 "
 
-kwargs_multi="
-representor=std_gen_aug,std_gen_A_pred,std_gen
-seed=1
-"
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

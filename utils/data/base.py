@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 from collections.abc import Sequence
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -69,7 +70,7 @@ class ISSLDataset(abc.ABC):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.aux_target = aux_target
-        self.a_augmentations = a_augmentations
+        self.a_augmentations = deepcopy(a_augmentations)
         self.seed = seed
         self.is_normalize = is_normalize
         self.n_agg_tasks = n_agg_tasks

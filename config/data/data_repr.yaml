@@ -2,5 +2,5 @@ defaults:
   - base_runtime
 
 is_copy_repr: True
-name: data_repr
+name: "{name}"
 dataset: ???

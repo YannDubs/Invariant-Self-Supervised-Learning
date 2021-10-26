@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"generative_ablation"
+experiment=$prfx"contrastive_dim"
 notes="
-**Goal**: Ablation study to understand how to improve generative ISSL compared to standard for linear classification.
+**Goal**: Understanding effect of dimensionality on contrastive ISSL.
 "
 
 # parses special mode for running the script
@@ -26,9 +26,13 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_gen,vae,gen,gen_no_norm,gen_no_V,gen_A_pred,gen_no_reg,gen_no_aug,gen_std_aug,gen_stoch,gen_Mx
+representor=std_cntr
+optimizer_issl.kwargs.lr=3e-3
+encoder.z_shape=10,16,32,128,512
 seed=1
 "
+
+
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

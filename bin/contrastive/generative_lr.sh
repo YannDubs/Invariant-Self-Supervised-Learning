@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"generative_ablation"
+experiment=$prfx"generative_lr"
 notes="
-**Goal**: Ablation study to understand how to improve generative ISSL compared to standard for linear classification.
+**Goal**: Hyperparameter tuning of learning rate.
 "
 
 # parses special mode for running the script
@@ -12,7 +12,7 @@ source `dirname $0`/../utils.sh
 kwargs="
 experiment=$experiment
 trainer.max_epochs=50
-checkpoint@checkpoint_repr=bestTrainLoss
+checkpoint@checkpoint_repr=bestValLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
@@ -26,7 +26,8 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_gen,vae,gen,gen_no_norm,gen_no_V,gen_A_pred,gen_no_reg,gen_no_aug,gen_std_aug,gen_stoch,gen_Mx
+representor=gen_no_norm
+optimizer_issl.kwargs.lr=3e-4,1e-3,3e-3,1e-2,3e-2,1e-1
 seed=1
 "
 

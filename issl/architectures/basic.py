@@ -44,7 +44,7 @@ class MLP(nn.Module):
         in_dim: int,
         out_dim: int,
         n_hid_layers: int = 1,
-        hid_dim: int = 128,
+        hid_dim: int = 1024,
         norm_layer: str = "identity",
         activation: str = "ReLU",
         dropout_p: float = 0,

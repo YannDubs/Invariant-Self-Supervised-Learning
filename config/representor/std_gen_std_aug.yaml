@@ -5,7 +5,7 @@ defaults:
   - override /decodability: generative
 
 representor:
-  name: std_gen_aug
+  name: std_gen_std_aug
   is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
 
 kwargs:

@@ -550,6 +550,14 @@ def evaluate(
         ckpt_path = cfg.evaluation[stage].ckpt_path
 
         if is_eval_train:
+            train_stage = f"{cfg.stage}_train"
+
+            # ensure that logging train and test resutls differently
+            if is_sklearn:
+                trainer.stage = train_stage
+            else:
+                trainer.lightning_module.stage = train_stage
+
             # first save the training ones because they will be under "test" in wandb
             try:
                 # also evaluate training set
@@ -558,7 +566,7 @@ def evaluate(
                     dataloaders=train_dataloader, ckpt_path=ckpt_path
                 )[0]
                 train_res = {
-                    k: v for k, v in train_res.items() if f"/{cfg.stage}/" in k
+                    k: v for k, v in train_res.items() if f"/{train_stage}/" in k
                 }
                 to_save["train"] = replace_keys(train_res, "test/", "")
             except:

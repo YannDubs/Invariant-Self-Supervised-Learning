@@ -12,7 +12,7 @@ source `dirname $0`/../utils.sh
 kwargs="
 experiment=$experiment
 trainer.max_epochs=50
-checkpoint@checkpoint_repr=bestValLoss
+checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist

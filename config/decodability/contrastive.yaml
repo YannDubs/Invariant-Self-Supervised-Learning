@@ -5,6 +5,7 @@ factor_beta: 1
 kwargs:
   mode: contrastive
   z_shape: ${encoder.z_shape}
+  temperature: 0.07
   is_train_temperature: True
   is_normalize_proj: True
   effective_batch_size: null

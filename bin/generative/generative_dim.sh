@@ -12,7 +12,7 @@ source `dirname $0`/../utils.sh
 kwargs="
 experiment=$experiment
 trainer.max_epochs=50
-checkpoint@checkpoint_repr=bestValLoss
+checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
@@ -25,8 +25,7 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_gen
-optimizer_issl.kwargs.lr=3e-3
+representor=std_gen,gen
 encoder.z_shape=10,16,32,128,512
 seed=1
 "

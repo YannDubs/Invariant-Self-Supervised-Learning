@@ -115,7 +115,7 @@ class ISSLImgDataset(ISSLDataset):
     train_x_augmentations : set of str or "a_augmentations" , optional
         Augmentations to use for the source input, i.e., p(X|img). I.e. standard augmentations that are
         used to essentially increase the dataset size. This is different from p(A|img). Can be a set of string as in 
-        `a_augmentations` or "a_augmentations". In the latter case, will use the same as `"a_augmentations"` which is
+        `a_augmentations`. In the latter case, will use the same as `"a_augmentations"` which is
         standard in ISSL but not theoretically necessary. Note that this cannot be "label" or "perm_label".
 
     val_x_augmentations : set of str or "train_x_augmentations" or "a_augmentations", optional
@@ -171,9 +171,10 @@ class ISSLImgDataset(ISSLDataset):
 
         self.is_label_aug = False
         self.perm_label_aug = None
+
         if "label" in a_augmentations:
             self.is_label_aug = True
-            a_augmentations.remove("label")
+            self.a_augmentations.remove("label")
         if "perm_label" in a_augmentations:
             assert not self.is_label_aug, "cannot have `label` and `perm_label`"
             assert self.is_clfs["target"], "`perm_label` only in clf"
@@ -181,9 +182,8 @@ class ISSLImgDataset(ISSLDataset):
             n_labels = self.shapes["target"][0]
             # label permuter simply increases by 1
             self.perm_label_aug = lambda x: (x + 1) % n_labels
-            a_augmentations.remove("perm_label")
+            self.a_augmentations.remove("perm_label")
 
-        self.a_augmentations = a_augmentations
         self.train_x_augmentations = train_x_augmentations
         self.val_x_augmentations = val_x_augmentations
 
@@ -230,9 +230,9 @@ class ISSLImgDataset(ISSLDataset):
 
         if isinstance(augmentations, str):
             # assumes that the other augmenters have already been initialized
-            if augmentations == "AlX_augmentation":
+            if augmentations == "a_augmentations":
                 return self.sample_p_AlI
-            elif augmentations == "train_augmentation":
+            elif augmentations == "train_x_augmentations":
                 return self.sample_p_XlI_train
             else:
                 raise ValueError(f"Unknown str augmentor={augmentations}.")
@@ -339,6 +339,7 @@ class ISSLImgDataset(ISSLDataset):
 
     def get_representative(self, Mx: Any) -> Any:
         if self.is_label_aug:
+            # TODO one issue is that Mx will actually be different during test / val /train
             target = Mx
             with tmp_seed(self.seed, is_cuda=False):
                 # to fix the representative use the same seed. Note that cannot set seed inside

@@ -5,8 +5,7 @@ defaults:
   - override /decodability: generative
 
 representor:
-  name: std_gen_A_pred
-  is_switch_x_aux_trgt: False # augmentations will be inputs so R[A|Z]
+  name: std_gen_A_pred # R[A|Z]
 
 kwargs:
   decoder_kwargs:
