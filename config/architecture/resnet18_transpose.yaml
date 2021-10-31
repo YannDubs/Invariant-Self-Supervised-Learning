@@ -1,0 +1,8 @@
+defaults:
+  - base
+
+name: resnet18_transpose
+kwargs:
+  architecture: resnet_transpose
+  arch_kwargs:
+    base: resnet18

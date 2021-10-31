@@ -8,9 +8,10 @@ representor:
   name: gen_no_V
   is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\Tilde{Z}]
 
-kwargs:
-  decoder_kwargs:
-    architecture: cnn
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: cnn
 
 data_repr:
   kwargs:

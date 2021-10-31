@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_queue
+
+decodability:
+  kwargs:
+    queue_size: 30

@@ -18,6 +18,7 @@ architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
+optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
 $add_kwargs
 "

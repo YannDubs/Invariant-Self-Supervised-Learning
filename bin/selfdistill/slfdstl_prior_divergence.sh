@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"generative_lr"
+experiment=$prfx"slfdstl_prior_divergence"
 notes="
-**Goal**: Hyperparameter tuning of learning rate.
+**Goal**: Hyperparameter tuning of the divergence p(M) and unif for self distillation ISSL compared to standard for linear classification.
 "
 
 # parses special mode for running the script
@@ -12,13 +12,13 @@ source `dirname $0`/../utils.sh
 kwargs="
 experiment=$experiment
 trainer.max_epochs=50
-checkpoint@checkpoint_repr=bestValLoss
+checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
-encoder.z_shape=128
+optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
 $add_kwargs
 "
@@ -26,13 +26,13 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=gen_no_norm
-optimizer_issl.kwargs.lr=3e-4,1e-3,3e-3,1e-2,3e-2,1e-1
+representor=slfdstl_prior
 seed=1
 "
 
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in  "decodability.kwargs.beta_pM_unif=null,0,0.1,1,10 decodability.kwargs.divergence=kl_symmetric" "decodability.kwargs.divergence=kl_symmetric,kl_reverse,kl_forward"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &

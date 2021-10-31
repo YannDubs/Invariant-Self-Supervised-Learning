@@ -1,0 +1,6 @@
+# @package _global_
+defaults:
+  - std_gen
+
+representor:
+  name: std_gen_cnn

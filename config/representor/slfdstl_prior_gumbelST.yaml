@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_gumbelST
+
+decodability:
+  kwargs:
+    mode_pMlz_qMlz: "sample_ST_CE"

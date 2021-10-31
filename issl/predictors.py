@@ -157,6 +157,12 @@ class Predictor(pl.LightningModule):
             for k, v in aggregate_dicts(logs_agg, operation=mean).items():
                 logs[f"{k}_agg"] = v  # agg is avg over all agg_tasks
 
+            for k, v in aggregate_dicts(logs_agg, operation=min).items():
+                logs[f"{k}_agg_max"] = v  # agg is max over all agg_tasks
+
+            for k, v in aggregate_dicts(logs_agg, operation=min).items():
+                logs[f"{k}_agg_min"] = v  # agg is min over all agg_tasks
+
             loss = loss + sum(loss_agg)  # sum all losses
 
         if not self.training and len(self.hparams.data.balancing_weights) > 0:

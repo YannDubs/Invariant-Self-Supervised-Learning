@@ -7,3 +7,4 @@ dataset: ???
 
 kwargs:
   subset_train_size: ???
+  is_test_nonsubset_train: True # test on the non subset train dataset

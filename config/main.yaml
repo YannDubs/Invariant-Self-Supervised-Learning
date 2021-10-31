@@ -14,9 +14,9 @@ defaults:
   - architecture@encoder: resnet18
   - architecture@online_evaluator: mlp_h2048_l2
   - checkpoint@checkpoint_repr: bestTrainLoss
-  - optimizer@optimizer_issl: AdamW_lr1e-3_w1e-5 # larger learning rate will decrease I[Z,X] usually
+  - optimizer@optimizer_issl: Adam_lr3e-4_w0 # larger learning rate will decrease I[Z,X] usually
   - scheduler@scheduler_issl: unifmultistep100
-  - optimizer@optimizer_eval: AdamW_lr3e-4_w1e-5
+  - optimizer@optimizer_eval: Adam_lr3e-4_w0
   - scheduler@scheduler_eval: unifmultistep100 # ensure that can always keep up with the changing representation
   - decodability: contrastive
   - regularizer: none
@@ -25,7 +25,7 @@ defaults:
 
   # PREDICTOR #
   - checkpoint@checkpoint_pred: bestTrainLoss # by default no validation set for predictors
-  - optimizer@optimizer_pred: AdamW_lr3e-4_w0
+  - optimizer@optimizer_pred: Adam_lr3e-4_w0
   - scheduler@scheduler_pred: unifmultistep100
   - predictor: pytorch
 
@@ -84,7 +84,7 @@ evaluation:
     is_evaluate: ${predictor.is_train}
     is_eval_train: True # whether to evaluate the predictor on train. Can be slow
 
-callbacks: # can use any callback name of issl.callbacks, pl_bolts.callbacks, pl.callbacks
+callbacks: # can use any callback name of issl.callbacks, pl.callbacks
   is_force_no_additional_callback: false # force empty callback
 
   # all callback kwargs should be here (`is_use` just says whether to use that callback)
@@ -128,7 +128,7 @@ data_repr:
 encoder:
   name: ???
   z_shape: 128
-  is_normalize_Z: True
+  is_normalize_Z: False
   kwargs:
     in_shape: ${data.shape}
     out_shape: ${encoder.z_shape} # do not change that

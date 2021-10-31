@@ -7,9 +7,10 @@ defaults:
 representor:
   name: std_gen
 
-kwargs:
-  decoder_kwargs:
-    architecture: cnn
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: cnn
 
 data_repr:
   kwargs:

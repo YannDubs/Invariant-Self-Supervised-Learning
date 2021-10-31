@@ -108,9 +108,9 @@ class ISSLImgDataset(ISSLDataset):
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|img). I.e. this should define the
         coarsest possible equivalence relation with respect to which to be invariant. It can be a set of augmentations
-        (see self.augmentations) and/or "label" or "perm_label". In the "label" case it samples randomly an image with
-        the same label (slow if too many labels). "perm_label" then similar but it randomly samples an image with a
-        different (but fixed => permutation) label.
+        (see self.augmentations) and/or "label" or "perm_label" or "{i}_equiv". In the "label" case it samples randomly
+        an image with the same label (slow if too many labels). "perm_label" then similar but it randomly samples an image
+        with a different (but fixed => permutation) label.
 
     train_x_augmentations : set of str or "a_augmentations" , optional
         Augmentations to use for the source input, i.e., p(X|img). I.e. standard augmentations that are
@@ -140,6 +140,12 @@ class ISSLImgDataset(ISSLDataset):
     curr_split : str, optional
         Which data split you are considering.
 
+    n_sub_label : int, optional
+        Number of sub equivalence classes to augment to when using `a_augmentations=label` or `a_augmentations=permlabel`.
+        Specifically instead of augmenting uniformly to images inside the label class, will do so in a subpartition of the
+        label class of size. There will be n_sub_label subpartitions. This is useful to know exactly the number of
+        equivalence classes you are learning, while being somewhat realistic.
+
     kwargs:
         Additional arguments to `ISSLDataset`.
     """
@@ -156,6 +162,7 @@ class ISSLImgDataset(ISSLDataset):
         normalization: Optional[str] = None,
         base_resize: str = "resize",
         curr_split: str = "train",
+        n_sub_label: int = 1,
         **kwargs,
     ):
 
@@ -170,7 +177,8 @@ class ISSLImgDataset(ISSLDataset):
         )
 
         self.is_label_aug = False
-        self.perm_label_aug = None
+        self.perm_Mx = None
+        self.n_sub_label = n_sub_label
 
         if "label" in a_augmentations:
             self.is_label_aug = True
@@ -179,15 +187,15 @@ class ISSLImgDataset(ISSLDataset):
             assert not self.is_label_aug, "cannot have `label` and `perm_label`"
             assert self.is_clfs["target"], "`perm_label` only in clf"
             self.is_label_aug = True
-            n_labels = self.shapes["target"][0]
-            # label permuter simply increases by 1
-            self.perm_label_aug = lambda x: (x + 1) % n_labels
+            # Mx permuter simply increases by 1. Attention: self.n_Mxs must be computed later
+            self.perm_Mx = lambda x: (x + 1) % self.n_Mxs
             self.a_augmentations.remove("perm_label")
 
         self.train_x_augmentations = train_x_augmentations
         self.val_x_augmentations = val_x_augmentations
 
         self.curr_split = curr_split
+        self.n_Mxs = len(np.unique(self.Mxs))
 
     @property
     def curr_split(self) -> str:
@@ -215,6 +223,42 @@ class ISSLImgDataset(ISSLDataset):
     def is_train(self) -> bool:
         """Whether considering training split."""
         return self.curr_split == "train"
+
+    def get_targets(self):
+        """Return the targets."""
+        if hasattr(self, "targets"):
+            # some dataset already load them by default (a.g. MNIST)
+            return self.targets
+        if hasattr(self, "_targets"):
+            # in vase precomputed
+            return self._targets
+        self._targets = np.stack(
+            [to_numpy(self.get_img_target(i)[1]) for i in range(len(self))]
+        )
+
+    @property
+    def Mxs(self) -> np.ndarray:
+        """Return an array like of M(X), one for each example."""
+        if hasattr(self, "_Mxs"):
+            return self._Mxs
+
+        if self.is_label_aug:
+            targets = self.get_targets()
+            if self.n_sub_label > 1:
+                with tmp_seed(self.seed):
+                    sub_labels = np.random.randint(self.n_sub_label, size=len(self))
+                self._Mxs = targets * self.n_sub_label + sub_labels
+                # the remainder (i.e. Mx % n_sub_label) will give the sub class
+                # the main part (i.e. Mx // n_sub_label) will give the targets
+            else:
+                self._Mxs = targets
+        else:
+            self._Mxs = np.array(range(len(self)))
+
+        return self._Mxs
+
+    def set_eval_(self):
+        self.curr_split = "test"
 
     @abc.abstractmethod
     def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
@@ -253,12 +297,9 @@ class ISSLImgDataset(ISSLDataset):
 
         x = self.sample_p_XlI(img)
 
-        if self.is_label_aug:
-            max_inv = target  # when equivalent to Y shifts, Mx is target
-        else:
-            max_inv = index  # when not equivalent to Y, Mx is index
+        Mx = self.Mxs[index]
 
-        return x, target, max_inv
+        return x, target, Mx
 
     @property
     def augmentations(self) -> dict[str, dict[str, Callable[..., Any]]]:
@@ -314,21 +355,31 @@ class ISSLImgDataset(ISSLDataset):
             tensor={"erasing": RandomErasing(value=0.5),},
         )
 
-    def get_img_from_target(self, target: float) -> Any:
-        """Load randomly images until you find an image desired target."""
-        while True:
-            index = torch.randint(0, len(self), size=[]).item()
+    def get_img_from_Mx(self, Mx: int) -> Any:
+        """Sample a random image from the corresponding equivalence class."""
 
-            img, curr_target = self.get_img_target(index)
+        # TODO not working well if subsetted dataset. E.g. there's small chance that augmenting to validation
+        # if underlying augmentation data is splitted. ~Ok as we don't this for prediction
 
-            if curr_target == target:
-                return img
+        if self.perm_Mx is not None:
+            # modify the target you are looking for, using the permuter
+            Mx = self.perm_Mx(Mx)
+
+        Mxs = self.Mxs
+        if not isinstance(Mxs, torch.Tensor):
+            Mxs = torch.tensor(Mxs)
+
+        choices = (Mxs == Mx).nonzero(as_tuple=True)[0]
+        index = choices[torch.randint(len(choices), size=[])]
+
+        img, curr_target = self.get_img_target(index)
+
+        return img
 
     def sample_p_Alx(self, _: Any, Mx: Any) -> Any:
         # load raw image
         if self.is_label_aug:
-            target = Mx
-            img = self.get_img_from_target(target)
+            img = self.get_img_from_Mx(Mx)
         else:
             index = Mx
             img, _ = self.get_img_target(index)
@@ -339,12 +390,11 @@ class ISSLImgDataset(ISSLDataset):
 
     def get_representative(self, Mx: Any) -> Any:
         if self.is_label_aug:
-            # TODO one issue is that Mx will actually be different during test / val /train
-            target = Mx
+            # TODO one issue is that representative will actually be different during test / val /train
             with tmp_seed(self.seed, is_cuda=False):
                 # to fix the representative use the same seed. Note that cannot set seed inside
                 # dataloader because forked subprocess. In any case we only need non cuda.
-                representative = self.get_img_from_target(target)
+                representative = self.get_img_from_Mx(Mx)
         else:
             # representative is simply the non augmented example
             index = Mx
@@ -504,25 +554,6 @@ class MnistDataset(ISSLImgDataset, MNIST):
         img, target = MNIST.__getitem__(self, index)
         return img, target
 
-    def get_img_from_target(self, target: int) -> Any:
-        """Accelerate image from target as all the data is loaded in memory."""
-        # TODO there's small chance that actually augmenting to validation
-        # if underlying augmentation data is splitted. ~Ok as we don't this for prediction
-        if self.perm_label_aug is not None:
-            # modify the target you are looking for, using the permuter
-            target = self.perm_label_aug(target)
-
-        targets = self.targets
-        if not isinstance(self.targets, torch.Tensor):
-            targets = torch.tensor(targets)
-
-        choices = (targets == target).nonzero(as_tuple=True)[0]
-        index = choices[torch.randint(len(choices), size=[])]
-
-        img, curr_target = self.get_img_target(index)
-
-        return img
-
     @property
     def dataset_name(self) -> str:
         return "MNIST"
@@ -539,8 +570,6 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
     def __init__(self, *args, curr_split: str = "train", **kwargs) -> None:
         is_train = curr_split == "train"
         super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
-
-    get_img_from_target = MnistDataset.get_img_from_target
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -569,8 +598,6 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
     def __init__(self, *args, curr_split: str = "train", **kwargs) -> None:
         is_train = curr_split == "train"
         super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
-
-    get_img_from_target = MnistDataset.get_img_from_target
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:

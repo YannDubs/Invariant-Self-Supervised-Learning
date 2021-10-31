@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -16,11 +16,20 @@ from issl.architectures.helpers import (
     get_Normalization,
     is_pow2,
 )
-from issl.helpers import prod, weights_init
+from issl.helpers import check_import, prod, weights_init
+
+try:
+    from pl_bolts.models.autoencoders.components import (
+        ResNetDecoder,
+        DecoderBlock,
+        DecoderBottleneck,
+    )
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["ResNet", "CNN", "CNNUnflatten"]
+__all__ = ["ResNet", "ResNetTranspose", "CNN", "CNNUnflatten"]
 
 
 class ResNet(nn.Module):
@@ -100,6 +109,67 @@ class ResNet(nn.Module):
             weights_init(self.resnet.conv1)
 
 
+class ResNetTranspose(nn.Module):
+    # transposed version of the resnet. Can be used as a decoder.
+    def __init__(
+        self, in_shape: Sequence[int], out_shape: Sequence[int], base: str = "resnet18",
+    ) -> None:
+        super().__init__()
+
+        check_import("pl_bolts", "ResNetTranspose")
+        self.out_shape = out_shape
+        self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
+        self.in_dim = prod(self.in_shape)
+        self.base = base
+
+        if self.base == "resnet18":
+            block = DecoderBlock
+            layers = [2, 2, 2, 2]
+        elif self.base == "resnet34":
+            block = DecoderBlock
+            layers = [3, 4, 6, 3]
+        elif self.base == "resnet50":
+            block = DecoderBottleneck
+            layers = [3, 4, 6, 3]
+        elif self.base == "resnet101":
+            block = DecoderBottleneck
+            layers = [3, 4, 23, 3]
+        else:
+            raise ValueError(f"Unknown base = {self.base}")
+
+        is_small = self.out_shape[1] < 100
+        self.resnet = ResNetDecoder(
+            block,
+            layers,
+            self.in_dim,
+            self.out_shape[1],
+            first_conv=not is_small,
+            maxpool1=not is_small,
+        )
+
+        n_chan = self.out_shape[0]
+        if n_chan != 3:
+            # replace in case it's black and white
+            self.resnet.conv1 = nn.Conv2d(
+                self.resnet.conv1.in_channels,
+                n_chan,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+            )
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        weights_init(self)
+
+    def forward(self, Z: torch.Tensor):
+        Z = Z.flatten(start_dim=Z.ndim - len(self.in_shape))
+        X_hat = self.resnet(Z)
+        return X_hat
+
+
 class CNN(nn.Module):
     """CNN in shape of pyramid, which doubles hidden after each layer but decreases image size by 2.
 
@@ -115,7 +185,7 @@ class CNN(nn.Module):
         Size of the inputs (channels first). If integer and `out_dim` is a tuple of int, then will
         transpose ("reverse") the CNN.
 
-    out_dim : int
+    out_shape : int
         Number of output channels. If tuple of int  and `in_shape` is an int, then will transpose
         ("reverse") the CNN.
 
@@ -139,7 +209,7 @@ class CNN(nn.Module):
     def __init__(
         self,
         in_shape: Sequence[int],
-        out_dim: int,
+        out_shape: Union[int, Sequence[int]],
         hid_dim: int = 32,
         norm_layer: str = "batchnorm",
         activation: str = "ReLU",
@@ -149,7 +219,7 @@ class CNN(nn.Module):
 
         super().__init__()
 
-        in_shape, out_dim, resizer = self.validate_sizes(out_dim, in_shape)
+        in_shape, out_dim, resizer = self.validate_sizes(out_shape, in_shape)
 
         self.in_shape = in_shape
         self.out_dim = out_dim

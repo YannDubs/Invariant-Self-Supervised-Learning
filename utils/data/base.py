@@ -5,6 +5,7 @@ Most code is reused from: https://github.com/YannDubs/lossyless/tree/main/utils/
 from __future__ import annotations
 
 import abc
+import logging
 from collections.abc import Sequence
 from copy import deepcopy
 from pathlib import Path
@@ -19,6 +20,7 @@ from issl.helpers import tmp_seed
 from utils.data.helpers import BalancedSubset, subset2dataset
 
 DIR = Path(__file__).parents[2].joinpath("data")
+logger = logging.getLogger(__name__)
 
 __all__ = ["ISSLDataset", "ISSLDataModule"]
 
@@ -101,6 +103,11 @@ class ISSLDataset(abc.ABC):
     @abc.abstractmethod
     def sample_p_Alx(self, x: Any, Mx: Any) -> Any:
         """Return some augmentation A of X sampled from p(A|X)."""
+        ...
+
+    @abc.abstractmethod
+    def set_eval_(self):
+        """Set the dataset into evaluation mode."""
         ...
 
     @property
@@ -229,6 +236,15 @@ class ISSLDataModule(LightningDataModule):
         If int, represents the absolute number or examples. If `None` does not
         subset the data.
 
+    is_test_nonsubset_train : bool, optional
+        Whether to use the training set that is not subset. This only makes sense
+        if `subset_train_size` is not None, and ensures that you are testing on the
+        "rest"  of the training set. This is particularly helpful if you want to
+        approximate the fact that representation learning has access to the entire
+        distribution (including test) but predictors are trained on a subset.
+        This avoid having to train on the union of train + validation + test to have
+        the same result, i.e., it keeps an unseen test set if needed.
+
     dataset_kwargs : dict, optional
         Additional arguments for the dataset.
     """
@@ -244,6 +260,7 @@ class ISSLDataModule(LightningDataModule):
         seed: int = 123,
         reload_dataloaders_every_n_epochs: bool = False,
         subset_train_size: Optional[float] = None,
+        is_test_nonsubset_train: bool = False,
         dataset_kwargs: dict = {},
     ) -> None:
         super().__init__()
@@ -256,6 +273,7 @@ class ISSLDataModule(LightningDataModule):
         self.seed = seed
         self.reload_dataloaders_every_n_epochs = reload_dataloaders_every_n_epochs
         self.subset_train_size = subset_train_size
+        self.is_test_nonsubset_train = is_test_nonsubset_train
         self.dataset_kwargs = dataset_kwargs
 
     @property
@@ -296,10 +314,24 @@ class ISSLDataModule(LightningDataModule):
             else:
                 stratify = train_dataset.targets
 
+            logger.info(f"Subsetting {self.subset_train_size} examples.")
             train_dataset = BalancedSubset(
                 train_dataset, self.subset_train_size, stratify=stratify, seed=self.seed
             )
         return train_dataset
+
+    def get_test_dataset_proc(self, **dataset_kwargs):
+        if self.is_test_nonsubset_train:
+            logger.info("Using non subset train as test")
+            assert isinstance(self.train_dataset, BalancedSubset)
+            # the non subset dataset. Note that it might still be a
+            # subset because it does not reincorporate validation
+            nonsubset_train = deepcopy(self.train_dataset.dataset)
+            # set in evaluation mode
+            subset2dataset(nonsubset_train).set_eval_()
+            return nonsubset_train
+        else:
+            return self.get_test_dataset(**dataset_kwargs)
 
     @property
     def dataset(self) -> ISSLDataset:
@@ -329,7 +361,7 @@ class ISSLDataModule(LightningDataModule):
             self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
 
         if stage == "test" or stage is None:
-            self.test_dataset = self.get_test_dataset(**self.dataset_kwargs)
+            self.test_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
 
     def train_dataloader(
         self,
@@ -381,8 +413,10 @@ class ISSLDataModule(LightningDataModule):
         """Return the test dataloader while possibly modifying dataset kwargs."""
         data_kwargs = kwargs.pop("dataset_kwargs", {})
         if self.reload_dataloaders_every_n_epochs or len(data_kwargs) > 0:
+            # in the case where `self.is_test_nonsubset_train` this is not 100% correct
+            # because _test_dataset is not used. SO kwargs are effectively disregarded
             curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
-            self.test_dataset = self.get_test_dataset(**curr_kwargs)
+            self.test_dataset = self.get_test_dataset_proc(**curr_kwargs)
 
         if batch_size is None:
             batch_size = self.val_batch_size

@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_ce
+
+decodability:
+  kwargs:
+    mode_pMlz_qMlz: "CE" # should really be adding H_mlz in this case

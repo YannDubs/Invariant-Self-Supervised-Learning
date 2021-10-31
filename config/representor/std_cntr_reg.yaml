@@ -7,10 +7,6 @@ defaults:
 representor:
   name: std_cntr_reg
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
-
 data_repr:
   kwargs:
     dataset_kwargs:
@@ -23,9 +19,9 @@ decodability:
     is_train_temperature: False
     is_normalize_proj: True
     is_project: True
-    is_proj_pred_same: True
+    is_pred_proj_same: True
     predictor_kwargs:
-      architecture: "mlp"
+      architecture: "linear"
       out_shape: 128
     projector_kwargs:
       architecture: "mlp"
@@ -36,5 +32,5 @@ decodability:
 
 encoder:
   z_shape: 1024
-  is_normalize_Z: True
+  is_normalize_Z: False
 

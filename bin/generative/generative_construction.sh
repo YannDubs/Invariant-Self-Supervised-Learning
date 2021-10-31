@@ -22,11 +22,17 @@ encoder.z_shape=128
 timeout=$time
 $add_kwargs
 "
+# all ran with optimizer@optimizer_issl=Adam_lr1e-2_w0 but probably want 3e-4 or 1e-3
 
 
 # every arguments that you are sweeping over
 kwargs_multi="
 representor=vae,std_gen_V,std_gen_supA,std_gen_stoch,std_gen_stdA_pred,std_gen_stdA,std_gen_reg,std_gen_permMx,std_gen_permA,std_gen_norm,std_gen_Mx,std_gen_mlp,std_gen,gen
+seed=1
+"
+
+kwargs_multi="
+representor=std_gen_resnet
 seed=1
 "
 

@@ -12,6 +12,7 @@ from issl.architectures import get_Architecture
 from issl.distributions import CondDist
 from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_
 from issl.losses import get_loss_decodability, get_regularizer
+from issl.losses.decodability import ClusterSelfDistillationISSL
 from issl.predictors import OnlineEvaluator
 
 __all__ = ["ISSLModule"]
@@ -316,3 +317,11 @@ class ISSLModule(pl.LightningModule):
 
         self.freeze()
         self.eval()
+
+    def on_after_backward(self):
+        dec = self.loss_decodability
+        is_cluster_slfdstl = isinstance(dec, ClusterSelfDistillationISSL)
+        if is_cluster_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
+            for name, p in dec.named_parameters():
+                if "Mx_logits" in name:
+                    p.grad = None

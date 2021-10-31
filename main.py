@@ -19,7 +19,6 @@ import hydra
 import matplotlib.pyplot as plt
 import omegaconf
 import pandas as pd
-import pl_bolts
 import pytorch_lightning as pl
 import torch
 from hydra import compose
@@ -390,7 +389,7 @@ def get_callbacks(
             try:
                 if kwargs.is_use:
                     callback_kwargs = kwargs.get("kwargs", {})
-                    modules = [issl.callbacks, pl.callbacks, pl_bolts.callbacks]
+                    modules = [issl.callbacks, pl.callbacks]
                     Callback = getattr_from_oneof(modules, name)
                     new_callback = Callback(**callback_kwargs)
 

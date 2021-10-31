@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_cluster
+
+representor:
+  name: slfdstl_cluster_asym
+
+decodability:
+  kwargs:
+    is_pred_proj_same: False

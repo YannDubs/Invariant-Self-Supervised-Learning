@@ -63,7 +63,7 @@ class ContrastiveISSL(nn.Module):
         if the representations p(Z|A) are not from the same distribution as p(Z|X). If `"single"` then only compares
         X to A, This makes the most sense if A is not equivalent to X.
 
-    is_proj_pred_same : bool, optional
+    is_pred_proj_same : bool, optional
         Whether to use the projector for the predictor. Typically True in SSL, but our theory says that it should be
         False.
 
@@ -92,7 +92,7 @@ class ContrastiveISSL(nn.Module):
         is_aux_already_represented: bool = False,
         is_project: bool = True,
         src_tgt_comparison: str = "all",
-        is_proj_pred_same: bool = True,
+        is_pred_proj_same: bool = True,
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -112,18 +112,18 @@ class ContrastiveISSL(nn.Module):
         self.effective_batch_size = effective_batch_size
         self.is_aux_already_represented = is_aux_already_represented
         self.is_project = is_project
-        self.is_proj_pred_same = is_proj_pred_same
+        self.is_pred_proj_same = is_pred_proj_same
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
 
-        Predictor = get_Architecture(**self.predictor_kwargs)
-        self.predictor = Predictor()
+        Projector = get_Architecture(**self.projector_kwargs)
+        self.projector = Projector()
 
-        if self.is_proj_pred_same:
-            self.projector = self.predictor
+        if self.is_pred_proj_same:
+            self.predictor = self.projector
         else:
-            Projector = get_Architecture(**self.projector_kwargs)
-            self.projector = Projector()
+            Predictor = get_Architecture(**self.predictor_kwargs)
+            self.predictor = Predictor()
 
         if self.is_train_temperature:
             self.init_temperature = temperature

@@ -23,9 +23,9 @@ decodability:
     is_train_temperature: False
     is_normalize_proj: True
     is_project: True
-    is_proj_pred_same: False
+    is_pred_proj_same: False
     predictor_kwargs:
-      architecture: "mlp"
+      architecture: "linear"
       out_shape: 128
     projector_kwargs:
       architecture: "mlp"
@@ -36,5 +36,5 @@ decodability:
 
 encoder:
   z_shape: 1024
-  is_normalize_Z: True
+  is_normalize_Z: False
 

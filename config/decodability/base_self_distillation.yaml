@@ -11,10 +11,13 @@ kwargs:
   is_stop_grad:  True
   is_aux_already_represented: ${data.is_aux_already_represented}
   is_normalize_proj: False
-  is_proj_pred_same: False
+  is_pred_proj_same: False
   predictor_kwargs:
-      architecture: "linear"
-      out_shape: 128
+    architecture: "linear"
+    out_shape: 128
   projector_kwargs:
-      architecture: "flatten"
-      out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
+    architecture: "mlp"
+    hid_dim: 2048
+    n_hid_layers: 2
+    norm_layer: "batch"
+    out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}

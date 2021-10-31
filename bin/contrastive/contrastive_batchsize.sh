@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"generative_dim"
+experiment=$prfx"contrastive_batchsize"
 notes="
-**Goal**: Hyperparameter tuning of learning rate.
+**Goal**: Understanding effect of dimensionality on contrastive ISSL.
 "
 
 # parses special mode for running the script
@@ -12,12 +12,13 @@ source `dirname $0`/../utils.sh
 kwargs="
 experiment=$experiment
 trainer.max_epochs=50
-checkpoint@checkpoint_repr=bestValLoss
+checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
+optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
 $add_kwargs
 "
@@ -25,11 +26,14 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_gen
-optimizer_issl.kwargs.lr=3e-3
-encoder.z_shape=10,16,32,128,512
+representor=cntr
++data_pred.kwargs.batch_size=256
+data_repr.kwargs.batch_size=64,256,1024,4096,16384
+optimizer_issl.kwargs.lr=1e-4,1e-3,1e-2
 seed=1
 "
+
+
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

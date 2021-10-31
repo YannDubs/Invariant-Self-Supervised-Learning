@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - slfdstl_cluster
+
+representor:
+  name: slfdstl_cluster_mlp
+
+decodability:
+  kwargs:
+    is_pred_proj_same: False
+    predictor_kwargs:
+      architecture: "mlp"
+      out_shape: 128

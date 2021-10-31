@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"contrastive_construction"
+experiment=$prfx"slfdstl_cluster_ablation"
 notes="
-**Goal**: Ablation study to understand how to improve generative ISSL compared to standard for linear classification.
+**Goal**: Ablation study to understand cluster self distillation ISSL.
 "
 
 # parses special mode for running the script
@@ -18,7 +18,8 @@ architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
-encoder.z_shape=128
+optimizer@optimizer_issl=Adam_lr3e-4_w0
+representor=slfdstl_cluster
 timeout=$time
 $add_kwargs
 "
@@ -26,14 +27,12 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=vae,std_gen_V,std_gen_stoch,std_gen_std_aug,std_gen_reg,std_gen_norm,std_gen_Mx,std_gen_mlp,std_gen_aug,std_gen_A_pred,std_gen
+representor=slfdstl_cluster,slfdstl_cluster_asym,slfdstl_cluster_grad,slfdstl_cluster_noqueue,slfdstl_cluster_queueL,slfdstl_cluster_stdA,slfdstl_cluster_supA,slfdstl_cluster_reg
+decodability.kwargs.n_Mx=128
 seed=1
 "
 
-kwargs_multi="
-representor=std_gen_aug,std_gen_A_pred,std_gen
-seed=1
-"
+
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

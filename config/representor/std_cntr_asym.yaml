@@ -7,4 +7,4 @@ representor:
 
 decodability:
   kwargs:
-    is_proj_pred_same: False
+    is_pred_proj_same: False

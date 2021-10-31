@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import contextlib
+import math
+import numbers
 import operator
 import random
 import sys
@@ -9,7 +11,7 @@ from argparse import Namespace
 from collections.abc import MutableMapping, MutableSet, Sequence
 from functools import reduce
 from queue import Queue
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,7 +20,6 @@ import seaborn as sns
 import torch
 import torch.distributed as dist
 from matplotlib.cbook import MatplotlibDeprecationWarning
-from pl_bolts.callbacks import BYOLMAWeightUpdate
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
@@ -101,7 +102,7 @@ def to_numpy(X) -> np.array:
     if hasattr(X, "iloc"):
         return X.values
 
-    if isinstance(X, (tuple, list)):
+    if isinstance(X, (tuple, list, numbers.Number)):
         return np.array(X)
 
     if not isinstance(X, (torch.Tensor, PackedSequence)):
@@ -788,7 +789,26 @@ class Annealer:
         return current
 
 
-class MAWeightUpdate(BYOLMAWeightUpdate):
+# modified from https://github.com/PyTorchLightning/lightning-bolts/blob/ad771c615284816ecadad11f3172459afdef28e3/pl_bolts/callbacks/byol_updates.py
+class MAWeightUpdate(pl.Callback):
+    """EMA Weight update rule from BYOL.
+
+        Notes
+        -----
+        - model should have `p_ZlX` and `ema_p_ZlX`.
+        - BYOL claims this keeps the online_network from collapsing.
+        - Automatically increases tau from ``initial_tau`` to 1.0 with every training step
+        """
+
+    def __init__(self, initial_tau: float = 0.996):
+        """
+        Args:
+            initial_tau: starting tau. Auto-updates with every training step
+        """
+        super().__init__()
+        self.initial_tau = initial_tau
+        self.current_tau = initial_tau
+
     def on_train_batch_end(
         self,
         trainer: Any,
@@ -807,6 +827,30 @@ class MAWeightUpdate(BYOLMAWeightUpdate):
 
         # update tau after
         self.current_tau = self.update_tau(pl_module, trainer)
+
+    def update_tau(self, pl_module: pl.LightningModule, trainer: pl.Trainer) -> float:
+        max_steps = len(trainer.train_dataloader) * trainer.max_epochs
+        tau = (
+            1
+            - (1 - self.initial_tau)
+            * (math.cos(math.pi * pl_module.global_step / max_steps) + 1)
+            / 2
+        )
+        return tau
+
+    def update_weights(
+        self,
+        online_net: Union[nn.Module, torch.Tensor],
+        target_net: Union[nn.Module, torch.Tensor],
+    ) -> None:
+        # apply MA weight update
+        for (name, online_p), (_, target_p) in zip(
+            online_net.named_parameters(), target_net.named_parameters(),
+        ):
+            target_p.data = (
+                self.current_tau * target_p.data
+                + (1 - self.current_tau) * online_p.data
+            )
 
 
 # modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11

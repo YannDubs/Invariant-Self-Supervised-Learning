@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - std_cntr
+
+representor:
+  name: std_cntr_norm
+
+encoder:
+  is_normalize_Z: True
+

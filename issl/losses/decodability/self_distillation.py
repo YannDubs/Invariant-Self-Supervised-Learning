@@ -12,11 +12,10 @@ import torch.nn as nn
 from torch.distributions import Categorical
 from torch.nn import functional as F
 
+from issl import GumbelCategorical
 from issl.architectures import get_Architecture
-from issl.distributions import GumbelCategorical
 from issl.helpers import (
     kl_divergence,
-    mean,
     prod,
     queue_push_,
     sinkhorn_knopp,
@@ -50,7 +49,7 @@ class SelfDistillationISSL(nn.Module):
         Whether to use an EMA encoder that is derived using exponential moving averaged of the predictor.
         
     is_process_Mx : bool, optional
-        Whether to process the projector. If not then this ensures the the projector and processor have
+        Whether to process the projector. If not then this ensures the projector and processor have
         different architectures.
 
     is_stop_grad : bool, optional
@@ -65,7 +64,7 @@ class SelfDistillationISSL(nn.Module):
         In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
         for clip, where the positive examples are text sentences that are already represented.
 
-    is_proj_pred_same : bool, optional
+    is_pred_proj_same : bool, optional
         Whether to use the same projector as the predictor.
 
     predictor_kwargs : dict, optional
@@ -86,10 +85,13 @@ class SelfDistillationISSL(nn.Module):
         is_stop_grad: bool = True,
         is_aux_already_represented: bool = False,
         is_normalize_proj: bool = False,
-        is_proj_pred_same: bool = False,
+        is_pred_proj_same: bool = False,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
         projector_kwargs: dict[str, Any] = {
-            "architecture": "flatten",
+            "architecture": "mlp",
+            "hid_dim": 2048,
+            "n_hid_layers": 2,
+            "norm_layer": "batch",
             "out_shape": 128,
         },
     ) -> None:
@@ -103,18 +105,18 @@ class SelfDistillationISSL(nn.Module):
         self.is_stop_grad = is_stop_grad
         self.is_aux_already_represented = is_aux_already_represented
         self.is_normalize_proj = is_normalize_proj
-        self.is_proj_pred_same = is_proj_pred_same
+        self.is_pred_proj_same = is_pred_proj_same
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
 
-        Predictor = get_Architecture(**self.predictor_kwargs)
-        self.predictor = Predictor()
+        Projector = get_Architecture(**self.projector_kwargs)
+        self.projector = Projector()
 
-        if self.is_proj_pred_same:
-            self.projector = self.predictor
+        if self.is_pred_proj_same:
+            self.predictor = self.projector
         else:
-            Projector = get_Architecture(**self.projector_kwargs)
-            self.projector = Projector()
+            Predictor = get_Architecture(**self.predictor_kwargs)
+            self.predictor = Predictor()
 
         self.reset_parameters()
 
@@ -155,13 +157,12 @@ class SelfDistillationISSL(nn.Module):
         other : dict
             Additional values to return.
         """
-
         if z.ndim != 2:
             raise ValueError(
                 f"When using contrastive loss the representation needs to be flattened."
             )
 
-        # TODO not working yet need to add EMA callback
+        # TODO test if EMA + callback working
         if self.is_ema and not hasattr(parent, "ema_p_ZlX"):
             # make sure that encoder is part of the parent for EMA
             parent.ema_p_ZlX = parent.p_ZlX
@@ -191,18 +192,7 @@ class SelfDistillationISSL(nn.Module):
 
 
 # performs SSL by having one part of the model implementing the M(X)
-add_doc = """
-    beta_H_mlz : float, optional
-        Whether to also minimize the entropy of p(M(x)|z), which is what you should want in theory because
-        M should end up being a deterministic function. If `None` then does not compute or maximize that entropy.
-        
-    mode_pMlz_qMlz : {"sample_CE","sample_ST_CE","KL","CE"}, optional
-        How to make q(M(X)|Z) close to p(M(X)|Z). If `"CE"` uses standard cross between 2 categoricals. If  
-        `"sample_CE"` samples from p(M(X)|Z) with relaxed (gumbel) categorical and then uses standard cross entropy 
-        with single sample although theoretically worst this can be useful to favor deterministic(M(X)|Z). `""sample_ST_CE"` 
-        uses as before but with a straight estimator. If `"KL` uses a KL divergence. If using KL divergence this should 
-        be equivalent to using adding an entropy minimizer, i.e., `beta_max_H_mlz = 1`. 
-        
+add_doc = """        
     divergence : {"kl_forward","kl_reverse","kl_symmetric"}, optional
         Which divergence to use between the empirical marginal p_hat(M) and the uniform categorical 
         D[p_hat(M) || Unif].         
@@ -214,11 +204,6 @@ add_doc = """
         Weight of the exponential moving average for estimating the marginal distribution p(M). Larger means more weight 
         to the current estimate. Note that previous estimate will only be used to compute a better estimate but will not 
         be backpropagation through to avoid large memory usage for the backprop. If `None` does not use ema. 
-    
-    queue_size : bool, optional
-        Size of the queue of all the p(M(X)|Z) which will be used to compute the current estimate of the marginal.
-        The size is number of batches. If you do not want to use a queue then use 0. Large means memory usage ++
-        in the backward pass.
     """
 
 
@@ -229,44 +214,41 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         self,
         *args,
         beta_H_mlz: float = None,
-        mode_pMlz_qMlz: float = "KL",
         divergence: str = "kl_symmetric",
+        mode_pMlz_qMlz: str = "CE",
         beta_pM_unif: float = 1.0,
         ema_weight_prior: Optional[float] = 0.05,
-        queue_size: int = 30,
         is_normalize_proj: bool = False,
         **kwargs,
     ) -> None:
 
-        self.queue_size = queue_size
-
         super().__init__(*args, is_normalize_proj=is_normalize_proj, **kwargs)
-        self.beta_H_mlz = beta_H_mlz
-        self.mode_pMlz_qMlz = mode_pMlz_qMlz
         self.divergence = divergence
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
+        self.beta_H_mlz = beta_H_mlz
+        self.mode_pMlz_qMlz = mode_pMlz_qMlz
 
     def reset_parameters(self) -> None:
         super().reset_parameters()
-        # +1 because you will alsop add the current
-        self.queue = queue.Queue(maxsize=self.queue_size + 1)
 
     def compute_loss(
         self, M_pred: torch.Tensor, M_a: torch.Tensor
     ) -> tuple[torch.Tensor, dict, dict]:
+
         # p(M|Z). batch shape: [batch_size] ; event shape: []
         p_Mlz = Categorical(logits=M_a)
-        # p(M). batch shape: [] ; event shape: []
+
+        # current p(M). batch shape: [] ; event shape: []
         hat_p_M = Categorical(probs=p_Mlz.probs.mean(0))
+
         # Unif(calM). batch shape: [] ; event shape: []
         uniform = Categorical(logits=torch.ones_like(hat_p_M.probs))
 
-        queue_push_(self.queue, hat_p_M.probs.float())
-        mean_p_M = mean(self.queue.queue)
+        mean_p_M = hat_p_M.probs.float()
 
         if self.ema_weight_prior is not None:
-            if not hasattr(self, "mean_p_hat_m"):
+            if not hasattr(self, "ema_mean_p_M"):
                 # initialize with uniform
                 self.ema_mean_p_M = uniform.probs.float()
 
@@ -278,6 +260,7 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         else:
             ema_mean_p_M = mean_p_M
 
+        # p(M) moving avg. batch shape: [] ; event shape: []
         ema_p_M = Categorical(probs=ema_mean_p_M)
 
         # D[\hat{p}(M) || Unif(\calM)]. shape: []
@@ -321,8 +304,7 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
 
         if self.beta_H_mlz is not None:
             # Decreasing the entropy will ensure that p(M(x)|Z) is close to deterministic.
-            # beta = 1 should be same as using KL divergence
-            # TODO: check if this is needed if you use self.mode_pMlz_qMlz == "KL"
+            # minimizing cross entropy already does taht but this can do it even more.
             loss = loss + self.beta_H_mlz * H_Mlz
 
         logs = dict(
@@ -373,7 +355,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         sinkhorn_kwargs: dict = dict(eps=0.05),
         is_normalize_proj: bool = True,
         # clustering is non differentiable so no grad besides if `src_tgt_comparison=="symmetric"`
-        is_proj_pred_same: bool = True,
+        is_pred_proj_same: bool = True,
         **kwargs,
     ) -> None:
 
@@ -382,11 +364,11 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         super().__init__(
             *args,
             is_normalize_proj=is_normalize_proj,
-            is_proj_pred_same=is_proj_pred_same,
+            is_pred_proj_same=is_pred_proj_same,
             **kwargs,
         )
         self.n_Mx = n_Mx
-        self.freeze_Mx_epochs = freeze_Mx_epochs
+        self.freeze_Mx_epochs = freeze_Mx_epochs  # will be frozen in ISSL
         self.src_tgt_comparison = src_tgt_comparison
         self.temperature = temperature
         self.sinkhorn_kwargs = sinkhorn_kwargs

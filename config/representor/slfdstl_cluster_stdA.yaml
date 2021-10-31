@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - slfdstl_cluster
+
+representor:
+  name: slfdstl_cluster_stdA
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      train_x_augmentations: []

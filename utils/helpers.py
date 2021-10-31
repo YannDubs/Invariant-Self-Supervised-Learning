@@ -11,20 +11,19 @@ from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
-import pl_bolts
 import pytorch_lightning as pl
 import sklearn
 import torch
 import wandb
 from joblib import dump, load
 from omegaconf import Container, OmegaConf
-from pl_bolts.datamodules import SklearnDataset
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 from torch.utils.data import DataLoader
 
 from issl.helpers import NamespaceMap, mean, namespace2dict
 from utils.data.helpers import subset2dataset
+from utils.data.sklearn import SklearnDataModule
 
 logger = logging.getLogger(__name__)
 
@@ -231,33 +230,6 @@ def log_dict(trainer: pl.Trainer, to_log: dict, is_param: bool) -> None:
         pass
 
 
-class SklearnDataModule(pl_bolts.datamodules.SklearnDataModule):
-    def __init__(self, *args, y_transform: Any = None, **kwargs):
-        self.y_transform = y_transform
-        super().__init__(*args, **kwargs)
-
-    # so that same as ISSLDataModule
-    def eval_dataloader(self, is_eval_on_test: bool, **kwargs) -> DataLoader:
-        """Return the evaluation dataloader (test or val)."""
-        if is_eval_on_test:
-            return self.test_dataloader(**kwargs)
-        else:
-            return self.val_dataloader(**kwargs)
-
-    def _init_datasets(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-        x_val: np.ndarray,
-        y_val: np.ndarray,
-        x_test: np.ndarray,
-        y_test: np.ndarray,
-    ) -> None:
-        self.train_dataset = SklearnDataset(X, y, y_transform=self.y_transform)
-        self.val_dataset = SklearnDataset(x_val, y_val, y_transform=self.y_transform)
-        self.test_dataset = SklearnDataset(x_test, y_test, y_transform=self.y_transform)
-
-
 class SklearnTrainer:
     """Wrapper around sklearn that mimics pytorch lightning trainer."""
 
@@ -368,11 +340,12 @@ def apply_representor(
     sklearn_kwargs = dict()
     sklearn_kwargs["batch_size"] = kwargs.get("batch_size", 128)
     sklearn_kwargs["num_workers"] = kwargs.get("num_workers", 8)
-    sklearn_kwargs["random_state"] = kwargs.get("seed", 123)
+    sklearn_kwargs["seed"] = kwargs.get("seed", 123)
 
     if is_agg_target:
         # separate the main target with the ones to aggregate over
-        sklearn_kwargs["y_transform"] = lambda y: (y[0:1], y[1:])
+        y_transform = lambda y: (y[0:1], y[1:])
+        sklearn_kwargs["dataset_kwargs"] = dict(y_transform=y_transform)
 
     # make a datamodule from features that are precomputed
     datamodule = SklearnDataModule(
@@ -382,8 +355,6 @@ def apply_representor(
         y_val=np.concatenate(Y_val, axis=0),
         x_test=np.concatenate(X_test, axis=0),
         y_test=np.concatenate(Y_test, axis=0),
-        shuffle=True,
-        pin_memory=True,
         **sklearn_kwargs,
     )
 

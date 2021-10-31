@@ -46,6 +46,9 @@ def get_Architecture(architecture: Any, **kwargs) -> Any:
     elif architecture == "resnet":
         return partial(ResNet, **kwargs)
 
+    elif architecture == "resnet_transpose":
+        return partial(ResNetTranspose, **kwargs)
+
     elif architecture == "cnn":
         return partial(CNN, **kwargs)
 

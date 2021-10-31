@@ -1,15 +1,9 @@
 # @package _global_
 defaults:
-  - base@representor
-  - override /regularizer: none
-  - override /decodability: generative
+  - std_gen
 
 representor:
   name: std_gen_Mx #  R[M(X)|Z]
-
-kwargs:
-  decoder_kwargs:
-    architecture: cnn
 
 data_repr:
   kwargs:
@@ -17,8 +11,3 @@ data_repr:
       aux_target:  "representative"
       a_augmentations: ["label"]
       train_x_augmentations: []
-
-encoder:
-  z_shape: 128
-  is_normalize_Z: False
-

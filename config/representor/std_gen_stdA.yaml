@@ -1,16 +1,10 @@
 # @package _global_
 defaults:
-  - base@representor
-  - override /regularizer: none
-  - override /decodability: generative
+  - std_gen
 
 representor:
   name: std_gen_stdA
   is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
-
-kwargs:
-  decoder_kwargs:
-    architecture: cnn
 
 data_repr:
   kwargs:
@@ -18,8 +12,3 @@ data_repr:
       aux_target:  "augmentation"
       a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
       train_x_augmentations: []
-
-encoder:
-  z_shape: 128
-  is_normalize_Z: False
-

@@ -7,9 +7,10 @@ defaults:
 representor:
   name: gen
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: linear
 
 data_repr:
   kwargs:

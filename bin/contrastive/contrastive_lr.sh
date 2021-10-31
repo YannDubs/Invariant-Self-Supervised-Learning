@@ -25,10 +25,17 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_cntr
-optimizer_issl.kwargs.lr=3e-4,1e-3,3e-3,1e-2,3e-2,1e-1
+representor=std_cntr,cntr
+optimizer_issl.kwargs.lr=3e-5,1e-4,3e-4,1e-3,3e-3
 seed=1
 "
+
+kwargs_multi="
+representor=std_cntr_asym
+optimizer_issl.kwargs.lr=1e-4,3e-4,1e-3,3e-3
+seed=1
+"
+# 1e-3 probably good or 3e-4
 
 
 

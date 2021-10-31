@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_ema
+
+decodability:
+  kwargs:
+    is_ema: True

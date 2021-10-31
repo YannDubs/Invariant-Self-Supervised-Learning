@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_mlp
+
+decodability:
+  kwargs:
+    predictor_kwargs:
+      architecture: "mlp"
+      out_shape: 128

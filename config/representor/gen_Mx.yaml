@@ -7,9 +7,10 @@ defaults:
 representor:
   name: gen_Mx
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: linear
 
 data_repr:
   kwargs:
@@ -20,5 +21,5 @@ data_repr:
 
 encoder:
   z_shape: 128
-  is_normalize_Z: True
+  is_normalize_Z: False
 

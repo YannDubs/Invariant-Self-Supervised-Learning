@@ -8,9 +8,10 @@ representor:
   name: gen_A_pred
   is_switch_x_aux_trgt: False # augmentations will be outputs so R[A|Z]
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: linear
 
 data_repr:
   kwargs:
@@ -21,5 +22,5 @@ data_repr:
 
 encoder:
   z_shape: 128
-  is_normalize_Z: True
+  is_normalize_Z: False
 

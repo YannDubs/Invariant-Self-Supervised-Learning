@@ -5,6 +5,6 @@ defaults:
 logger:
   name: null
 
-callbacks: # can use any callback name of issl.callbacks, pl_bolts.callbacks, pl.callbacks
+callbacks: # can use any callback name of issl.callbacks,  pl.callbacks
   LearningRateMonitor:
     is_use : false

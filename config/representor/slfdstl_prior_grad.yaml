@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_grad
+
+decodability:
+  kwargs:
+    is_stop_grad:  False

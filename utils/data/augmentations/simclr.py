@@ -3,9 +3,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from pl_bolts.models.self_supervised.simclr.transforms import GaussianBlur
 from torchvision import transforms
-from torchvision.transforms.transforms import ToPILImage
+
+try:
+    import cv2
+except ImportError:
+    pass
 
 __all__ = ["get_simclr_augmentations", "get_finetune_augmentations"]
 
@@ -40,8 +43,9 @@ def get_simclr_augmentations(dataset: str, input_height: int) -> Callable[..., A
         if kernel_size % 2 == 0:
             kernel_size += 1
 
-        data_transforms.append(GaussianBlur(kernel_size=kernel_size, p=0.5))
-        data_transforms.append(ToPILImage())  # put back to PIL
+        data_transforms.append(
+            transforms.RandomApply([transforms.GaussianBlur(kernel_size)], p=0.5)
+        )
 
     data_transforms = transforms.Compose(data_transforms)
 

@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_noHmlz
+
+decodability:
+  kwargs:
+    beta_H_mlz: null

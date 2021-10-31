@@ -4,9 +4,7 @@ defaults:
 kwargs:
   mode: prior_self_distillation
   beta_H_mlz: null
-  mode_pMlz_qMlz: KL
   divergence: kl_symmetric
   beta_pM_unif: 1.0
   ema_weight_prior: 0.05
-  queue_size: 30
   is_normalize_proj: False
