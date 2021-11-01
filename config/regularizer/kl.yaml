@@ -1,6 +1,0 @@
-defaults:
-  - base_coarsener
-
-factor_beta: 1
-kwargs:
-  loss: kl

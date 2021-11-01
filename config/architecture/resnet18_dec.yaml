@@ -1,8 +1,0 @@
-defaults:
-  - base
-
-name: resnet18
-kwargs:
-  architecture: resnet
-  arch_kwargs:
-    base: resnet18
