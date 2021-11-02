@@ -3,8 +3,8 @@ defaults:
   - slfdstl_prior
 
 representor:
-  name: slfdstl_prior_gumbel
+  name: slfdstl_prior_nograd
 
 decodability:
   kwargs:
-    mode_pMlz_qMlz: "sample_CE"
+    is_stop_grad:  True

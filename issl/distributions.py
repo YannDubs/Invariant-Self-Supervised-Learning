@@ -8,13 +8,8 @@ import einops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions import (
-    Distribution,
-    Independent,
-    Normal,
-    RelaxedOneHotCategorical,
-    constraints,
-)
+from torch.distributions import (Distribution, Independent, Normal,
+                                 RelaxedOneHotCategorical, constraints)
 from torch.distributions.utils import broadcast_all
 
 from .architectures import get_Architecture
@@ -157,11 +152,11 @@ class CondDist(nn.Module):
     in_shape : sequence of int
 
     out_shape : sequence of int
-    
+
     architecture : str or Callable
         If module should be instantiated using `Architecture(in_shape, out_dim)`. If str will be given to
         `get_Architecture`.
-        
+
     arch_kwargs : dict, optional
         Arguments to `get_Architecture`.
 
@@ -331,7 +326,7 @@ class GumbelCategorical(RelaxedOneHotCategorical):
 
     logits: torch.Tensor, optional
         Unnormalized log probability for each event.
-        
+
     is_hard: bool, optional
         Whether to round during the forward pass.
     """
@@ -345,7 +340,9 @@ class GumbelCategorical(RelaxedOneHotCategorical):
     ) -> None:
         self.is_hard = is_hard
         super().__init__(
-            temperature, probs=probs, logits=logits,
+            temperature,
+            probs=probs,
+            logits=logits,
         )
 
     def rsample(self, sample_shape: Sequence[int] = torch.Size()) -> torch.Tensor:

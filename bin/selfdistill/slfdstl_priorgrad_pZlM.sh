@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"generative_lr"
+experiment=$prfx"slfdstl_priorgrad_pZlM"
 notes="
-**Goal**: Hyperparameter tuning of learning rate.
+**Goal**: Ablation study to understand how to improve self distillation ISSL compared to standard for linear classification.
 "
 
 # parses special mode for running the script
@@ -18,7 +18,9 @@ architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
-encoder.z_shape=128
+optimizer@optimizer_issl=Adam_lr3e-4_w0
+representor=slfdstl_prior
+decodability.kwargs.ema_weight_prior=0.9
 timeout=$time
 $add_kwargs
 "
@@ -26,15 +28,16 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_gen,gen,std_gen_stdA
-optimizer_issl.kwargs.lr=3e-4,1e-3,3e-3,1e-2,3e-2,1e-1
+representor=slfdstl_prior_pZlM
+decodability.kwargs.beta_pZlM=0,1e-5,1e-4,1e-3,1e-2,1e-1,1.0,10
 seed=1
 "
-# 1e-3 probably good
+
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
+    echo run
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
 

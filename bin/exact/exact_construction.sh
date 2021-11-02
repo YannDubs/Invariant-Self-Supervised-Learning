@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"slfdstl_prior_lr"
+experiment=$prfx"exact_construction"
 notes="
-**Goal**: Hyperparameter tuning lr for self distillation ISSL.
+**Goal**: understand exact ISSL if you had access to the maximal invariant under the form of an index / clf.
 "
 
 # parses special mode for running the script
@@ -16,9 +16,8 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
+data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_100_test,data_repr_1000]
 predictor=sk_logistic
-optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
 $add_kwargs
 "
@@ -26,12 +25,9 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=slfdstl_prior
-optimizer_issl.kwargs.lr=3e-5,1e-4,3e-4,1e-3,3e-3
+representor=exact,exact_stdA,exact_norm,exact_mlp
 seed=1
 "
-#3e-4 is good
-
 
 
 if [ "$is_plot_only" = false ] ; then

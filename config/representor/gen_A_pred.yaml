@@ -21,6 +21,6 @@ data_repr:
       train_x_augmentations: []
 
 encoder:
-  z_shape: 128
+  z_shape: 1024
   is_normalize_Z: False
 

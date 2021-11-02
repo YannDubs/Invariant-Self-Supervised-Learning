@@ -9,18 +9,12 @@ from typing import Any, Optional
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from torch.distributions import Categorical
-from torch.nn import functional as F
-
 from issl import GumbelCategorical
 from issl.architectures import get_Architecture
-from issl.helpers import (
-    kl_divergence,
-    prod,
-    queue_push_,
-    sinkhorn_knopp,
-    weights_init,
-)
+from issl.distributions import CondDist, DiagGaussian
+from issl.helpers import kl_divergence, prod, queue_push_, sinkhorn_knopp, weights_init
+from torch.distributions import Categorical
+from torch.nn import functional as F
 
 __all__ = [
     "SelfDistillationISSL",
@@ -31,7 +25,7 @@ __all__ = [
 
 class SelfDistillationISSL(nn.Module):
     """Compute the ISSL loss using self distillation (i.e. approximates M(X) using current representation).
-    
+
     Notes
     -----
     - The key is to ensure that the M(X) you are approximating is approximately maximal (i.e. does not collapse).
@@ -47,7 +41,7 @@ class SelfDistillationISSL(nn.Module):
 
     is_ema : bool, optional
         Whether to use an EMA encoder that is derived using exponential moving averaged of the predictor.
-        
+
     is_process_Mx : bool, optional
         Whether to process the projector. If not then this ensures the projector and processor have
         different architectures.
@@ -58,7 +52,7 @@ class SelfDistillationISSL(nn.Module):
 
     is_normalize_proj : bool, optional
         Whether to normalize the predictions after the predictor / projector.
-    
+
     is_aux_already_represented : bool, optional
         Whether the positive examples are already represented => no need to use p_ZlX again.
         In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
@@ -186,17 +180,13 @@ class SelfDistillationISSL(nn.Module):
             M_a = F.normalize(M_a, dim=1, p=2)
 
         # shape: [batch_size, M_shape]
-        hat_R_mla, logs, other = self.compute_loss(M_pred, M_a)
+        hat_R_mla, logs, other = self.compute_loss(M_pred, M_a, z)
 
         return hat_R_mla, logs, other
 
 
 # performs SSL by having one part of the model implementing the M(X)
-add_doc = """        
-    divergence : {"kl_forward","kl_reverse","kl_symmetric"}, optional
-        Which divergence to use between the empirical marginal p_hat(M) and the uniform categorical 
-        D[p_hat(M) || Unif].         
-        
+add_doc = """                
     beta_pM_unif : float, optional
         Parameter that weights the divergence D[p_hat(M) || Unif]
         
@@ -213,27 +203,21 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
     def __init__(
         self,
         *args,
-        beta_H_mlz: float = None,
-        divergence: str = "kl_symmetric",
-        mode_pMlz_qMlz: str = "CE",
-        beta_pM_unif: float = 1.0,
-        ema_weight_prior: Optional[float] = 0.05,
+        beta_pM_unif: float = None,
+        ema_weight_prior: Optional[float] = 0.5,
         is_normalize_proj: bool = False,
         **kwargs,
     ) -> None:
 
         super().__init__(*args, is_normalize_proj=is_normalize_proj, **kwargs)
-        self.divergence = divergence
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
-        self.beta_H_mlz = beta_H_mlz
-        self.mode_pMlz_qMlz = mode_pMlz_qMlz
 
     def reset_parameters(self) -> None:
         super().reset_parameters()
 
     def compute_loss(
-        self, M_pred: torch.Tensor, M_a: torch.Tensor
+        self, M_pred: torch.Tensor, M_a: torch.Tensor, z: torch.Tensor
     ) -> tuple[torch.Tensor, dict, dict]:
 
         # p(M|Z). batch shape: [batch_size] ; event shape: []
@@ -250,6 +234,7 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         if self.ema_weight_prior is not None:
             if not hasattr(self, "ema_mean_p_M"):
                 # initialize with uniform
+                # TODO: should be initialized in reset_parameters as non trainable param
                 self.ema_mean_p_M = uniform.probs.float()
 
             alpha = self.ema_weight_prior
@@ -264,48 +249,18 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         ema_p_M = Categorical(probs=ema_mean_p_M)
 
         # D[\hat{p}(M) || Unif(\calM)]. shape: []
-        # regularizer ensures that p(M(x)) is approximately uniform
-        # note that other divergences like Wasserstein make less sense in current categorical setting
-        # because "closer" bins are not more related than "further" ones.
-        if self.divergence == "kl_forward":
-            fit_pM_Unif = kl_divergence(ema_p_M, uniform)
-        elif self.divergence == "kl_reverse":
-            fit_pM_Unif = kl_divergence(uniform, ema_p_M)
-        elif self.divergence == "kl_symmetric":
-            fit_pM_Unif = (
-                kl_divergence(uniform, ema_p_M) + kl_divergence(ema_p_M, uniform)
-            ) / 2
-        else:
-            raise ValueError(f"Unknown self.divergence={self.divergence}.")
+        # this is equivalent to maximizing entropy `fit_pM_Unif = -ema_p_M.entropy()`
+        # keeping the general code here in case you have a different prior on p(M)
+        fit_pM_Unif = kl_divergence(ema_p_M, uniform)
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
-        # regularizer ensures that p(M(x)) is approximately uniform
-        if self.mode_pMlz_qMlz == "KL":
-            # KL[p(M | Z) || q(M | Z)].
-            # note that KL divergence will maximize likelihood (i.e. match both) but
-            # also minimize the entropy of the true distribution p(M|Z)
-            fit_pMlz_qMlz = kl_divergence(p_Mlz, Categorical(logits=M_pred))
-        elif self.mode_pMlz_qMlz == "CE":
-            fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
-        elif self.mode_pMlz_qMlz == "sample_CE":
-            probs_p_Mlz = GumbelCategorical(probs=p_Mlz.probs, is_hard=False).rsample()
-            fit_pMlz_qMlz = -(probs_p_Mlz * M_pred.log_softmax(-1)).sum(-1)
-        elif self.mode_pMlz_qMlz == "sample_ST_CE":
-            probs_p_Mlz = GumbelCategorical(probs=p_Mlz.probs, is_hard=True).rsample()
-            fit_pMlz_qMlz = -(probs_p_Mlz * M_pred.log_softmax(-1)).sum(-1)
-        else:
-            raise ValueError(f"Unknown self.mode_pMlz_qMlz={self.mode_pMlz_qMlz}.")
+        fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
 
         # shape: [batch_size]
         loss = fit_pMlz_qMlz + self.beta_pM_unif * fit_pM_Unif
 
         # H[M|Z]. shape: [batch_size]
         H_Mlz = p_Mlz.entropy()
-
-        if self.beta_H_mlz is not None:
-            # Decreasing the entropy will ensure that p(M(x)|Z) is close to deterministic.
-            # minimizing cross entropy already does taht but this can do it even more.
-            loss = loss + self.beta_H_mlz * H_Mlz
 
         logs = dict(
             fit_pM_Unif=fit_pM_Unif,
@@ -356,6 +311,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         is_normalize_proj: bool = True,
         # clustering is non differentiable so no grad besides if `src_tgt_comparison=="symmetric"`
         is_pred_proj_same: bool = True,
+        is_stop_grad: bool = True,
         **kwargs,
     ) -> None:
 
@@ -365,6 +321,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
             *args,
             is_normalize_proj=is_normalize_proj,
             is_pred_proj_same=is_pred_proj_same,
+            is_stop_grad=False,  # don't stop gradient in target if using symmetric
             **kwargs,
         )
         self.n_Mx = n_Mx
@@ -372,6 +329,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         self.src_tgt_comparison = src_tgt_comparison
         self.temperature = temperature
         self.sinkhorn_kwargs = sinkhorn_kwargs
+        self.is_actual_stop_grad = is_stop_grad
 
         proj_shape = self.projector_kwargs["out_shape"]
         self.Mx_logits = nn.Linear(proj_shape, self.n_Mx, bias=False)
@@ -390,7 +348,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         return super().forward(*args, **kwargs)
 
     def compute_loss(
-        self, z_src: torch.Tensor, z_tgt: torch.Tensor
+        self, z_src: torch.Tensor, z_tgt: torch.Tensor, z: torch.Tensor
     ) -> tuple[torch.Tensor, dict, dict]:
 
         # compute logits. shape: [batch_size, n_Mx]
@@ -410,23 +368,24 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         else:
             raise ValueError(f"Unknown src_tgt_comparison={self.src_tgt_comparison}.")
 
+        if self.is_actual_stop_grad:
+            Mt_logits = Mt_logits.detach()
+
         # use the queue.
         if self.queue_size > 0:
             if len(self.queue.queue) == 0:
                 # for first step ensure has at least one element
-                queue_push_(self.queue, z_tgt.detach())
+                queue_push_(self.queue, tmp_Mt_logits.detach())
 
             # get logits for the queue and add them to the target ones => assignments will consider queue
-            # shape: [batch_size * queue_size, out_dim]
-            z_queue = torch.cat(list(self.queue.queue), dim=0)
             # shape: [batch_size * queue_size, n_Mx]
-            Mq_logits = self.Mx_logits(z_queue)
+            Mq_logits = torch.cat(list(self.queue.queue), dim=0)
             # shape: [batch_size * queue_size + n_tgt, n_Mx]
             Mt_logits = torch.cat([Mt_logits, Mq_logits], dim=0)
 
             # fill the queue with the representations => ensure that you still use the most
             # recent logits. + detach to avoid huge memory cost
-            queue_push_(self.queue, z_tgt.detach())
+            queue_push_(self.queue, tmp_Mt_logits.detach())
 
         # make sure float32 and not 16
         Ms_logits = Ms_logits.float()
@@ -439,7 +398,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
             else:
                 world_size = 1
 
-            # shape: [n_tgt, n_Mx]
+            # shape: [(batch_size * queue_size) + n_samples, n_Mx]
             p_Mlzt = sinkhorn_knopp(
                 Mt_logits, world_size=world_size, **self.sinkhorn_kwargs
             )
@@ -447,7 +406,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
             # chose only the target ones. shape: [ n_tgt, n_Mx]
             p_Mlzt = p_Mlzt[:n_tgt]
 
-        # log q(M(X)|Z_src). shape: [batch_size, n_Mx]
+        # log q(M(X)|Z_src). shape: [n_tgt, n_Mx]
         log_q_Mlzs = (Ms_logits / self.temperature).log_softmax(-1)
 
         # shape: [n_tgt]

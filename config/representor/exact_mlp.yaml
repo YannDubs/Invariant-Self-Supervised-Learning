@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - exact
+
+representor:
+  name: exact_mlp
+
+decodability:
+  kwargs:
+    predictor_kwargs:
+      architecture: "mlp"

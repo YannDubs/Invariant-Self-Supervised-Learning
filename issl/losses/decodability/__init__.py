@@ -3,6 +3,7 @@ from __future__ import annotations
 import torch
 
 from .contrastive import *
+from .exact import *
 from .generative import *
 from .self_distillation import *
 
@@ -20,5 +21,7 @@ def get_loss_decodability(mode: str, **kwargs) -> torch.nn.Module:
         return PriorSelfDistillationISSL(**kwargs)
     elif mode == "cluster_self_distillation":
         return ClusterSelfDistillationISSL(**kwargs)
+    elif mode == "exact":
+        return ExactISSL(**kwargs)
     else:
         raise ValueError(f"Unknown mode={mode}.")

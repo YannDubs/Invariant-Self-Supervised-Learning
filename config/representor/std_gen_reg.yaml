@@ -1,7 +1,7 @@
 # @package _global_
 defaults:
   - base@representor
-  - override /regularizer: cosine
+  - override /regularizer: huber
   - override /decodability: generative
 
 representor:
@@ -19,6 +19,6 @@ data_repr:
       train_x_augmentations: []
 
 encoder:
-  z_shape: 128
+  z_shape: 1024
   is_normalize_Z: False
 

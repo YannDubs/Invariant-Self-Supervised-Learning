@@ -8,9 +8,8 @@ import einops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from issl import get_marginalDist
-from issl.helpers import kl_divergence
+from issl.helpers import BatchRMSELoss, kl_divergence
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
@@ -30,8 +29,8 @@ class CoarseningRegularizer(nn.Module):
 
     Parameters
     ---------
-    loss : {"kl", "mse", "cosine", "huber"} or callable, optional
-        What loss to use to bring enc(x) and enc(a) closer together. If `MSE` or `cosine` will sample through the rep.
+    loss : {"kl", "rmse", "cosine", "huber"} or callable, optional
+        What loss to use to bring enc(x) and enc(a) closer together. If `RMSE` or `cosine` will sample through the rep.
         If kl should be stochastic representation. Makes more sense to use a symmetric function and thus assume X ~ A.
 
     is_distributions : bool, optional
@@ -57,11 +56,11 @@ class CoarseningRegularizer(nn.Module):
             # use symmetric kl divergence
             self.loss_f = lambda p, q: (kl_divergence(p, q) + kl_divergence(q, p)) / 2
             self.is_distributions = True
-        elif loss == "mse":
-            self.loss_f = nn.MSELoss()
+        elif loss == "rmse":
+            self.loss_f = BatchRMSELoss()
             self.is_distributions = False
         elif loss == "huber":
-            self.loss_f = nn.SmoothL1Loss()
+            self.loss_f = nn.SmoothL1Loss(reduction="none")
             self.is_distributions = False
         elif loss == "cosine":
             self.loss_f = lambda z, z_a: F.cosine_similarity(

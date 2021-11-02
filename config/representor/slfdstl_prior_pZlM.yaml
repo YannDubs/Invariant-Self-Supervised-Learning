@@ -3,8 +3,8 @@ defaults:
   - slfdstl_prior
 
 representor:
-  name: slfdstl_prior_gumbelST
+  name: slfdstl_prior_pZlM
 
 decodability:
   kwargs:
-    mode_pMlz_qMlz: "sample_ST_CE"
+    beta_pZlM:  1.0

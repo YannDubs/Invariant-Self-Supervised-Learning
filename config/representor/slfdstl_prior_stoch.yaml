@@ -1,0 +1,32 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: kl
+  - override /decodability: prior_self_distillation
+
+representor:
+  name: slfdstl_prior_stoch
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      train_x_augmentations: []
+
+
+decodability:
+  kwargs:
+    is_ema: False
+    is_process_Mx: False
+    is_stop_grad:  False
+    is_pred_proj_same:  False
+    beta_pM_unif: 1.0 # TODO: tune
+    ema_weight_prior: 0.9
+    
+encoder:
+  z_shape: 1024
+  is_normalize_Z: False
+  kwargs:
+    family: diag_gaussian
+

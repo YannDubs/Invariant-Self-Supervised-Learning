@@ -16,7 +16,7 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
+data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_100_test,data_repr_1000]
 predictor=sk_logistic
 optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
@@ -26,7 +26,7 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=cntr,std_cntr,std_cntr_asym,std_cntr_asym_A,std_cntr_asym_permMx,std_cntr_dot,std_cntr_Mx,std_cntr_norm,std_cntr_permMx,std_cntr_reg,std_cntr_stoch,std_cntr_supA
+representor=cntr,std_cntr,std_cntr_asym,std_cntr_asym_A,std_cntr_asym_permMx,std_cntr_asymmlp,std_cntr_dot,std_cntr_Mx,std_cntr_norm,std_cntr_permMx,std_cntr_reg,std_cntr_stoch,std_cntr_supA
 seed=1
 "
 

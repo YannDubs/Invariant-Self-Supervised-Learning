@@ -1,11 +1,27 @@
 # @package _global_
 defaults:
-  - std_gen
+  - base@representor
+  - override /regularizer: kl
+  - override /decodability: generative
 
 representor:
-  name: std_gen_stoch
+  name: std_gen
+
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: cnn
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "input"
+      a_augmentations: []
+      train_x_augmentations: []
 
 encoder:
+  z_shape: 1024
+  is_normalize_Z: False
   kwargs:
     family: diag_gaussian
 

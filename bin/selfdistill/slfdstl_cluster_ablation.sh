@@ -27,10 +27,11 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=slfdstl_cluster,slfdstl_cluster_asym,slfdstl_cluster_grad,slfdstl_cluster_noqueue,slfdstl_cluster_queueL,slfdstl_cluster_stdA,slfdstl_cluster_supA,slfdstl_cluster_reg
+representor=slfdstl_cluster,slfdstl_cluster_asym,slfdstl_cluster_grad,slfdstl_cluster_noqueue,slfdstl_cluster_queueL,slfdstl_cluster_Mx,slfdstl_cluster_supA,slfdstl_cluster_reg
 decodability.kwargs.n_Mx=128
 seed=1
 "
+
 
 
 

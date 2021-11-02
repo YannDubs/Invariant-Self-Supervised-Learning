@@ -15,27 +15,24 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
-import hydra
 import matplotlib.pyplot as plt
-import omegaconf
 import pandas as pd
+
+import hydra
+import issl
+import omegaconf
 import pytorch_lightning as pl
 import torch
 from hydra import compose
+from issl import ISSLModule, Predictor
+from issl.callbacks import LatentDimInterpolator, ReconstructImages
+from issl.helpers import MAWeightUpdate, check_import, prod
+from issl.predictors import SklearnPredictor, get_representor_predictor
 from omegaconf import Container, OmegaConf
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.utilities import parsing
-
-import issl
-from issl import ISSLModule, Predictor
-from issl.callbacks import (
-    LatentDimInterpolator,
-    ReconstructImages,
-)
-from issl.helpers import MAWeightUpdate, check_import, prod
-from issl.predictors import SklearnPredictor, get_representor_predictor
 from utils.data import get_Datamodule
 from utils.data.base import ISSLDataModule
 from utils.helpers import (
@@ -89,62 +86,68 @@ def main(cfg):
     begin(cfg)
     finalize_kwargs = dict(modules={}, trainers={}, datamodules={}, cfgs={}, results={})
 
-    ############## REPRESENTATION LEARNING ##############
-    logger.info("Stage : Representor")
-    stage = "representor"
-    repr_cfg = set_cfg(cfg, stage)
-    repr_datamodule = instantiate_datamodule_(repr_cfg)
-    repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
-
-    if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
-        representor = ISSLModule(hparams=repr_cfg)
-        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
-        initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
-
-        logger.info("Train representor ...")
-        repr_trainer.fit(representor, datamodule=repr_datamodule)
-        save_pretrained(repr_cfg, repr_trainer, stage)
-    else:
-        logger.info("Load pretrained representor ...")
-        if repr_cfg.representor.is_use_init:
-            # for pretrained SSL models simply load the pretrained model (init)
-            representor = ISSLModule(hparams=repr_cfg)
-        else:
-            representor = load_pretrained(repr_cfg, ISSLModule, stage)
-        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
-        placeholder_fit(repr_trainer, representor, repr_datamodule)
-        repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
-
-    if repr_cfg.evaluation.representor.is_evaluate:
-        logger.info("Evaluate representor ...")
-        repr_res = evaluate(repr_trainer, repr_datamodule, repr_cfg, stage)
-    else:
-        repr_res = load_results(repr_cfg, stage)
-
-    finalize_stage_(
-        stage,
-        repr_cfg,
-        representor,
-        repr_trainer,
-        repr_datamodule,
-        repr_res,
-        finalize_kwargs,
-        is_save_best=True,
-    )
-    if repr_cfg.predictor.is_skip:
-        return finalize(**finalize_kwargs)
-
-    del repr_datamodule  # not used anymore and can be large
-
-    ############## REPRESENT ##############
-    if repr_cfg.representor.is_on_the_fly:
-        # this will perform representation on the fly.
-        on_fly_representor = representor
+    if cfg.representor.name == "none":
+        on_fly_representor = None
         pre_representor = None
     else:
-        # this is quicker but means that you cannot augment at test time and requires more RAM
-        on_fly_representor = None
-        pre_representor = repr_trainer
+        ############## REPRESENTATION LEARNING ##############
+        logger.info("Stage : Representor")
+        stage = "representor"
+        repr_cfg = set_cfg(cfg, stage)
+        repr_datamodule = instantiate_datamodule_(repr_cfg)
+        repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
+
+        if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
+            representor = ISSLModule(hparams=repr_cfg)
+            repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+            initialize_representor_(
+                representor, repr_datamodule, repr_trainer, repr_cfg
+            )
+
+            logger.info("Train representor ...")
+            repr_trainer.fit(representor, datamodule=repr_datamodule)
+            save_pretrained(repr_cfg, repr_trainer, stage)
+        else:
+            logger.info("Load pretrained representor ...")
+            if repr_cfg.representor.is_use_init:
+                # for pretrained SSL models simply load the pretrained model (init)
+                representor = ISSLModule(hparams=repr_cfg)
+            else:
+                representor = load_pretrained(repr_cfg, ISSLModule, stage)
+            repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+            placeholder_fit(repr_trainer, representor, repr_datamodule)
+            repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
+
+        if repr_cfg.evaluation.representor.is_evaluate:
+            logger.info("Evaluate representor ...")
+            repr_res = evaluate(repr_trainer, repr_datamodule, repr_cfg, stage)
+        else:
+            repr_res = load_results(repr_cfg, stage)
+
+        finalize_stage_(
+            stage,
+            repr_cfg,
+            representor,
+            repr_trainer,
+            repr_datamodule,
+            repr_res,
+            finalize_kwargs,
+            is_save_best=True,
+        )
+        if repr_cfg.predictor.is_skip:
+            return finalize(cfg, **finalize_kwargs)
+
+        del repr_datamodule  # not used anymore and can be large
+
+        ############## REPRESENT ##############
+        if repr_cfg.representor.is_on_the_fly:
+            # this will perform representation on the fly.
+            on_fly_representor = representor
+            pre_representor = None
+        else:
+            # this is quicker but means that you cannot augment at test time and requires more RAM
+            on_fly_representor = None
+            pre_representor = repr_trainer
 
     ############## DOWNSTREAM PREDICTOR ##############
     for data in cfg.data_pred.all_data:
@@ -207,7 +210,7 @@ def main(cfg):
 
     ############## SHUTDOWN ##############
 
-    return finalize(**finalize_kwargs)
+    return finalize(cfg, **finalize_kwargs)
 
 
 def begin(cfg: Container) -> None:
@@ -453,7 +456,8 @@ def get_trainer(
         kwargs["sync_batchnorm"] = True
         parallel_devices = [torch.device(f"cuda:{i}") for i in range(kwargs["gpus"])]
         kwargs["plugins"] = DDPPlugin(
-            parallel_devices=parallel_devices, find_unused_parameters=True,
+            parallel_devices=parallel_devices,
+            find_unused_parameters=True,
         )
 
     # TRAINER
@@ -668,6 +672,7 @@ def finalize_stage_(
 
 
 def finalize(
+    cfg,
     modules: dict[str, pl.LightningModule],
     trainers: dict[str, pl.Trainer],
     datamodules: dict[str, pl.LightningDataModule],
@@ -675,7 +680,6 @@ def finalize(
     results: dict[str, dict],
 ) -> Any:
     """Finalizes the script."""
-    cfg = cfgs["representor"]  # this is always in
 
     logger.info("Stage : Shutdown")
 

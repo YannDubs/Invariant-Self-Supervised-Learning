@@ -7,4 +7,4 @@ representor:
 
 decodability:
   kwargs:
-    beta_pM_unif: 10
+    beta_pM_unif: 3

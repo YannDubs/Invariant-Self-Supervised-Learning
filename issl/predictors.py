@@ -5,10 +5,11 @@ import logging
 from collections.abc import Callable, Sequence
 from typing import Any, Optional, Union
 
+from sklearn.pipeline import Pipeline
+
 import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
-from sklearn.pipeline import Pipeline
 from torch import nn
 from torchmetrics.functional import accuracy
 
@@ -157,7 +158,7 @@ class Predictor(pl.LightningModule):
             for k, v in aggregate_dicts(logs_agg, operation=mean).items():
                 logs[f"{k}_agg"] = v  # agg is avg over all agg_tasks
 
-            for k, v in aggregate_dicts(logs_agg, operation=min).items():
+            for k, v in aggregate_dicts(logs_agg, operation=max).items():
                 logs[f"{k}_agg_max"] = v  # agg is max over all agg_tasks
 
             for k, v in aggregate_dicts(logs_agg, operation=min).items():
@@ -176,7 +177,11 @@ class Predictor(pl.LightningModule):
 
         return loss, logs
 
-    def loss(self, Y_hat: torch.Tensor, y: torch.Tensor,) -> tuple[torch.Tensor, dict]:
+    def loss(
+        self,
+        Y_hat: torch.Tensor,
+        y: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict]:
         """Compute the MSE or cross entropy loss."""
 
         loss = prediction_loss(Y_hat, y, self.is_clf)

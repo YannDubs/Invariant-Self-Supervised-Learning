@@ -11,17 +11,17 @@ from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
-import pytorch_lightning as pl
 import sklearn
-import torch
 import wandb
 from joblib import dump, load
-from omegaconf import Container, OmegaConf
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from torch.utils.data import DataLoader
 
+import pytorch_lightning as pl
+import torch
 from issl.helpers import NamespaceMap, mean, namespace2dict
+from omegaconf import Container, OmegaConf
+from torch.utils.data import DataLoader
 from utils.data.helpers import subset2dataset
 from utils.data.sklearn import SklearnDataModule
 
@@ -281,13 +281,11 @@ class SklearnTrainer:
         }
 
         if self.is_agg_target:
-            results_agg = {
-                f"test/{self.stage}/{self.hparams.data.name}/{score.__name__}_agg": mean(
-                    [score(y_agg[:, i], y_hat_agg[:, i]) for i in range(n_agg_tgt)]
-                )
-                for score in self.scores
-            }
-            results.update(results_agg)
+            for score in self.scores:
+                to_agg = [score(y_agg[:, i], y_hat_agg[:, i]) for i in range(n_agg_tgt)]
+                for txt, fun in [("", mean), ("_max", max), ("_min", min)]:
+                    key = f"test/{self.stage}/{self.hparams.data.name}/{score.__name__}_agg{txt}"
+                    results[key] = fun(to_agg)
 
         logger.info(results)
 

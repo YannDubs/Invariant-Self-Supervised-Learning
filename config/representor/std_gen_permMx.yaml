@@ -8,6 +8,6 @@ representor:
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "augmentation"
+      aux_target:  "representative"
       a_augmentations: ["perm_label"]
       train_x_augmentations: []

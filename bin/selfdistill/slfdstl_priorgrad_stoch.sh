@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"contrastive_lr"
+experiment=$prfx"slfdstl_priorgrad_stoch"
 notes="
-**Goal**: Hyperparameter tuning lr for contrastive ISSL.
+**Goal**: Ablation study to understand how to improve self distillation ISSL compared to standard for linear classification.
 "
 
 # parses special mode for running the script
@@ -18,6 +18,9 @@ architecture@online_evaluator=linear
 data@data_repr=mnist
 data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
+optimizer@optimizer_issl=Adam_lr3e-4_w0
+representor=slfdstl_prior
+decodability.kwargs.ema_weight_prior=0.9
 timeout=$time
 $add_kwargs
 "
@@ -25,23 +28,16 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=std_cntr,cntr
-optimizer_issl.kwargs.lr=3e-5,1e-4,3e-4,1e-3,3e-3
+representor=slfdstl_prior_stoch
+representor.loss.beta=0,1e-5,1e-4,1e-3,1e-2,0.1,1,10,100
 seed=1
 "
-
-kwargs_multi="
-representor=std_cntr_asym
-optimizer_issl.kwargs.lr=1e-4,3e-4,1e-3,3e-3
-seed=1
-"
-# 1e-3 probably good or 3e-4
-
-
+#stoch doesn't really seem to help
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
+    echo run
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
 

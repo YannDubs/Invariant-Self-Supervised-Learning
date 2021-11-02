@@ -11,17 +11,15 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
-import torch
 from PIL import Image
-from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import (
     CIFAR10,
     CIFAR100,
+    MNIST,
+    STL10,
     CocoCaptions,
     ImageFolder,
     ImageNet,
-    MNIST,
-    STL10,
 )
 from torchvision.transforms import (
     CenterCrop,
@@ -43,7 +41,10 @@ from torchvision.transforms import (
 )
 from tqdm import tqdm
 
+import torch
 from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy
+from torch.utils.data import DataLoader, random_split
+
 from .augmentations import (
     CIFAR10Policy,
     ImageNetPolicy,
@@ -114,7 +115,7 @@ class ISSLImgDataset(ISSLDataset):
 
     train_x_augmentations : set of str or "a_augmentations" , optional
         Augmentations to use for the source input, i.e., p(X|img). I.e. standard augmentations that are
-        used to essentially increase the dataset size. This is different from p(A|img). Can be a set of string as in 
+        used to essentially increase the dataset size. This is different from p(A|img). Can be a set of string as in
         `a_augmentations`. In the latter case, will use the same as `"a_augmentations"` which is
         standard in ISSL but not theoretically necessary. Note that this cannot be "label" or "perm_label".
 
@@ -124,7 +125,7 @@ class ISSLImgDataset(ISSLDataset):
     is_normalize : bool, optional
         Whether to normalize all input images. Only for colored images. If True, you should ensure
         that `MEAN` and `STD` and `get_normalization` and `undo_normalization` in `issl.helpers`
-        can normalize your data. 
+        can normalize your data.
 
     normalization : str, optional
         What dataset to use for the normalization, e.g., "clip" for standard online normalization. If `None`, uses the
@@ -167,6 +168,7 @@ class ISSLImgDataset(ISSLDataset):
     ):
 
         self.base_resize = base_resize
+        self.n_Mxs = -1  # tmp until gets allocated
 
         super().__init__(
             *args,
@@ -352,7 +354,9 @@ class ISSLImgDataset(ISSLDataset):
                 "simclr-imagenet": get_simclr_augmentations("imagenet", shape[-1]),
                 "simclr-finetune": get_finetune_augmentations(shape[-1]),
             },
-            tensor={"erasing": RandomErasing(value=0.5),},
+            tensor={
+                "erasing": RandomErasing(value=0.5),
+            },
         )
 
     def get_img_from_Mx(self, Mx: int) -> Any:
@@ -450,7 +454,7 @@ class ISSLImgDataset(ISSLDataset):
     @property
     def is_clfs(self) -> dict[str, bool]:
         # images should be seen as regression when they are color and clf otherwise
-        return dict(input=not self.is_color, target=True)
+        return dict(input=not self.is_color, target=True, Mx=True)
 
     @property
     def shapes(self) -> dict[str, tuple[int, ...]]:
@@ -461,6 +465,8 @@ class ISSLImgDataset(ISSLDataset):
             # when using clip the shape should always be 224x224
             shapes["input"] = (3, 224, 224)
 
+        shapes["Mx"] = (self.n_Mxs,)
+
         return shapes
 
 
@@ -469,7 +475,10 @@ class ISSLImgDataModule(ISSLDataModule):
         self, **dataset_kwargs
     ) -> tuple[ISSLImgDataset, ISSLImgDataset]:
         dataset = self.Dataset(
-            self.data_dir, download=False, curr_split="train", **dataset_kwargs,
+            self.data_dir,
+            download=False,
+            curr_split="train",
+            **dataset_kwargs,
         )
         n_val = int_or_ratio(self.val_size, len(dataset))
         train, valid = random_split(
@@ -487,7 +496,10 @@ class ISSLImgDataModule(ISSLDataModule):
     def get_train_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
         if "validation" in self.Dataset.get_available_splits():
             train = self.Dataset(
-                self.data_dir, curr_split="train", download=False, **dataset_kwargs,
+                self.data_dir,
+                curr_split="train",
+                download=False,
+                **dataset_kwargs,
             )
         else:
             # if there is no validation split will compute it on the fly
@@ -509,7 +521,10 @@ class ISSLImgDataModule(ISSLDataModule):
 
     def get_test_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
         test = self.Dataset(
-            self.data_dir, curr_split="test", download=False, **dataset_kwargs,
+            self.data_dir,
+            curr_split="test",
+            download=False,
+            **dataset_kwargs,
         )
         return test
 
@@ -1044,7 +1059,9 @@ class ExternalImgDataset(ISSLImgDataset):
         self.length = len(list(self.get_dir(curr_split).glob("*.jpeg")))
 
         super().__init__(
-            *args, curr_split=curr_split, **kwargs,
+            *args,
+            curr_split=curr_split,
+            **kwargs,
         )
 
     def get_dir(self, split: Optional[str] = None) -> Path:
@@ -1158,7 +1175,10 @@ class CocoClipDataset(ExternalImgDataset):
     ]
 
     # test annotation are not given => use val instead
-    split_to_root = dict(test="val2017", train="train2017",)
+    split_to_root = dict(
+        test="val2017",
+        train="train2017",
+    )
     split_to_annotate = dict(
         test="annotations/captions_val2017.json",
         train="annotations/captions_train2017.json",
@@ -1174,7 +1194,10 @@ class CocoClipDataset(ExternalImgDataset):
         **kwargs,
     ) -> None:
         super().__init__(
-            *args, base_resize=base_resize, normalization=normalization, **kwargs,
+            *args,
+            base_resize=base_resize,
+            normalization=normalization,
+            **kwargs,
         )
 
     def download(self, data_dir: Path) -> None:

@@ -1,1 +1,6 @@
-name: ???
+# @package _global_
+defaults:
+  - base@representor # placeholders
+  
+representor:
+  name: none

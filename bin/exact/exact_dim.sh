@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"slfdstl_prior_emaweight"
+experiment=$prfx"exact_dim"
 notes="
-**Goal**: Hyperparameter tuning of the ema weight for self distillation ISSL compared to standard for linear classification.
+**Goal**: understand dimensionality for exact ISSL.
 "
 
 # parses special mode for running the script
@@ -16,9 +16,8 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
+data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_100_test,data_repr_1000]
 predictor=sk_logistic
-optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
 $add_kwargs
 "
@@ -26,13 +25,10 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=slfdstl_prior
-decodability.kwargs.ema_weight_prior=0.01,0.05,0.1,0.3,0.5,0.7,0.9
+representor=exact,exact_stdA
+encoder.z_shape=5,10,16,32,128,512
 seed=1
 "
-
-
-
 
 
 if [ "$is_plot_only" = false ] ; then

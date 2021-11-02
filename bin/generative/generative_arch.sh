@@ -16,9 +16,8 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
+data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_100_test,data_repr_1000]
 predictor=sk_logistic
-encoder.z_shape=128
 timeout=$time
 $add_kwargs
 "
@@ -27,15 +26,11 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=vae,std_gen_V,std_gen_supA,std_gen_stoch,std_gen_stdA_pred,std_gen_stdA,std_gen_reg,std_gen_permMx,std_gen_permA,std_gen_norm,std_gen_Mx,std_gen_mlp,std_gen,gen
+representor=std_gen_resnet,std_gen_cnn,std_gen_resnetlin,std_gen_cnnlin,std_gen_V,std_gen_mlp
 seed=1
 "
-
-kwargs_multi="
-representor=std_gen_resnet,std_gen_cnn,std_gen_resnet,std_gen_V,std_gen_V,std_gen_mlp
-seed=1
-"
-
+# cnnlin works slightly better than  but resnetlin slightly worst than resnet
+# both work better than linear though
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

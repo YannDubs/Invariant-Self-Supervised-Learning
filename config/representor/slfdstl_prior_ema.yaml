@@ -8,3 +8,4 @@ representor:
 decodability:
   kwargs:
     is_ema: True
+    is_stop_grad:  True

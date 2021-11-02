@@ -6,14 +6,13 @@ from typing import Any, Optional
 
 import pytorch_lightning as pl
 import torch
-from torch.nn import functional as F
-
 from issl.architectures import get_Architecture
 from issl.distributions import CondDist
 from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_
 from issl.losses import get_loss_decodability, get_regularizer
 from issl.losses.decodability import ClusterSelfDistillationISSL
 from issl.predictors import OnlineEvaluator
+from torch.nn import functional as F
 
 __all__ = ["ISSLModule"]
 
@@ -149,6 +148,9 @@ class ISSLModule(pl.LightningModule):
         # to log (dict)
         logs.update(d_logs)
         logs.update(s_logs)
+        logs["z_norm_l2"] = F.normalize(z, dim=1, p=2).mean()
+        logs["z_max"] = z.abs().max(dim=-1)[0].mean()
+        logs["z_norm_l1"] = F.normalize(z, dim=1, p=1).mean()
 
         # any additional information that can be useful (dict)
         other.update(d_other)

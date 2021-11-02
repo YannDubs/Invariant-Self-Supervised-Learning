@@ -1,7 +1,7 @@
 # @package _global_
 defaults:
   - base@representor
-  - override /regularizer: cosine
+  - override /regularizer: huber
   - override /decodability: prior_self_distillation
 
 representor:
@@ -18,10 +18,10 @@ decodability:
   kwargs:
     is_ema: False
     is_process_Mx: False
-    is_stop_grad:  True
+    is_stop_grad:  False
     is_pred_proj_same:  False
     beta_pM_unif: 1.0 # TODO: tune
-    ema_weight_prior: 0.05 # TODO: tune
+    ema_weight_prior: 0.9 # for MNIST 09 works best but likely for harder task needs much smaller
     predictor_kwargs:
       architecture: "linear"
       out_shape: 128

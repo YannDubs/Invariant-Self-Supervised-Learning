@@ -15,17 +15,30 @@ from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pytorch_lightning as pl
 import seaborn as sns
+from matplotlib.cbook import MatplotlibDeprecationWarning
+from torchvision import transforms as transform_lib
+
+import pytorch_lightning as pl
 import torch
 import torch.distributed as dist
-from matplotlib.cbook import MatplotlibDeprecationWarning
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
-from torchvision import transforms as transform_lib
 
 
+class BatchRMSELoss(nn.Module):
+    """Batch root mean squared error."""
+    def __init__(self, eps=1e-6):
+        super().__init__()
+        self.mse = nn.MSELoss(reduction="none")
+        self.eps = eps
+        
+    def forward(self,yhat,y):
+        batch_mse = self.mse(yhat,y).flatten(1, -1).mean(-1)
+        loss = torch.sqrt(batch_mse + self.eps)
+        return loss
+        
 def namespace2dict(namespace):
     """
     Converts recursively namespace to dictionary. Does not work if there is a namespace whose
@@ -855,15 +868,41 @@ class MAWeightUpdate(pl.Callback):
 
 # modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11
 def sinkhorn_knopp(
-    logits,
-    eps=0.05,
-    n_iter=3,
+    logits : torch.Tensor,
+    eps : float=0.05,
+    n_iter: int=3,
     is_hard_assignment: bool = False,
     world_size: int = 1,
     is_double_prec: bool = True,
     is_force_no_gpu: bool = False,
 ):
-    """Sinkhorn knopp algorithm to find an equipartition giving logits."""
+    """Sinkhorn knopp algorithm to find an equipartition giving logits.
+    
+    Parameters
+    ----------
+    logits : torch.Tensor
+        Logits of shape (n_samples, n_Mx).
+
+    eps : float, optional
+        Regularization parameter for Sinkhorn-Knopp algorithm. Reducing epsilon parameter encourages
+        the assignments to be sharper (i.e. less uniform), which strongly helps avoiding collapse. 
+        However, using a too low value for epsilon may lead to numerical instability.
+
+    n_iter : int, optional
+        Nubmer of iterations. Larger is better but more compute.
+
+    is_hard_assignment : bool, optional
+        Whether to use hard assignements rather than soft ones.
+
+    world_size : int, optional
+        Number of GPUs.
+    
+    is_double_prec : bool, optional
+        Whether to use double precision to ensure that no instabilities.
+
+    is_force_no_gpu : bool, optional
+        Forcing computation on CPU even if GPU available.
+    """
 
     # we follow the u, r, c and Q notations from
     # https://arxiv.org/abs/1911.05371

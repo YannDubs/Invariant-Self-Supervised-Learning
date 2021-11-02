@@ -1,10 +1,10 @@
 # @package _global_
 defaults:
-  - slfdstl_prior
+  - slfdstl_cluster
 
 representor:
-  name: slfdstl_prior_queue
+  name: slfdstl_cluster_nMx1000
 
 decodability:
   kwargs:
-    queue_size: 30
+    n_Mx: 1000

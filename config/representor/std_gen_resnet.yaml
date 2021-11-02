@@ -1,8 +1,6 @@
 # @package _global_
 defaults:
-  - base@representor
-  - override /regularizer: none
-  - override /decodability: generative
+  - std_gen
 
 representor:
   name: std_gen_resnet
@@ -12,15 +10,3 @@ decodability:
     decoder_kwargs:
       architecture: resnet_transpose
       base: resnet18
-
-data_repr:
-  kwargs:
-    dataset_kwargs:
-      aux_target:  "input"
-      a_augmentations: []
-      train_x_augmentations: []
-
-encoder:
-  z_shape: 128
-  is_normalize_Z: False
-

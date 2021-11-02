@@ -3,8 +3,8 @@ defaults:
   - slfdstl_prior
 
 representor:
-  name: slfdstl_prior_grad
+  name: slfdstl_prior_proc
 
-decodability:
+Z_processor:
   kwargs:
-    is_stop_grad:  False
+    architecture: mlp

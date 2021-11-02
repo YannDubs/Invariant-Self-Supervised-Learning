@@ -13,10 +13,10 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
-from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, Subset
 
 from issl.helpers import tmp_seed
+from pytorch_lightning import LightningDataModule
+from torch.utils.data import DataLoader, Subset
 from utils.data.helpers import BalancedSubset, subset2dataset
 
 DIR = Path(__file__).parents[2].joinpath("data")
@@ -31,11 +31,11 @@ class ISSLDataset(abc.ABC):
 
     Parameters
     -----------
-    aux_target : {"input", "representative", "augmentation", "target", "agg_target", None}, optional
+    aux_target : {"input", "representative", "augmentation", "target", "agg_target", "Mx", None}, optional
         Auxiliary target to append to the target. This will be used to minimize R[aux_target|Z]. `"input"` is the input
         example X, "representative" is a representative of the equivalence class, `"sample_p_Alx"` is some
         augmented source A(x). "target" is the target. "agg_target" is the aggregated targets (`n_agg_tasks` of them).
-        `None` appends nothing.
+        "Mx" is the maximal invariant. `None` appends nothing.
 
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|x). I.e. this should define the
@@ -167,6 +167,8 @@ class ISSLDataset(abc.ABC):
         elif self.aux_target == "agg_target":
             # add aggregated targets
             to_add = [m[target] for m in self.agg_tgt_mapper]
+        elif self.aux_target == "Mx":
+            to_add = Mx
         else:
             raise ValueError(f"Unknown aux_target={self.aux_target}")
 
@@ -182,7 +184,9 @@ class ISSLDataset(abc.ABC):
 
         return is_clf["target"], is_clf[self.aux_target]
 
-    def get_shapes(self,) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
+    def get_shapes(
+        self,
+    ) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
         """Return `shapes` for the target, aux_target, all agg_target."""
         shapes = self.shapes
         shapes["representative"] = shapes["input"]
