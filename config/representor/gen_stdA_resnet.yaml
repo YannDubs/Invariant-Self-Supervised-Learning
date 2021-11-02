@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - gen_stdA
+
+representor:
+  name: gen_stdA_resnet
+
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: resnet_transpose
+      base: resnet18

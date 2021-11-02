@@ -6,11 +6,11 @@ defaults:
 
 representor:
   name: std_gen
-
 decodability:
   kwargs:
     decoder_kwargs:
-      architecture: cnn
+      architecture: resnet_transpose
+      base: resnet18
 
 data_repr:
   kwargs:

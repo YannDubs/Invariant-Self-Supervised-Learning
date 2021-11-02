@@ -4,10 +4,11 @@ defaults:
 
 representor:
   name: gen_stdA
+  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
 
 data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "augmentation"
-      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--] # should have a data standard augmentation
-      train_x_augmentations: "a_augmentations"
+      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      train_x_augmentations: []

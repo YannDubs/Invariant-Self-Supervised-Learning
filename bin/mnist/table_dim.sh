@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"slfdstl_prior_regularizer"
+experiment=$prfx"table_dim"
 notes="
-**Goal**: Understand effect of regularizer on self distillation ISSL.
+**Goal**: run the dim part of the MNIST table.
 "
 
 # parses special mode for running the script
@@ -11,15 +11,18 @@ source `dirname $0`/../utils.sh
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
++logger.wandb_kwargs.project=mnist
 trainer.max_epochs=50
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_100_test,data_repr_1000]
+data_pred.all_data=[data_repr_agg]
 predictor=sk_logistic
-optimizer@optimizer_issl=Adam_lr3e-4_w0
-decodability.kwargs.ema_weight_prior=0.9
+data_repr.kwargs.val_size=2
++data_pred.kwargs.val_size=2
++trainer.num_sanity_val_steps=0
++trainer.limit_val_batches=0
 timeout=$time
 $add_kwargs
 "
@@ -27,15 +30,15 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=slfdstl_prior
-seed=1
+representor=exact,exact_stdA,exact_mlp,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,std_cntr,cntr,cntr_stdA,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_stoch,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_stoch
+encoder.z_shape=5,10,16,32,128,512,2048
 "
-# huber,rmse 1e-3
-# or kl 1e-4
+
+# difference for gen: linear resnet / augmentations / larger dim
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "" "representor=slfdstl_prior_stoch representor.loss.beta=1e-4,1e-3,1e-2,0.1" "regularizer=rmse,huber representor.loss.beta=1e-4,1e-3,1e-2,0.1"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &

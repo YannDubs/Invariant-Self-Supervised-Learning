@@ -1,23 +1,26 @@
 # @package _global_
 defaults:
   - base@representor
-  - override /regularizer: cosine
+  - override /regularizer: huber
   - override /decodability: generative
 
 representor:
-  name: gen_A_pred
-  is_switch_x_aux_trgt: False # augmentations will be outputs so R[A|Z]
+  name: gen_stdA_reg
+  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
+  
 
 decodability:
   kwargs:
     decoder_kwargs:
-      architecture: linear
+      architecture: resnet_transpose
+      base: resnet18
+      activation: Identity
 
 data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "augmentation"
-      a_augmentations: ["label"]
+      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
       train_x_augmentations: []
 
 encoder:
