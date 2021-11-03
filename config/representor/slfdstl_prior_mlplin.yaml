@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - slfdstl_prior
+
+representor:
+  name: slfdstl_prior_mlplin
+
+decodability:
+  kwargs:
+    predictor_kwargs:
+      architecture: "mlp"
+      out_shape: 128
+      activation: "Identity"

@@ -161,7 +161,8 @@ def main(cfg):
         pred_cfg = omegaconf2namespace(pred_cfg)
 
         is_sklearn = pred_cfg.predictor.is_sklearn
-        if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
+        is_train = pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage)
+        if is_train or pred_cfg.predictor.is_force_train:
             if is_sklearn:
                 assert not repr_cfg.representor.is_on_the_fly
                 predictor = SklearnPredictor(pred_cfg.predictor)
@@ -283,9 +284,11 @@ def set_cfg(cfg: Container, stage: str) -> Container:
                 cfg.representor.is_train = False
                 cfg.evaluation.representor.is_evaluate = False
 
-            elif stage == "predictor":  # improbable
-                cfg.predictor.is_train = False
-                cfg.evaluation.predictor.is_evaluate = False
+            elif stage == "predictor":
+                if not cfg.predictor.is_force_train:
+                    # improbable
+                    cfg.predictor.is_train = False
+                    cfg.evaluation.predictor.is_evaluate = False
 
             else:
                 raise ValueError(f"Unknown stage={stage}.")
@@ -571,6 +574,10 @@ def evaluate(
                 train_res = {
                     k: v for k, v in train_res.items() if f"/{train_stage}/" in k
                 }
+                # the following 2 are only used for better logging in wandb and should be removed
+                train_res = replace_keys(train_res, "_train", "")
+                train_res = replace_keys(train_res, f"{cfg.data.name}/", "")
+
                 to_save["train"] = replace_keys(train_res, "test/", "")
             except:
                 logger.exception(
@@ -590,6 +597,8 @@ def evaluate(
         # ensure that select only correct stage
         test_res = {k: v for k, v in test_res.items() if f"/{cfg.stage}/" in k}
         log_dict(trainer, test_res, is_param=False)
+        # data is used for better logging in wandb and should be removed
+        test_res = replace_keys(test_res, f"{cfg.data.name}/", "")
         to_save["test"] = replace_keys(test_res, "test/", "")
 
         # save results

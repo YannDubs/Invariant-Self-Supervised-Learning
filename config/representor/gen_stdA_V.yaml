@@ -1,0 +1,25 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: none
+  - override /decodability: generative
+
+representor:
+  name: gen_stdA_V
+
+decodability:
+  kwargs:
+    decoder_kwargs:
+      architecture: linear
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      train_x_augmentations: []
+
+encoder:
+  z_shape: 1024
+  is_normalize_Z: False
+

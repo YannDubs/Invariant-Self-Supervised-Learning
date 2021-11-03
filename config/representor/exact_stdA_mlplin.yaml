@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - exact_stdA
+
+representor:
+  name: exact_stdA_mlplin
+
+decodability:
+  kwargs:
+    predictor_kwargs:
+      architecture: "mlp"
+      activation: "Identity"

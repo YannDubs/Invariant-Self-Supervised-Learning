@@ -192,6 +192,7 @@ predictor:
   name: ???
   is_skip: false # run predictor?
   is_train: True
+  is_force_train: False
 
 ### OPTIMIZER ###
 optimizer_pred:

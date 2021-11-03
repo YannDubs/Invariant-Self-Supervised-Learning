@@ -8,8 +8,8 @@ from typing import Any, Optional, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import torch
 
+import torch
 from issl.helpers import to_numpy
 
 
@@ -72,9 +72,8 @@ def aggregate(
     if isinstance(table, pd.Series):
         table = table.to_frame()
 
-    table_agg = table.groupby(
-        by=[c for c in table.index.names if c not in cols_to_agg]
-    ).agg(aggregates)
+    new_idcs = [c for c in table.index.names if c not in cols_to_agg]
+    table_agg = table.reset_index().groupby(by=new_idcs, dropna=False).agg(aggregates)
     table_agg.columns = ["_".join(col).rstrip("_") for col in table_agg.columns.values]
     return table_agg
 

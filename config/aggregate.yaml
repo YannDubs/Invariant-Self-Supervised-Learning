@@ -3,14 +3,13 @@ defaults:
   - override hydra/hydra_logging: colorlog
 
 experiment: ???
-agg_mode: [summarize_metrics] # summarize_RD_curves, plot_all_RD_curves, plot_invariance_RD_curve, plot_scatter_lines
+agg_mode: [summarize_metrics] # plot_scatter_lines
 col_val_subset : {}
 
 patterns:
   # name, pattern to find it
   representor: "results/exp_${experiment}/**/results_representor.csv"
   predictor: "results/exp_${experiment}/**/results_predictor.csv"
-  communication: "results/exp_${experiment}/**/results_communication.csv"
 
 collect_data:
   params_to_add: {}

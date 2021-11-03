@@ -1,14 +1,49 @@
 from __future__ import annotations
 
 import functools
+from collections import Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
 from issl.helpers import plot_config
+
 from .helpers import aggregate, assert_sns_vary_only_param, get_default_args, save_fig
 
-__all__ = ["data_getter", "table_summarizer", "folder_split", "single_plot"]
+__all__ = [
+    "data_getter",
+    "table_summarizer",
+    "folder_split",
+    "single_plot",
+    "filename_format",
+]
+
+
+def filename_format(arg_format: list):
+    """Allows formatting of kwargs"""
+
+    def real_decorator(fn):
+        dflt_kwargs = get_default_args(fn)
+
+        @functools.wraps(fn)
+        def helper(self, filename=dflt_kwargs["filename"], **kwargs):
+            dflt_kwargs.update(kwargs)
+
+            for arg in arg_format:
+                val = dflt_kwargs[arg]
+                if isinstance(val, Sequence) and not isinstance(val, str):
+                    val = "-".join(val)
+
+                if isinstance(val, str) and "/" in val:
+                    val = val.split("/")[-1]
+
+                filename = filename.replace("{" + f"{arg}" + "}", str(val))
+
+            return fn(self, filename=filename, **kwargs)
+
+        return helper
+
+    return real_decorator
 
 
 def data_getter(fn):

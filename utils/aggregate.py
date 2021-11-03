@@ -3,6 +3,7 @@
 This should be called by `python utils/aggregate.py <conf>` where <conf> sets all configs from the cli, see
 the file `config/aggregate.yaml` for details about the configs. or use `python utils/aggregate.py -h`.
 """
+from __future__ import annotations
 
 import glob
 import logging
@@ -33,7 +34,7 @@ CURR_DIR = os.path.abspath(str(Path(__file__).parents[0]))
 sys.path.append(MAIN_DIR)
 sys.path.append(CURR_DIR)
 
-from lossyless.helpers import BASE_LOG, check_import  # isort:skip
+from issl.helpers import check_import  # isort:skip
 from main import CONFIG_FILE, get_stage_name  # isort:skip
 from utils.helpers import (  # isort:skip
     cfg_load,
@@ -41,6 +42,7 @@ from utils.helpers import (  # isort:skip
     getattr_from_oneof,
     omegaconf2namespace,
     format_resolver,
+    replace_keys,
 )
 from utils.postplotting import (  # isort:skip
     PRETTY_RENAMER,
@@ -49,6 +51,7 @@ from utils.postplotting import (  # isort:skip
     folder_split,
     single_plot,
     table_summarizer,
+    filename_format,
 )
 from utils.postplotting.helpers import aggregate, save_fig  # isort:skip
 from utils.visualizations.helpers import kwargs_log_scale  # isort:skip
@@ -136,8 +139,8 @@ class ResultAggregator(PostPlotter):
         self.param_names = dict()
         self.cfgs = dict()
 
-    def merge_tables(self, to_merge=["featurizer", "predictor", "communication"]):
-        """Add one large table called `"merge"` that concatenates other tables."""
+    def merge_tables(self, to_merge=["representor", "predictor"]):
+        """Add one large table called `"merged"` that concatenates other tables."""
         merged = self.tables[to_merge[0]]
         for table in to_merge[1:]:
             merged = pd.merge(
@@ -148,8 +151,8 @@ class ResultAggregator(PostPlotter):
 
     def collect_data(
         self,
-        pattern=f"results/**/results_featurizer.csv",
-        table_name="featurizer",
+        pattern=f"results/**/results_representor.csv",
+        table_name="representor",
         params_to_rm=["jid"],
         params_to_add={},
     ):
@@ -214,11 +217,23 @@ class ResultAggregator(PostPlotter):
             df_params = pd.DataFrame.from_dict(params, orient="index").T
             # looks like : dict(train={metric1:..., metric2:...}, test={metric1:..., metric2:...})
             dicts = pd.read_csv(path, index_col=0).to_dict()
+
+            # TODO remove. This is just temporary to work with previous runs.
+            dicts = {k: replace_keys(v, "_train", "") for k, v in dicts.items()}
+            dicts = {
+                k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
+            }
+
             # flattens dicts and make dataframe :
             # DataFrame(train/metric1:...,train/metric2:..., test/metric1:..., test/metric2:...)
             df_metrics = pd.json_normalize(dicts, sep="/")
 
-            results.append(pd.concat([df_params, df_metrics], axis=1))
+            result = pd.concat([df_params, df_metrics], axis=1)
+
+            # to numeric if appropriate
+            result = result.apply(pd.to_numeric, errors="ignore")
+
+            results.append(result)
 
         param_name = list(params.keys())
         self.tables[table_name] = pd.concat(results, axis=0).set_index(param_name)
@@ -235,299 +250,16 @@ class ResultAggregator(PostPlotter):
         for col, val in col_val.items():
             logger.debug("Keeping only val={val} for col={col}.")
             for k in self.tables.keys():
-                self.tables[k] = self.tables[k][(self.tables[k][col]).isin(val)]
-                if self.tables[k].empty:
+                table = self.tables[k].reset_index()
+                if col not in table.columns:
+                    logger.info(f"Skipping subsetting {k} as {col} not there.")
+                    continue
+
+                table = table[(table[col]).isin(val)]
+                if table.empty:
                     logger.info(f"Empty table after filtering {col}={val}")
 
-    @data_getter
-    def plot_all_RD_curves(
-        self,
-        data=None,
-        rate_cols=["test/feat/rate"],
-        distortion_cols=["test/feat/distortion", "test/feat/online_loss"],
-        logbase_x=None,
-        cols_to_agg=["seed"],
-        filename="all_RD_curves_{table}",
-        **kwargs,
-    ):
-        """Main function for plotting different Rate distortion plots.
-
-        Parameters
-        ----------
-        data : pd.DataFrame or str
-            Dataframe to use for plotting. If str will use one of self.tables. If `None` runs all tables.
-
-        rate_cols : list of str
-            List of columns that can be considered as rates and for which we should generate RD curves.
-
-        distortion_cols : list of str
-            List of columns that can be considered as distortions and for which we should generate
-            RD curves.
-
-        logbase_x : int, optional
-            Base of the x  axis. If 1 no logscale. if `None` will automatically chose.
-
-        cols_to_agg : list of str, optional
-            Paremeters over which to aggregate the RD curves and compute the standard errors.
-
-        kwargs :
-            Additional arguments to `plot_scatter_lines`.
-        """
-        data = merge_rate_distortions(data, rate_cols, distortion_cols)
-
-        is_single_col = len(distortion_cols) == 1
-        is_single_row = len(rate_cols) == 1
-
-        return self.plot_scatter_lines(
-            data=data,
-            y="rate_val_mean",
-            x="distortion_val_mean",
-            kind="line",
-            logbase_x=logbase_x,
-            row=None if is_single_row else "rate_type",
-            col=None if is_single_col else "distortion_type",
-            cols_to_agg=cols_to_agg,
-            is_x_errorbar=True,
-            is_y_errorbar=True,
-            sharey=is_single_row,
-            sharex=is_single_col,
-            filename=filename,
-            xlabel="Distortion",
-            ylabel="Rate (bits)",
-            **kwargs,
-        )
-
-    @data_getter
-    def plot_pareto_front(
-        self,
-        data=None,
-        hue="dist",
-        rate_col="test/comm/rate",
-        distortion_col="test/pred/err",
-        logbase_x=None,
-        filename="pareto_front_{table}",
-        **kwargs,
-    ):
-        """Main function for plotting the pareto front, of RD curve. I.e. similar to `plot_all_RD_curves`
-        but instead of taking averages you look at minimums.
-
-        Parameters
-        ----------
-        data : pd.DataFrame or str
-            Dataframe to use for plotting. If str will use one of self.tables. If `None` runs all tables.
-
-        hue : str, optional
-            Column by which to group the pareto fronts. I.e. for different values of that column,
-            will plot different pareto optimal RD curves.
-
-        rate_col : list of str
-            Columns of rate rates and for which we should generate RD curves.
-
-        distortion_col : list of str
-            List of columns that can be considered as distortions and for which we should generate
-            RD curves.
-
-        logbase_x : int, optional
-            Base of the x  axis. If 1 no logscale. if `None` will automatically chose.
-
-        kwargs :
-            Additional arguments to `plot_scatter_lines`.
-        """
-        mask = np.zeros(data.shape[0], dtype=bool)
-        for curr_hue in data.index.unique(level=hue):
-            hue_mask = data.index.get_level_values(hue) == curr_hue
-            pareto_mask = is_pareto_optimal(
-                data.loc[hue_mask, [rate_col, distortion_col]].values
-            )
-            mask[hue_mask] = pareto_mask
-
-        data = data[mask]
-        return self.plot_scatter_lines(
-            data=data,
-            y=rate_col,
-            x=distortion_col,
-            kind="line",
-            logbase_x=logbase_x,
-            row=None,
-            col=None,
-            sharey=False,
-            sharex=False,
-            filename=filename,
-            xlabel="Distortion",
-            ylabel="Rate (bits)",
-            hue=hue,
-            **kwargs,
-        )
-
-    @data_getter
-    def plot_invariance_RD_curve(
-        self,
-        data="featurizer",
-        col_dist_param="dist",
-        noninvariant="VAE",
-        rate_col="test/feat/rate",
-        upper_distortion="test/feat/distortion",
-        desirable_distortion="test/feat/online_loss",
-        logbase_x=None,
-        cols_to_agg=["seed"],
-        filename="invariance_RD_curve",
-        **kwargs,
-    ):
-        """Plot a specific rate distortion curve which where the distortion is the invaraince
-        distortion H[M(X)|Z], but the non invariant model shows both H[M(X)|Z] and H[X|Z]. Where
-        H[X|Z] is the distoriton used during training for the non invariant models, but is also a
-        tight upper bound on the maximal H[M(X)|Z] for a (noninvariant) optimal Z.
-
-        Parameters
-        ----------
-        data : pd.DataFrame or str
-            Dataframe to use for plotting. If str will use one of self.tables. If `None` runs all tables.
-
-        col_dist_param : str, optional
-            Name of the column that will distinguish the non invariant and the invariant model.
-
-        noninvariant : str, optional
-            Name of the non invariant model.
-
-        desirable_distortion : str, optional
-            Name fo the column containing the invariance distortion.
-
-        kwargs :
-            Additional arguments to `plot_scatter_lines`.
-        """
-        results = data
-        results = merge_rate_distortions(
-            results, [rate_col], [upper_distortion, desirable_distortion]
-        )
-
-        tmp = results.reset_index()
-        tmp = tmp[
-            (tmp[col_dist_param] == noninvariant)
-            | (tmp["distortion_type"] == upper_distortion)
-        ]
-        tmp.loc[
-            (tmp[col_dist_param] == noninvariant)
-            & (tmp["distortion_type"] == upper_distortion),
-            col_dist_param,
-        ] = f"Worst {noninvariant}"
-        tmp["distortion_type"] = "distortion"
-        results = tmp.set_index(results.index.names)
-
-        return self.plot_scatter_lines(
-            data=results,
-            y="rate_val_mean",
-            x="distortion_val_mean",
-            kind="line",
-            hue=col_dist_param,
-            logbase_x=logbase_x,
-            cols_to_agg=cols_to_agg,
-            is_x_errorbar=True,
-            is_y_errorbar=True,
-            sharey=False,
-            sharex=False,
-            filename=filename,
-            xlabel="Distortion",
-            ylabel="Rate",
-            **kwargs,
-        )
-
-    @data_getter
-    @table_summarizer
-    def summarize_RD_curves(
-        self,
-        data=None,
-        rate_cols=["test/feat/rate"],
-        distortion_cols=["test/feat/distortion", "test/feat/online_loss"],
-        cols_to_agg=["seed"],
-        cols_to_sweep=["beta"],
-        mse_cols=["test/feat/distortion", "test/feat/online_loss"],
-        compare_cols=["dist"],
-        epsilon_close_distortion=0.01,
-        filename="summarized_RD_curves_{table}",
-    ):
-        """Summarize RD curves by a table: area under the RD curve, average rate for (nearly)
-        lossless prediction, ...
-
-        Parameters
-        ----------
-        data : pd.DataFrame or str, optional
-            Dataframe to summarize. If str will use one of self.tables. If `None` uses all data
-                in self.tables.
-
-        rate_cols : list of str, optional
-            List of columns that can be considered as rates and for which we should generate RD curves.
-
-        distortion_cols : list of str, optional
-            List of columns that can be considered as distortions and for which we should generate
-            RD curves.
-
-        cols_to_agg : list of str, optional
-            List of columns over which to aggregate the summarizes. Typically ["seed"].
-
-        cols_to_sweep : list of str, optional
-            Columns over which to sweep to generate different values on the RD curve. Typically ["beta"].
-
-        mse_cols : list of str, optional
-            List of columns that are distortions (subset of distortion_cols) but where the distortions
-            are in terms of mean squared error (variance) instead of entropies. In that case the columns
-            will first be processed to entropy (upper bounds) so that that the distortion and rate
-            are both in terms of the same unit which makes it more meaningfull.
-
-        compare_cols : list of str, optional
-            List of columns that you whish to compare (typically some model hyperparameters). This
-            is used to compute the compute the approx. rate needed for lossless prediction, because
-            lossless would be defined as reaching the minimal distortion for all different models
-            that only differ in terms of `compare_cols`.
-
-        epsilon_close_distortion : float, optional
-            Threshold from which you can be considered to have similar distortion. This is used to
-            comptute all the rates for "losless" prediction, which means that you are delta close
-            in terms of prediction to the best one.
-
-        filename : str, optional
-            Name of the file for saving to summarized RD curves. Can interpolate {table} if from
-            self.tables.
-        """
-        check_import("sklearn", "summarize_RD_curves")
-
-        # to be meaningfull, both the disortion and the rate columns should be in bits / erntropies (also as approximately linar the
-        # trapezoidal rule should be a very good approximation of integral)
-        # h[X] = -1/2 log(2 pi e Var[X]) + KL...
-        for mse_col in mse_cols:
-            data[mse_col] = (
-                0.5 * np.log(2 * np.pi * np.e * data[mse_col]) / np.log(BASE_LOG)
-            )
-
-        data = merge_rate_distortions(data, rate_cols, distortion_cols)
-        data = data.reset_index(level=cols_to_sweep)
-
-        # area under the curve => summary of how good rate over all distortions
-        aurd = data.groupby(data.index.names).apply(apply_area_under_RD).rename("AURD")
-        aurd = aggregate(aurd, cols_to_agg)
-
-        # compute the avg rate for each model to have distortion than best for THAT model
-        data_toagg = data.reset_index(level=cols_to_agg)
-        rate_mindist_cur = data_toagg.groupby(data_toagg.index.names).apply(
-            apply_rate_mindistortion,
-            epsilon=epsilon_close_distortion,
-            name="mindist_curr",
-        )
-
-        # compute the avg rate for each model to have distortion than best for All model
-        dropped = data_toagg.reset_index(level=compare_cols)
-        mindist_all = dropped.groupby(dropped.index.names).min()[
-            "distortion_val"
-        ]  # table of all minimum distortions
-        rate_mindist_all = data_toagg.groupby(data_toagg.index.names).apply(
-            apply_rate_mindistortion,
-            epsilon=epsilon_close_distortion,
-            name="mindist_all",
-            min_distortion_df=mindist_all,
-            to_drop=compare_cols,
-        )
-
-        summary = pd.concat([aurd, rate_mindist_cur, rate_mindist_all], axis=1)
-        return summary
+                self.tables[k] = table.set_index(self.tables[k].index.names)
 
     @data_getter
     @table_summarizer
@@ -556,6 +288,68 @@ class ResultAggregator(PostPlotter):
                 Name of the file for saving the metrics. Can interpolate {table} if from self.tables.
         """
         return aggregate(data, cols_to_agg, aggregates)
+
+    @filename_format(["cols_to_sweep", "metric", "operator", "threshold"])
+    @data_getter
+    @table_summarizer
+    def summarize_threshold(
+        self,
+        data: Optional[str] = "predictor",
+        cols_to_agg: list[str] = ["seed"],
+        cols_to_sweep: list[str] = ["zdim"],
+        metric: str = "test/pred/accuracy_score_agg_min_mean",
+        operator: str = "geq",
+        threshold: float = 0.99,
+        filename: str = "summarized_{cols_to_sweep}_{metric}_{operator}_{threshold}_{table}",
+    ):
+        """Sweep over `col_to_sweep` and store return first value s.t. the metric is larger or smaller
+        than a given threshold.
+
+        Parameters
+        ----------
+        data : pd.DataFrame or str, optional
+            Dataframe to summarize. If str will use one of self.tables. If `None` uses all data
+            in self.tables.
+
+        cols_to_agg : list of str, optional
+            List of columns over which to avg metric before thresholding. E.g. `["seed"]`.
+            Note that aggregation is not done after thresholding because usually the gap between
+            the sweeps is large => would seem like huge variance.
+
+        cols_to_sweep : list str, optional
+            Columns over which to sweep to find value achieving threshold.
+
+        operator : {"leq","geq"}, optional
+            Whether to achieve >= (geq) or <= (leq) than threshold.
+
+        threshold : float, optional
+            Value that should be achieved.
+
+        filename : str, optional
+            Name of the file for saving the metrics. Can interpolate {col_to_sweep} {metric}
+            {operator} {threshold} and {table}.
+        """
+        data_agg = aggregate(data, cols_to_agg, ["mean"])
+        data_metric = data_agg[metric]
+
+        if operator == "geq":
+            idcs = data_metric >= threshold
+            filtered = data_metric[idcs]
+            filtered = filtered.reset_index(level=cols_to_sweep)
+            filtered = filtered.groupby(filtered.index.names).min()
+        elif operator == "leq":
+            idcs = data_metric <= threshold
+            filtered = data_metric[idcs]
+            filtered = filtered.reset_index(level=cols_to_sweep)
+            filtered = filtered.groupby(filtered.index.names).max()
+        else:
+            raise ValueError(f"Unknown operator={operator}.")
+
+        base = data_metric.reset_index(level=cols_to_sweep)
+        base = base.groupby(filtered.index.names).max()
+        base.iloc[:] = np.nan  # fill with nan
+
+        return base.fillna(filtered)
 
     @data_getter
     def plot_superpose(
@@ -745,7 +539,10 @@ class ResultAggregator(PostPlotter):
 
         elif mode == "lmplot":
             used_kwargs = dict(
-                legend="full", sharey=sharey, sharex=sharex, legend_out=legend_out,
+                legend="full",
+                sharey=sharey,
+                sharex=sharex,
+                legend_out=legend_out,
             )
             used_kwargs.update(kwargs)
 
@@ -885,82 +682,6 @@ def set_log_scale(data, basex, basey, **kwargs):
     y_data = data["y"].unique()
     plt.xscale(**kwargs_log_scale(x_data, base=basex))
     plt.yscale(**kwargs_log_scale(y_data, base=basey))
-
-
-def merge_rate_distortions(results, rate_cols, distortion_cols):
-    """
-    Adds a `distortion_type` and `rate_type` index by melting over `distortion_cols` and `rate_cols`
-    respectively. The values columns are resepectively `distortion_val`and `rate_val`.
-    """
-    results = results.melt(
-        id_vars=rate_cols,
-        value_vars=distortion_cols,
-        ignore_index=False,
-        var_name="distortion_type",
-        value_name="distortion_val",
-    ).set_index(["distortion_type"], append=True)
-
-    results = results.melt(
-        id_vars="distortion_val",
-        value_vars=rate_cols,
-        ignore_index=False,
-        var_name="rate_type",
-        value_name="rate_val",
-    ).set_index(["rate_type"], append=True)
-    return results
-
-
-def apply_area_under_RD(df):
-    """Compute the area under the rate distortion curve using trapezoidal rule."""
-    df = df.sort_values(by="distortion_val")
-    return sklearn.metrics.auc(df["distortion_val"], df["rate_val"])
-
-
-def apply_rate_mindistortion(
-    df, epsilon=0.01, min_distortion_df=None, to_drop=["dist"], name="mindistortion"
-):
-    """
-    Compute the rate for (delta) close to lossless prediction. `name` is name of added column. `min_distortion_df`
-    is a dataframe containing the minimal distortions for a set of parameters (all parameters besides `to_drop`).
-    For example you might want to see the rate of different models that are close to the best possible distoriton
-    over ALL models so `to_drop` will be the model column. If `min_distortion_df` is None you don't look at best disortion
-    over ALL models but best over CURRENT models.
-    """
-    if min_distortion_df is None:
-        min_distortion = df["distortion_val"].min()
-    else:
-        current_idcs = df.reset_index(level=to_drop).index.unique()
-        assert len(current_idcs) == 1
-        min_distortion = min_distortion_df.loc[current_idcs[0]]
-
-    threshold = min_distortion + epsilon
-    df = df[df["distortion_val"] <= threshold]
-    # returning series in apply can be very slow
-    return pd.Series(
-        [df["rate_val"].mean(), df["rate_val"].sem(), threshold],
-        index=[f"rate_val_{name}_mean", f"rate_val_{name}_sem", f"{name}_threshold"],
-    )
-
-
-def get_varying_levels(df, is_index=True):
-    """Return the name of the levels that are varying in multi index / columns."""
-    if is_index:
-        levels, names = df.index.levels, df.index.names
-    else:
-        levels, names = df.columns.levels, df.columns.names
-    return [n for l, n in zip(levels, names) if len(l) > 1]
-
-
-# credits: https://stackoverflow.com/questions/32791911/fast-calculation-of-pareto-front-in-python
-def is_pareto_optimal(costs):
-    """Find the pareto optimal points (for minimization), and returns a mask for selecting those."""
-    mask_pareto = np.ones(costs.shape[0], dtype=bool)
-    for i, cost in enumerate(costs):
-        if mask_pareto[i]:
-            # Keep points with a lower cost and keep self
-            mask_pareto[mask_pareto] = np.any(costs[mask_pareto] < cost, axis=1)
-            mask_pareto[i] = True
-    return mask_pareto
 
 
 if __name__ == "__main__":

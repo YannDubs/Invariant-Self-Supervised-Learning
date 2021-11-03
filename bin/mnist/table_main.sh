@@ -17,7 +17,7 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_30_test,data_repr_10,data_repr_20,data_repr_30,data_repr_100,data_repr_300,data_repr_1000,data_repr_10000]
+data_pred.all_data=[data_repr_10,data_repr_20,data_repr_30,data_repr_100,data_repr_300,data_repr_1000,data_repr_10000,data_repr_100_test,data_repr_agg]
 predictor=sk_logistic
 data_repr.kwargs.val_size=2
 +data_pred.kwargs.val_size=2
@@ -30,7 +30,12 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_stdA,exact_mlp,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,std_cntr,cntr,cntr_stdA,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_stoch,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_stoch
+representor=exact,exact_stdA,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,std_cntr,cntr,cntr_stdA,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_stoch,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_stoch,gen_stdA_V,exact_stdA_mlp,cntr_stdA_mlplin,slfdstl_prior_mlplin
+seed=1,2,3
+"
+
+kwargs_multi="
+representor=gen_stdA_V,gen
 seed=1,2,3
 "
 
@@ -49,3 +54,23 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
+
+wait 
+
+# for representor
+python utils/aggregate.py \
+       experiment=$experiment  \
+       $col_val_subset \
+       +collect_data.params_to_add.data_subset="data.kwargs.subset_train_size" \
+       +summarize_threshold.cols_to_sweep=["data_subset","datapred"] \
+       +summarize_threshold.metric="test/pred/accuracy_score_mean" \
+       +summarize_threshold.operator="geq" \
+       +summarize_threshold.threshold=0.98 \
+       agg_mode=[summarize_metrics,summarize_threshold]
+
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       +col_val_subset.datapred=["mnist_agg"] \
+       kwargs.prfx="agg_" \
+       agg_mode=[summarize_metrics]

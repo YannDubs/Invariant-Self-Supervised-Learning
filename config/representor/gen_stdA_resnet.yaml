@@ -10,3 +10,4 @@ decodability:
     decoder_kwargs:
       architecture: resnet_transpose
       base: resnet18
+      activation: ReLU
