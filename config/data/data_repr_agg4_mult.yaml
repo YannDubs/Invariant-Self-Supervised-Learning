@@ -1,0 +1,9 @@
+defaults:
+  - data_repr_agg
+
+name: "{name}_agg${.kwargs.dataset_kwargs.n_agg_tasks}_mult"
+
+kwargs:
+  dataset_kwargs:
+    n_agg_tasks: 4
+    max_k_ary_agg: null

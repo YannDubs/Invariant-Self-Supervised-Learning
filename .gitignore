@@ -36,6 +36,7 @@ __MACOSX/
 *.egg-info
 __pycache__/
 *.py[cod]
+*.pyc
 .python-version
 *$py.class
 

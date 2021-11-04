@@ -47,3 +47,13 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
+
+wait
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       +summarize_threshold.cols_to_sweep=["zdim"] \
+       +summarize_threshold.metric="test/pred/accuracy_score_min_mean" \
+       +summarize_threshold.operator="geq" \
+       +summarize_threshold.threshold=0.98 \
+       agg_mode=[summarize_metrics,summarize_threshold]

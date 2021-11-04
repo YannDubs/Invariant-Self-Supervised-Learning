@@ -246,7 +246,7 @@ class SklearnTrainer:
 
     def fit(self, model: Pipeline, datamodule: SklearnDataModule):
         if self.is_agg_target:
-            model = MultiOutputClassifier(model, n_jobs=-1)
+            model = MultiOutputClassifier(model)
 
         data = datamodule.train_dataset
         model.fit(data.X, data.Y)

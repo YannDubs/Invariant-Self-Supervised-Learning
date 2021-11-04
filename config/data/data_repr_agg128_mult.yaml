@@ -1,0 +1,7 @@
+defaults:
+  - data_repr_agg4_mult
+
+kwargs:
+  dataset_kwargs:
+    n_agg_tasks: 128
+    max_k_ary_agg: null

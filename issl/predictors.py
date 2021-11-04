@@ -14,14 +14,8 @@ from torch import nn
 from torchmetrics.functional import accuracy
 
 from .architectures import get_Architecture
-from .helpers import (
-    aggregate_dicts,
-    append_optimizer_scheduler_,
-    mean,
-    namespace2dict,
-    prediction_loss,
-    weights_init,
-)
+from .helpers import (aggregate_dicts, append_optimizer_scheduler_, mean,
+                      namespace2dict, prediction_loss, weights_init)
 
 __all__ = [
     "Predictor",
@@ -74,10 +68,10 @@ class Predictor(pl.LightningModule):
 
         if self.is_agg_target:
             cfgp = copy.deepcopy(cfg_pred)
-            cfgp.arch_kwargs.out_shape = 2
-            Arch_binary = get_Architecture(cfgp.architecture, **cfgp.arch_kwargs)
+            del cfgp.arch_kwargs.out_shape  # use same hparams besides out shape
+            Arch = get_Architecture(cfgp.architecture, **cfgp.arch_kwargs)
             self.agg_predictors = nn.ModuleList(
-                [Arch_binary(pred_in_shape) for _ in self.hparams.data.aux_shape]
+                [Arch(pred_in_shape, out_shape=k) for k in self.hparams.data.aux_shape]
             )
 
         self.stage = self.hparams.stage

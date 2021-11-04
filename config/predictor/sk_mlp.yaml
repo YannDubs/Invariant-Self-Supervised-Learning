@@ -1,7 +1,7 @@
 defaults:
   - base_sklearn
 
-name: sk_logistic
+name: sk_mlp
 model:
   _target_: sklearn.neural_network.MLPClassifier
   hidden_layer_sizes: (1024,)

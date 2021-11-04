@@ -50,8 +50,13 @@ class ISSLDataset(abc.ABC):
 
     n_agg_tasks : int, optional
         Number of aggregated tasks to add if `aux_target="agg_target"`. Will make `n_agg_tasks` random
-        binary classification tasks. Note that for the theory to work you should not treat it as a multi task problem,
-        but train a separate model for each aggregated task.
+        k-ary classification tasks. Note that for the theory to work you should not treat it as a
+        multi task problem but train a separate model for each aggregated task.
+
+    max_k_ary_agg : int, optional
+        (Included) upper bound on the k-ary clf for each `n_agg_tasks` subtasks. E.g. if 4 will
+        sample from binary, 3-ary, or 4-ary. Should be in ]1,n_target[. If `null` uses the maximum
+        of n_Mx -1.
 
     seed : int, optional
         Pseudo random seed.
@@ -67,6 +72,7 @@ class ISSLDataset(abc.ABC):
         is_normalize: bool = False,
         normalization: Optional[str] = None,
         n_agg_tasks: int = 10,
+        max_k_ary_agg: int = 2,
         seed: int = 123,
         **kwargs,
     ) -> None:
@@ -76,13 +82,21 @@ class ISSLDataset(abc.ABC):
         self.seed = seed
         self.is_normalize = is_normalize
         self.n_agg_tasks = n_agg_tasks
+        self.max_k_ary_agg = max_k_ary_agg
+        self.shape_agg_target = None
 
         self.normalization = (
             self.dataset_name if normalization is None else normalization
         )
 
+        if self.max_k_ary_agg is None:
+            self.max_k_ary_agg = self.get_shapes()[0][0] - 1  # maxumum
+
         if self.aux_target == "agg_target":
             self.agg_tgt_mapper = self.get_agg_tgt_mapper()
+            self.shape_agg_target = tuple(
+                len(np.unique(m)) for m in self.agg_tgt_mapper
+            )
 
     @property
     @abc.abstractmethod
@@ -127,12 +141,15 @@ class ISSLDataset(abc.ABC):
         agg_tgt_mapper = []
         n_Mx = self.get_shapes()[0][0]
 
-        assert (n_Mx > 2) and (self.n_agg_tasks > 0)
+        assert (n_Mx > self.max_k_ary_agg) and (self.n_agg_tasks > 0)
         with tmp_seed(self.seed):
             while len(agg_tgt_mapper) < self.n_agg_tasks:
-                mapper = np.random.randint(0, 2, size=n_Mx)
-                if len(np.unique(mapper)) == 1:
-                    continue  # don't add all constants
+                # number of labels
+                k = np.random.randint(2, self.max_k_ary_agg + 1)
+                mapper = np.random.randint(0, k, size=n_Mx)
+                if len(np.unique(mapper)) < k:
+                    # some classes weren't sampled: go again
+                    continue
                 agg_tgt_mapper.append(mapper)
 
         return agg_tgt_mapper
@@ -191,7 +208,7 @@ class ISSLDataset(abc.ABC):
         shapes = self.shapes
         shapes["representative"] = shapes["input"]
         shapes["augmentation"] = shapes["input"]
-        shapes["agg_target"] = (2,) * self.n_agg_tasks  # binary clf
+        shapes["agg_target"] = self.shape_agg_target
         shapes[None] = None
 
         return shapes["target"], shapes[self.aux_target]

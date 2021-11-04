@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"table_sup"
+experiment=$prfx"approx_subtasks"
 notes="
-**Goal**: run the dim part of the MNIST table.
+**Goal**: evaluate the approximation on the number of subtasks
 "
 
 # parses special mode for running the script
@@ -17,15 +17,12 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=mnist
-data_pred.all_data=[data_repr_agg,data_repr_100_test,data_repr_100,data_repr_1000,data_repr_10000]
+data_pred.all_data=[data_repr_agg4,data_repr_agg8,data_repr_agg10,data_repr_agg16,data_repr_agg32,data_repr_agg64,data_repr_agg128,data_repr_agg4_mult,data_repr_agg8_mult,data_repr_agg10_mult,data_repr_agg16_mult,data_repr_agg32_mult,data_repr_agg64_mult,data_repr_agg128_mult]
 predictor=sk_logistic
 data_repr.kwargs.val_size=2
 +data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
-representor=none
-predictor=pytorch
-architecture@predictor=resnet18
 timeout=$time
 $add_kwargs
 "
@@ -33,9 +30,10 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=none
+representor=std_gen_smallZ,cntr_stdA
 seed=1,2,3
 "
+
 
 # difference for gen: linear resnet / augmentations / larger dim
 
@@ -51,9 +49,4 @@ if [ "$is_plot_only" = false ] ; then
   done
 fi
 
-wait
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       patterns.representor=null \
-       agg_mode=[summarize_metrics]
+wait 

@@ -8,3 +8,5 @@ dataset: ???
 kwargs:
   dataset_kwargs:
     aux_target: agg_target
+    n_agg_tasks: 10
+    max_k_ary_agg: 2
