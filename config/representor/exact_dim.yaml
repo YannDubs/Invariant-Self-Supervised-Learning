@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - exact
+
+representor:
+  name: exact_dim
+
+encoder:
+  z_shape: 8192

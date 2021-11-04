@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - cntr_stdA
+
+representor:
+  name: cntr_stdA_bs
+
+data_repr:
+  kwargs:
+    batch_size: 1024

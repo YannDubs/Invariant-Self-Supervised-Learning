@@ -241,7 +241,6 @@ def set_data_pred(cfg: Container, data: str):
 
         if cfg.data_pred.is_copy_repr:
             name = cfg.data_repr.name
-            breakpoint()
             if cfg.data_repr.name == "stl10_unlabeled":
                 # stl10_unlabeled goes to stl10 at test time
                 name = "stl10"
@@ -340,7 +339,7 @@ def instantiate_datamodule_(
 
     n_devices = max(cfgt.gpus * cfgt.num_nodes, 1)
     eff_batch_size = n_devices * cfgd.kwargs.batch_size * cfgt.accumulate_grad_batches
-    train_batches = cfgd.length // eff_batch_size
+    train_batches = 1 + cfgd.length // eff_batch_size
     cfgd.max_steps = cfgt.max_epochs * train_batches
 
     return datamodule

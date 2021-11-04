@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - gen_stdA
+
+representor:
+  name: gen_stdA_dim
+
+encoder:
+  z_shape: 8192

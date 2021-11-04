@@ -40,13 +40,6 @@ class ContrastiveISSL(nn.Module):
     min_temperature : float, optional
         Lower bound on the temperature. Only if `is_train_temperature`.
 
-    effective_batch_size : float, optional
-        Effective batch size to use for estimating InfoNCE. Larger means that more variance but less bias,
-        but if too large can become not a lower bound anymore. In [1] this is (m+1)/(2*alpha), where
-        +1 and / 2 comes from the fact that talking about batch size rather than sample size.
-        If `None` will use the standard unweighted `effective_batch_size`. Another good possibility
-        is `effective_batch_size=len_dataset` which ensures that least bias while still lower bound.
-
     is_normalize_proj : bool, optional
         Whether to use cosine similarity instead of dot products fot the logits of deterministic functions.
         This seems necessary for training, probably because if not norm of Z matters++ and then
@@ -88,7 +81,6 @@ class ContrastiveISSL(nn.Module):
         is_train_temperature: bool = True,
         min_temperature: float = 0.01,
         is_normalize_proj: bool = True,
-        effective_batch_size: Optional[float] = None,
         is_aux_already_represented: bool = False,
         is_project: bool = True,
         src_tgt_comparison: str = "all",
@@ -109,7 +101,6 @@ class ContrastiveISSL(nn.Module):
         self.min_temperature = min_temperature
         self.src_tgt_comparison = src_tgt_comparison
         self.is_normalize_proj = is_normalize_proj
-        self.effective_batch_size = effective_batch_size
         self.is_aux_already_represented = is_aux_already_represented
         self.is_project = is_project
         self.is_pred_proj_same = is_pred_proj_same
@@ -306,28 +297,8 @@ class ContrastiveISSL(nn.Module):
             # the ones from the same index
             pos_idx = arange
 
-        if self.effective_batch_size is not None:
-            # TODO remove if not useful
-            if self.src_tgt_comparison == "all":
-                # want the reweighing so that as if the batch size was entire dataset
-                # so number of negatives would be 2*dataset - 1 (one being being current)
-                effective_n_classes = 2 * self.effective_batch_size - 1
-            else:
-                effective_n_classes = self.effective_batch_size
 
-            # you want to multiply \sum exp(negative) in the denominator by to_mult
-            # so that they have an effective weight of `effective_n_classes - 1`
-            # -1 comes from the fact that only the negatives
-            to_mult = (effective_n_classes - 1) / (n_classes - 1)
-
-            # equivalent: add log(to_mult) to every negative logits
-            # equivalent: add - log(to_mult) to positive logits
-            to_add = -math.log(to_mult)
-            to_add = to_add * torch.ones_like(logits[:, 0:1])  # correct shape
-            logits.scatter_add_(1, pos_idx.unsqueeze(1), to_add)
-            # when testing use `logits.gather(1, pos_idx.unsqueeze(1))` to see pos
-        else:
-            effective_n_classes = n_classes
+        effective_n_classes = n_classes
 
         if self.is_train_temperature:
             temperature = torch.clamp(
