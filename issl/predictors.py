@@ -14,8 +14,14 @@ from torch import nn
 from torchmetrics.functional import accuracy
 
 from .architectures import get_Architecture
-from .helpers import (aggregate_dicts, append_optimizer_scheduler_, mean,
-                      namespace2dict, prediction_loss, weights_init)
+from .helpers import (
+    aggregate_dicts,
+    append_optimizer_scheduler_,
+    mean,
+    namespace2dict,
+    prediction_loss,
+    weights_init,
+)
 
 __all__ = [
     "Predictor",
@@ -145,7 +151,7 @@ class Predictor(pl.LightningModule):
             loss_agg = []
             logs_agg = []
             for i in range(len(self.agg_predictors)):
-                curr_loss, curr_logs = self.loss(Ys_hat_agg[i], y_agg[:, i])
+                curr_loss, curr_logs = self.loss(Ys_hat_agg[i], y_agg[i])
                 loss_agg.append(curr_loss)
                 logs_agg.append(curr_logs)
 
