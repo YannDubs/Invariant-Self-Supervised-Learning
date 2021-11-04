@@ -15,24 +15,27 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
-import matplotlib.pyplot as plt
-import pandas as pd
-
 import hydra
-import issl
+import matplotlib.pyplot as plt
 import omegaconf
+import pandas as pd
 import pytorch_lightning as pl
 import torch
 from hydra import compose
-from issl import ISSLModule, Predictor
-from issl.callbacks import LatentDimInterpolator, ReconstructImages
-from issl.helpers import MAWeightUpdate, check_import, prod
-from issl.predictors import SklearnPredictor, get_representor_predictor
 from omegaconf import Container, OmegaConf
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.utilities import parsing
+
+import issl
+from issl import ISSLModule, Predictor
+from issl.callbacks import (
+    LatentDimInterpolator,
+    ReconstructImages,
+)
+from issl.helpers import MAWeightUpdate, check_import, prod
+from issl.predictors import SklearnPredictor, get_representor_predictor
 from utils.data import get_Datamodule
 from utils.data.base import ISSLDataModule
 from utils.helpers import (
@@ -86,68 +89,62 @@ def main(cfg):
     begin(cfg)
     finalize_kwargs = dict(modules={}, trainers={}, datamodules={}, cfgs={}, results={})
 
-    if cfg.representor.name == "none":
-        on_fly_representor = None
+    ############## REPRESENTATION LEARNING ##############
+    logger.info("Stage : Representor")
+    stage = "representor"
+    repr_cfg = set_cfg(cfg, stage)
+    repr_datamodule = instantiate_datamodule_(repr_cfg)
+    repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
+
+    if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
+        representor = ISSLModule(hparams=repr_cfg)
+        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+        initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
+
+        logger.info("Train representor ...")
+        repr_trainer.fit(representor, datamodule=repr_datamodule)
+        save_pretrained(repr_cfg, repr_trainer, stage)
+    else:
+        logger.info("Load pretrained representor ...")
+        if repr_cfg.representor.is_use_init:
+            # for pretrained SSL models simply load the pretrained model (init)
+            representor = ISSLModule(hparams=repr_cfg)
+        else:
+            representor = load_pretrained(repr_cfg, ISSLModule, stage)
+        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+        placeholder_fit(repr_trainer, representor, repr_datamodule)
+        repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
+
+    if repr_cfg.evaluation.representor.is_evaluate:
+        logger.info("Evaluate representor ...")
+        repr_res = evaluate(repr_trainer, repr_datamodule, repr_cfg, stage)
+    else:
+        repr_res = load_results(repr_cfg, stage)
+
+    finalize_stage_(
+        stage,
+        repr_cfg,
+        representor,
+        repr_trainer,
+        repr_datamodule,
+        repr_res,
+        finalize_kwargs,
+        is_save_best=True,
+    )
+    if repr_cfg.predictor.is_skip:
+        return finalize(**finalize_kwargs)
+
+    del repr_datamodule  # not used anymore and can be large
+
+    ############## REPRESENT ##############
+    if repr_cfg.representor.is_on_the_fly:
+        # this will perform representation on the fly.
+        on_fly_representor = representor
         pre_representor = None
     else:
-        ############## REPRESENTATION LEARNING ##############
-        logger.info("Stage : Representor")
-        stage = "representor"
-        repr_cfg = set_cfg(cfg, stage)
-        repr_datamodule = instantiate_datamodule_(repr_cfg)
-        repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
-
-        if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
-            representor = ISSLModule(hparams=repr_cfg)
-            repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
-            initialize_representor_(
-                representor, repr_datamodule, repr_trainer, repr_cfg
-            )
-
-            logger.info("Train representor ...")
-            repr_trainer.fit(representor, datamodule=repr_datamodule)
-            save_pretrained(repr_cfg, repr_trainer, stage)
-        else:
-            logger.info("Load pretrained representor ...")
-            if repr_cfg.representor.is_use_init:
-                # for pretrained SSL models simply load the pretrained model (init)
-                representor = ISSLModule(hparams=repr_cfg)
-            else:
-                representor = load_pretrained(repr_cfg, ISSLModule, stage)
-            repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
-            placeholder_fit(repr_trainer, representor, repr_datamodule)
-            repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
-
-        if repr_cfg.evaluation.representor.is_evaluate:
-            logger.info("Evaluate representor ...")
-            repr_res = evaluate(repr_trainer, repr_datamodule, repr_cfg, stage)
-        else:
-            repr_res = load_results(repr_cfg, stage)
-
-        finalize_stage_(
-            stage,
-            repr_cfg,
-            representor,
-            repr_trainer,
-            repr_datamodule,
-            repr_res,
-            finalize_kwargs,
-            is_save_best=True,
-        )
-        if repr_cfg.predictor.is_skip:
-            return finalize(cfg, **finalize_kwargs)
-
-        del repr_datamodule  # not used anymore and can be large
-
-        ############## REPRESENT ##############
-        if repr_cfg.representor.is_on_the_fly:
-            # this will perform representation on the fly.
-            on_fly_representor = representor
-            pre_representor = None
-        else:
-            # this is quicker but means that you cannot augment at test time and requires more RAM
-            on_fly_representor = None
-            pre_representor = repr_trainer
+        # this is quicker but means that you cannot augment at test time and requires more RAM
+        on_fly_representor = None
+        pre_representor = repr_trainer
 
     ############## DOWNSTREAM PREDICTOR ##############
     for data in cfg.data_pred.all_data:
@@ -161,8 +158,7 @@ def main(cfg):
         pred_cfg = omegaconf2namespace(pred_cfg)
 
         is_sklearn = pred_cfg.predictor.is_sklearn
-        is_train = pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage)
-        if is_train or pred_cfg.predictor.is_force_train:
+        if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
             if is_sklearn:
                 assert not repr_cfg.representor.is_on_the_fly
                 predictor = SklearnPredictor(pred_cfg.predictor)
@@ -211,7 +207,7 @@ def main(cfg):
 
     ############## SHUTDOWN ##############
 
-    return finalize(cfg, **finalize_kwargs)
+    return finalize(**finalize_kwargs)
 
 
 def begin(cfg: Container) -> None:
@@ -244,8 +240,16 @@ def set_data_pred(cfg: Container, data: str):
         cfg.data_pred = OmegaConf.merge(cfg.dflt_data_pred, cfg.data_pred)
 
         if cfg.data_pred.is_copy_repr:
-            cfg.data_pred.name = cfg.data_pred.name.format(name=cfg.data_repr.name)
+            name = cfg.data_repr.name
+            breakpoint()
+            if cfg.data_repr.name == "stl10_unlabeled":
+                # stl10_unlabeled goes to stl10 at test time
+                name = "stl10"
+                cfg.data_pred.dataset = "stl10"
+
+            cfg.data_pred.name = cfg.data_pred.name.format(name=name)
             cfg.data_pred = OmegaConf.merge(cfg.data_repr, cfg.data_pred)
+
     return cfg
 
 
@@ -284,11 +288,9 @@ def set_cfg(cfg: Container, stage: str) -> Container:
                 cfg.representor.is_train = False
                 cfg.evaluation.representor.is_evaluate = False
 
-            elif stage == "predictor":
-                if not cfg.predictor.is_force_train:
-                    # improbable
-                    cfg.predictor.is_train = False
-                    cfg.evaluation.predictor.is_evaluate = False
+            elif stage == "predictor":  # improbable
+                cfg.predictor.is_train = False
+                cfg.evaluation.predictor.is_evaluate = False
 
             else:
                 raise ValueError(f"Unknown stage={stage}.")
@@ -459,8 +461,7 @@ def get_trainer(
         kwargs["sync_batchnorm"] = True
         parallel_devices = [torch.device(f"cuda:{i}") for i in range(kwargs["gpus"])]
         kwargs["plugins"] = DDPPlugin(
-            parallel_devices=parallel_devices,
-            find_unused_parameters=True,
+            parallel_devices=parallel_devices, find_unused_parameters=True,
         )
 
     # TRAINER
@@ -574,10 +575,6 @@ def evaluate(
                 train_res = {
                     k: v for k, v in train_res.items() if f"/{train_stage}/" in k
                 }
-                # the following 2 are only used for better logging in wandb and should be removed
-                train_res = replace_keys(train_res, "_train", "")
-                train_res = replace_keys(train_res, f"{cfg.data.name}/", "")
-
                 to_save["train"] = replace_keys(train_res, "test/", "")
             except:
                 logger.exception(
@@ -597,8 +594,6 @@ def evaluate(
         # ensure that select only correct stage
         test_res = {k: v for k, v in test_res.items() if f"/{cfg.stage}/" in k}
         log_dict(trainer, test_res, is_param=False)
-        # data is used for better logging in wandb and should be removed
-        test_res = replace_keys(test_res, f"{cfg.data.name}/", "")
         to_save["test"] = replace_keys(test_res, "test/", "")
 
         # save results
@@ -681,7 +676,6 @@ def finalize_stage_(
 
 
 def finalize(
-    cfg,
     modules: dict[str, pl.LightningModule],
     trainers: dict[str, pl.Trainer],
     datamodules: dict[str, pl.LightningDataModule],
@@ -689,6 +683,7 @@ def finalize(
     results: dict[str, dict],
 ) -> Any:
     """Finalizes the script."""
+    cfg = cfgs["representor"]  # this is always in
 
     logger.info("Stage : Shutdown")
 

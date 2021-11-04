@@ -14,6 +14,8 @@ def get_Datamodule(datamodule: str) -> type:
         return MnistDataModule
     elif datamodule == "imagenet":
         return ImagenetDataModule
+    elif datamodule == "tinyimagenet":
+        return TinyImagenetDataModule
     elif datamodule == "stl10":
         return STL10DataModule
     elif datamodule == "stl10_unlabeled":

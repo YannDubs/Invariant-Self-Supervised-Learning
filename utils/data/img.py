@@ -11,15 +11,17 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
+import torch
 from PIL import Image
+from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import (
     CIFAR10,
     CIFAR100,
-    MNIST,
-    STL10,
     CocoCaptions,
     ImageFolder,
     ImageNet,
+    MNIST,
+    STL10,
 )
 from torchvision.transforms import (
     CenterCrop,
@@ -41,10 +43,7 @@ from torchvision.transforms import (
 )
 from tqdm import tqdm
 
-import torch
 from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy
-from torch.utils.data import DataLoader, random_split
-
 from .augmentations import (
     CIFAR10Policy,
     ImageNetPolicy,
@@ -80,6 +79,18 @@ except ImportError:
     pass
 
 EXIST_DATA = "data_exist.txt"
+IMG_EXTENSIONS = (
+    ".jpg",
+    ".jpeg",
+    ".JPEG",
+    ".png",
+    ".ppm",
+    ".bmp",
+    ".pgm",
+    ".tif",
+    ".tiff",
+    ".webp",
+)
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -94,6 +105,7 @@ __all__ = [
     "Caltech101DataModule",
     "MnistDataModule",
     "ImagenetDataModule",
+    "TinyImagenetDataModule",
     "CocoClipDataModule",
 ]
 
@@ -354,9 +366,7 @@ class ISSLImgDataset(ISSLDataset):
                 "simclr-imagenet": get_simclr_augmentations("imagenet", shape[-1]),
                 "simclr-finetune": get_finetune_augmentations(shape[-1]),
             },
-            tensor={
-                "erasing": RandomErasing(value=0.5),
-            },
+            tensor={"erasing": RandomErasing(value=0.5),},
         )
 
     def get_img_from_Mx(self, Mx: int) -> Any:
@@ -475,10 +485,7 @@ class ISSLImgDataModule(ISSLDataModule):
         self, **dataset_kwargs
     ) -> tuple[ISSLImgDataset, ISSLImgDataset]:
         dataset = self.Dataset(
-            self.data_dir,
-            download=False,
-            curr_split="train",
-            **dataset_kwargs,
+            self.data_dir, download=False, curr_split="train", **dataset_kwargs,
         )
         n_val = int_or_ratio(self.val_size, len(dataset))
         train, valid = random_split(
@@ -496,10 +503,7 @@ class ISSLImgDataModule(ISSLDataModule):
     def get_train_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
         if "validation" in self.Dataset.get_available_splits():
             train = self.Dataset(
-                self.data_dir,
-                curr_split="train",
-                download=False,
-                **dataset_kwargs,
+                self.data_dir, curr_split="train", download=False, **dataset_kwargs,
             )
         else:
             # if there is no validation split will compute it on the fly
@@ -521,10 +525,7 @@ class ISSLImgDataModule(ISSLDataModule):
 
     def get_test_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
         test = self.Dataset(
-            self.data_dir,
-            curr_split="test",
-            download=False,
-            **dataset_kwargs,
+            self.data_dir, curr_split="test", download=False, **dataset_kwargs,
         )
         return test
 
@@ -1056,13 +1057,14 @@ class ExternalImgDataset(ISSLImgDataset):
             self.preprocess()
 
         self.load_data_(curr_split)
-        self.length = len(list(self.get_dir(curr_split).glob("*.jpeg")))
+        self.length = 0
+        for ext in IMG_EXTENSIONS:
+            self.length += len(list(self.get_dir(curr_split).glob(f"**/*.{ext}")))
 
-        super().__init__(
-            *args,
-            curr_split=curr_split,
-            **kwargs,
-        )
+        super().__init__(*args, curr_split=curr_split, **kwargs)
+
+    def __len__(self) -> int:
+        return self.length
 
     def get_dir(self, split: Optional[str] = None) -> Path:
         """Return the main directory or the one for a split."""
@@ -1104,7 +1106,7 @@ class ExternalImgDataset(ISSLImgDataset):
                 unzip(filename)
             zips = list(data_dir.glob("*.zip"))
 
-        logger.info(f"{self.dataset_name} successfully pre-processed.")
+        logger.info(f"{self.dataset_name} successfully extracted.")
 
     def preprocess(self) -> None:
         """Preprocesses all the extracted and downloaded data."""
@@ -1112,6 +1114,7 @@ class ExternalImgDataset(ISSLImgDataset):
             logger.info(f"Preprocessing {self.dataset_name} split={split}.")
             split_path = self.get_dir(split)
 
+            self.move_split(split)
             remove_rf(split_path, not_exist_ok=True)
             split_path.mkdir()
 
@@ -1124,13 +1127,15 @@ class ExternalImgDataset(ISSLImgDataset):
                 # remove all files and directories that are not needed
                 remove_rf(f)
 
-    @property
-    def __len__(self) -> int:
-        return self.length
+        logger.info(f"{self.dataset_name} successfully pre-processed.")
 
     @classmethod
     def get_available_splits(cls) -> list[str]:
         return ["test", "train"]
+
+    def move_split(self, split: str) -> None:
+        """Moves folders for a specific split before starting the processing."""
+        pass
 
     @property
     def preprocessing_resizer(self) -> Callable[..., Any]:
@@ -1156,6 +1161,100 @@ class ExternalImgDataset(ISSLImgDataset):
         ...
 
 
+class TinyImagenetDataset(ExternalImgDataset):
+    """Tiny Imagenet."""
+
+    split_to_tmp = dict(test="tmp_test", train="tmp_train")
+    split_to_old = dict(test="val", train="train")
+    required_packages = []
+    min_size = None
+    urls = [
+        "http://cs231n.stanford.edu/tiny-imagenet-200.zip",
+    ]
+
+    def __init__(self, *args, normalization="ImageNet", **kwargs):
+        super().__init__(
+            *args, normalization=normalization, **kwargs,
+        )
+
+    def download(self, data_dir: Path) -> None:
+        for url in self.urls:
+            logger.info(f"Downloading {url}")
+            download_url(url, data_dir)
+
+    def preprocess_split(self, split: str) -> Sequence[Union[str, Path]]:
+        tmp_path = self.get_dir() / self.split_to_tmp[split]
+        split_path = self.get_dir(split)
+
+        if split == "test":
+            img_path = tmp_path / "images"
+            with open(tmp_path / "val_annotations.txt", "r") as f:
+                for line in f.readlines():
+                    split_line = line.split("\t")
+                    name = split_line[0]
+                    label = split_line[1]
+                    label_path = split_path / label
+                    label_path.mkdir(parents=True, exist_ok=True)
+                    (img_path / name).rename(label_path / name)
+
+        elif split == "train":
+            for img_path in tmp_path.glob("**/images"):
+                label = img_path.parent.stem
+                label_path = split_path / label
+                label_path.mkdir(parents=True, exist_ok=True)
+                img_path.rename(label_path)
+
+        else:
+            raise ValueError(f"Unknown split={split}.")
+
+        files_to_rm = [tmp_path]
+        return files_to_rm
+
+    def move_split(self, split: str) -> None:
+        """Moves folders for a specific split before starting the processing."""
+        old_split = self.get_dir() / self.split_to_old[split]
+        tmp_split = self.get_dir() / self.split_to_tmp[split]
+        old_split.rename(tmp_split)
+
+    @property
+    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
+        shapes = super().shapes
+        shapes["input"] = shapes.get("input", (3, 64, 64))
+        shapes["target"] = (200,)
+        return shapes
+
+    def __len__(self) -> int:
+        return len(self.loader)
+
+    def get_img_target(self, index: int) -> tuple[Any, int]:
+        img, target = self.loader[index]
+        return img, target
+
+    def load_data_(self, curr_split: str) -> None:
+        self.loader = ImageFolder(self.get_dir(curr_split))
+        self.targets = self.loader.targets
+
+    def download_extract(self) -> None:
+        super().download_extract()
+        # data is extracted at tiny-imagenet-200/tiny-imagenet-200/ so move it one folder up
+        curr_dir = self.get_dir() / self.dataset_name
+        tmp_dir = Path(self.root) / f"tmp_{self.dataset_name}"
+
+        curr_dir.rename(tmp_dir)
+        remove_rf(curr_dir.parent)
+        tmp_dir.rename(curr_dir.parent)
+
+    @property
+    def dataset_name(self) -> str:
+        return "tiny-imagenet-200"
+
+
+class TinyImagenetDataModule(ISSLImgDataModule):
+    @property
+    def Dataset(self) -> Any:
+        return TinyImagenetDataset
+
+
 # MS Coco caption dataset with clip sentences #
 class CocoClipDataset(ExternalImgDataset):
     """MSCOCO caption dataset where the captions are represented by CLIP.
@@ -1175,10 +1274,7 @@ class CocoClipDataset(ExternalImgDataset):
     ]
 
     # test annotation are not given => use val instead
-    split_to_root = dict(
-        test="val2017",
-        train="train2017",
-    )
+    split_to_root = dict(test="val2017", train="train2017",)
     split_to_annotate = dict(
         test="annotations/captions_val2017.json",
         train="annotations/captions_train2017.json",
@@ -1194,10 +1290,7 @@ class CocoClipDataset(ExternalImgDataset):
         **kwargs,
     ) -> None:
         super().__init__(
-            *args,
-            base_resize=base_resize,
-            normalization=normalization,
-            **kwargs,
+            *args, base_resize=base_resize, normalization=normalization, **kwargs,
         )
 
     def download(self, data_dir: Path) -> None:
@@ -1265,6 +1358,10 @@ class CocoClipDataset(ExternalImgDataset):
     @property
     def dataset_name(self) -> str:
         return "coco_captions"
+
+    @property
+    def __len__(self) -> int:
+        return self.length
 
 
 class CocoClipDataModule(ISSLImgDataModule):
