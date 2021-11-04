@@ -30,7 +30,7 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_stdA,exact_stdA_mlp,exact_stdA_mlplin,exact_stdA_dim,gen_stdA_V,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,gen_stdA_dim,std_cntr,cntr,cntr_stdA,cntr_stdA_mlplin,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_bs,cntr_stdA_dim,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_dim,slfdstl_prior_mlplin
+representor=exact,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,gen_stdA_dim,std_cntr,cntr,cntr_stdA,cntr_stdA_mlplin,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_bs,cntr_stdA_dim,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_dim,slfdstl_prior_mlplin
 seed=1,2,3
 "
 

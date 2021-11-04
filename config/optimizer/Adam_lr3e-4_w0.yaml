@@ -1,5 +1,5 @@
 # name is automatic
-mode: AdamW
+mode: Adam
 kwargs:
   lr: 3e-4
   weight_decay: 0

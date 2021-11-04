@@ -54,6 +54,10 @@ class ResNet(nn.Module):
 
     norm_layer : nn.Module or {"identity","batch"}, optional
         Normalizing layer to use.
+
+    bottleneck : int, optional
+        Optional bottleneck. If given then the real output of the resnet will be `bottleneck`, but then this
+        will be followed by a a linear predictor to get to out_shape.
     """
 
     def __init__(
@@ -63,6 +67,7 @@ class ResNet(nn.Module):
         base: str = "resnet18",
         is_pretrained: bool = False,
         norm_layer: str = "batchnorm",
+        bottleneck: Optional[int] = None
     ):
         super().__init__()
         kwargs = {}
@@ -70,10 +75,12 @@ class ResNet(nn.Module):
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
         self.out_dim = prod(self.out_shape)
         self.is_pretrained = is_pretrained
+        self.bottleneck = bottleneck
+        self.tmp_out_dim = self.out_dim if self.bottleneck is None else self.bottleneck
 
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
-            kwargs["num_classes"] = self.out_dim
+            kwargs["num_classes"] = self.tmp_out_dim
 
         self.resnet = torchvision.models.__dict__[base](
             pretrained=self.is_pretrained,
@@ -82,9 +89,9 @@ class ResNet(nn.Module):
         )
 
         if self.is_pretrained:
-            assert self.out_dim == self.resnet.fc.in_features
+            assert self.tmp_out_dim == self.resnet.fc.in_features
             # when pretrained has to remove last layer
-            self.resnet.fc = torch.nn.Identity()
+            self.resnet.fc = nn.Identity()
 
         if self.in_shape[1] < 100:
             # resnet for smaller images
@@ -93,10 +100,16 @@ class ResNet(nn.Module):
             )
             self.resnet.maxpool = nn.Identity()
 
+        if self.bottleneck is None:
+            self.processor = nn.Identity()
+        else:
+            self.processor = nn.Linear(self.tmp_out_dim, self.out_dim)
+
         self.reset_parameters()
 
     def forward(self, X):
         Y_pred = self.resnet(X)
+        Y_pred = self.processor(Y_pred)
         Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
         return Y_pred
 

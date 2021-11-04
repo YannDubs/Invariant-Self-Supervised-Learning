@@ -6,4 +6,4 @@ representor:
   name: slfdstl_prior_dim
 
 encoder:
-  z_shape: 8192
+  z_shape: 4096
