@@ -14,4 +14,4 @@ kwargs:
   dataset_kwargs:
     seed: ${seed}
     is_normalize: True
-    a_augmentations: []
+    a_augmentations: ["data-standard"]

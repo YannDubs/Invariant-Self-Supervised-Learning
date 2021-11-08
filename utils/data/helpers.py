@@ -16,7 +16,7 @@ from torchvision.datasets.folder import default_loader
 from torchvision.transforms import Compose, functional as F_trnsf
 from tqdm import tqdm
 
-from issl.helpers import to_numpy
+from issl.helpers import to_numpy, int_or_ratio
 
 logger = logging.getLogger(__name__)
 
@@ -121,12 +121,6 @@ def download_url(url, save_dir):
             url, filename=save_dir / filename, reporthook=t.update_to
         )
 
-
-def int_or_ratio(alpha: float, n: int) -> int:
-    """Return an integer alpha. If float, it's seen as ratio of `n`."""
-    if isinstance(alpha, int):
-        return alpha
-    return int(alpha * n)
 
 
 def remove_rf(path, not_exist_ok: bool = False) -> Any:

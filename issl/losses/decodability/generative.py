@@ -103,7 +103,7 @@ class GenerativeISSL(nn.Module):
         # but this might be less understandable for usual deep learning + less numerically stable
         if self.is_img_out:
             if is_colored_img(aux_target):
-                if self.is_normalized:
+                if self.normalized is not None:
                     # compare in unnormalized space
                     aux_target = self.unnormalizer(aux_target)
 

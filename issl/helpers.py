@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import math
 import numbers
 import operator
@@ -17,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.cbook import MatplotlibDeprecationWarning
+from torch.optim.lr_scheduler import ReduceLROnPlateau, _LRScheduler
 from torchvision import transforms as transform_lib
 
 import pytorch_lightning as pl
@@ -26,19 +28,33 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
+try:
+    from pl_bolts.optimizers import LinearWarmupCosineAnnealingLR
+except ImportError:
+    pass
+
+
+def int_or_ratio(alpha: float, n: int) -> int:
+    """Return an integer alpha. If float, it's seen as ratio of `n`."""
+    if isinstance(alpha, int):
+        return alpha
+    return int(alpha * n)
+
 
 class BatchRMSELoss(nn.Module):
     """Batch root mean squared error."""
+
     def __init__(self, eps=1e-6):
         super().__init__()
         self.mse = nn.MSELoss(reduction="none")
         self.eps = eps
-        
-    def forward(self,yhat,y):
-        batch_mse = self.mse(yhat,y).flatten(1, -1).mean(-1)
+
+    def forward(self, yhat, y):
+        batch_mse = self.mse(yhat, y).flatten(1, -1).mean(-1)
         loss = torch.sqrt(batch_mse + self.eps)
         return loss
-        
+
+
 def namespace2dict(namespace):
     """
     Converts recursively namespace to dictionary. Does not work if there is a namespace whose
@@ -507,6 +523,9 @@ def get_lr_scheduler(
     k_steps: int = 3,
     name: Optional[str] = None,
     kwargs_config_scheduler: dict[str, Any] = {},
+    is_warmup_lr: bool = False,
+    warmup_epochs: float = 10,
+    warmup_multiplier: float = 1.0,
     **kwargs,
 ):
     """Return the correct lr scheduler as a dictionary as required by pytorch lightning.
@@ -538,9 +557,30 @@ def get_lr_scheduler(
     kwargs_config_scheduler : dict, optional
         Additional kwargs to be passed to pytorch lightning, e.g., monitor / interval / frequency...
 
+    is_warmup_lr : bool, optional
+        Whether to warmup to lr.
+
+    warmup_epochs : float, optional
+        For how many epochs to warmup the learning rate if `is_warmup_lr`. If int it's a number of epoch. If
+        in ]0,1[ it's percentage of epochs.
+
+    warmup_multiplier : float, optional
+        Target learning rate = base lr * multiplier if multiplier > 1.0. if multiplier = 1.0, lr starts from 0
+        and ends up with the base_lr. For CosineAnnealingLR scheduler need to be warmup_multiplier=1.0.
+
     kwargs :
         Additional arguments to any `torch.optim.lr_scheduler`.
     """
+    if is_warmup_lr:
+        # remove the warmup
+        epochs = epochs - warmup_epochs
+
+    if "milestones" in kwargs:
+        # allow negative milestones which are subtracted to the last epoch
+        kwargs["milestones"] = [
+            m if m > 0 else epochs + m for m in kwargs["milestones"]
+        ]
+
     if scheduler_type is None:
         scheduler = None
     elif scheduler_type == "expdecay":
@@ -556,6 +596,29 @@ def get_lr_scheduler(
     else:
         Scheduler = getattr(torch.optim.lr_scheduler, scheduler_type)
         scheduler = Scheduler(optimizer, **kwargs)
+
+    # TODO: test plateau
+
+    if is_warmup_lr:
+        warmup_epochs = int_or_ratio(warmup_epochs, epochs)
+        if scheduler_type == "CosineAnnealingLR":
+            # TODO: test
+            assert warmup_multiplier == 1.0
+            check_import("pl_bolts", "CosineAnnealingLR with warmup")
+            kwargs = copy.deepcopy(kwargs)
+            # the following will remove warmup_epochs => should no give
+            # epochs = epochs - warmup_epochs
+            T_max = kwargs.pop("T_max")
+            scheduler = LinearWarmupCosineAnnealingLR(
+                optimizer, warmup_epochs=warmup_epochs, max_epochs=T_max, **kwargs
+            )
+        else:
+            scheduler = GradualWarmupScheduler(
+                optimizer,
+                multiplier=warmup_multiplier,
+                total_epoch=warmup_epochs,
+                after_scheduler=scheduler,
+            )
 
     return dict(scheduler=scheduler, name=name, **kwargs_config_scheduler)
 
@@ -603,12 +666,183 @@ def append_optimizer_scheduler_(
     optimizer = get_optimizer(train_params, hparams_opt.mode, **hparams_opt.kwargs)
     optimizers += [optimizer]
 
-    for mode in hparams_sch.modes:
+    # TODO warming up likely does not work well when using multiple schedulers
+    for i, mode in enumerate(hparams_sch.modes):
         sch_kwargs = hparams_sch.kwargs.get(mode, {})
+        sch_kwargs.update(hparams_sch.kwargs.base)
+        sch_kwargs = copy.deepcopy(sch_kwargs)
+
+        if i < len(hparams_sch.modes) - 1:
+            # never warmup besides the last
+            sch_kwargs["is_warmup_lr"] = False
+
+        is_plat = mode == "ReduceLROnPlateau"
+        if sch_kwargs.get("is_warmup_lr", False) and is_plat:
+            # pytorch lightning will not work with the current code for plateau + warmup
+            # because they use `isinstance` to know whether to give a metric
+            # => instead just append a linear warming up
+            lin = LinearLR(
+                optimizer,
+                start_factor=1 / 100,
+                total_iters=sch_kwargs["warmup_epochs"],
+            )
+            schedulers += [dict(scheduler=lin, name=name)]
+            sch_kwargs["is_warmup_lr"] = False
+
         scheduler = get_lr_scheduler(optimizer, mode, name=name, **sch_kwargs)
         schedulers += [scheduler]
 
     return optimizers, schedulers
+
+
+# modified from https://github.com/ildoonet/pytorch-gradual-warmup-lr/blob/6b5e8953a80aef5b324104dc0c2e9b8c34d622bd/warmup_scheduler/scheduler.py#L5
+class GradualWarmupScheduler(_LRScheduler):
+    """ Gradually warm-up(increasing) learning rate in optimizer.
+
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        multiplier: target learning rate = base lr * multiplier if multiplier > 1.0. if multiplier = 1.0, lr starts from 0 and ends up with the base_lr.
+        total_epoch: target learning rate is reached at total_epoch, gradually
+        after_scheduler: after target_epoch, use this scheduler(eg. ReduceLROnPlateau)
+    """
+
+    def __init__(self, optimizer, multiplier, total_epoch, after_scheduler=None):
+        self.multiplier = multiplier
+        if self.multiplier < 1.0:
+            raise ValueError("multiplier should be greater thant or equal to 1.")
+        self.total_epoch = total_epoch
+        self.after_scheduler = after_scheduler
+        self.finished = False
+        super(GradualWarmupScheduler, self).__init__(optimizer)
+
+    def get_lr(self):
+        if self.last_epoch >= self.total_epoch:
+            if self.after_scheduler:
+                if not self.finished:
+                    self.after_scheduler.base_lrs = [
+                        base_lr * self.multiplier for base_lr in self.base_lrs
+                    ]
+                    self.finished = True
+                return self.after_scheduler.get_last_lr()
+            return [base_lr * self.multiplier for base_lr in self.base_lrs]
+
+        if self.multiplier == 1.0:
+            return [
+                base_lr * (float(self.last_epoch) / self.total_epoch)
+                for base_lr in self.base_lrs
+            ]
+        else:
+            return [
+                base_lr
+                * ((self.multiplier - 1.0) * self.last_epoch / self.total_epoch + 1.0)
+                for base_lr in self.base_lrs
+            ]
+
+    def step_ReduceLROnPlateau(self, metrics):
+        self.last_epoch += 1
+        if self.last_epoch < self.total_epoch:
+            warmup_lr = self.get_lr()
+            for param_group, lr in zip(self.optimizer.param_groups, warmup_lr):
+                param_group["lr"] = lr
+        else:
+            self.after_scheduler.step(metrics)
+
+    def step(self, metrics=None):
+        if not isinstance(self.after_scheduler, ReduceLROnPlateau):
+            if self.finished and self.after_scheduler:
+                self.after_scheduler.step()
+                self._last_lr = self.after_scheduler.get_last_lr()
+            else:
+                return super(GradualWarmupScheduler, self).step()
+        else:
+            self.step_ReduceLROnPlateau(metrics)
+
+
+# TODO remove in pytorch 1.10 as this is copied from there
+class LinearLR(_LRScheduler):
+    """Decays the learning rate of each parameter group by linearly changing small
+    multiplicative factor until the number of epoch reaches a pre-defined milestone: total_iters.
+    Notice that such decay can happen simultaneously with other changes to the learning rate
+    from outside this scheduler. When last_epoch=-1, sets initial lr as lr.
+
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        start_factor (float): The number we multiply learning rate in the first epoch.
+            The multiplication factor changes towards end_factor in the following epochs.
+            Default: 1./3.
+        end_factor (float): The number we multiply learning rate at the end of linear changing
+            process. Default: 1.0.
+        total_iters (int): The number of iterations that multiplicative factor reaches to 1.
+            Default: 5.
+        last_epoch (int): The index of the last epoch. Default: -1.
+        verbose (bool): If ``True``, prints a message to stdout for
+            each update. Default: ``False``.
+    """
+
+    def __init__(
+        self,
+        optimizer,
+        start_factor=1.0 / 3,
+        end_factor=1.0,
+        total_iters=5,
+        last_epoch=-1,
+        verbose=False,
+    ):
+        if start_factor > 1.0 or start_factor < 0:
+            raise ValueError(
+                "Starting multiplicative factor expected to be between 0 and 1."
+            )
+
+        if end_factor > 1.0 or end_factor < 0:
+            raise ValueError(
+                "Ending multiplicative factor expected to be between 0 and 1."
+            )
+
+        self.start_factor = start_factor
+        self.end_factor = end_factor
+        self.total_iters = total_iters
+        super(LinearLR, self).__init__(optimizer, last_epoch, verbose)
+
+    def get_lr(self):
+        if not self._get_lr_called_within_step:
+            warnings.warn(
+                "To get the last learning rate computed by the scheduler, "
+                "please use `get_last_lr()`.",
+                UserWarning,
+            )
+
+        if self.last_epoch == 0:
+            return [
+                group["lr"] * self.start_factor for group in self.optimizer.param_groups
+            ]
+
+        if self.last_epoch > self.total_iters:
+            return [group["lr"] for group in self.optimizer.param_groups]
+
+        return [
+            group["lr"]
+            * (
+                1.0
+                + (self.end_factor - self.start_factor)
+                / (
+                    self.total_iters * self.start_factor
+                    + (self.last_epoch - 1) * (self.end_factor - self.start_factor)
+                )
+            )
+            for group in self.optimizer.param_groups
+        ]
+
+    def _get_closed_form_lr(self):
+        return [
+            base_lr
+            * (
+                self.start_factor
+                + (self.end_factor - self.start_factor)
+                * min(self.total_iters, self.last_epoch)
+                / self.total_iters
+            )
+            for base_lr in self.base_lrs
+        ]
 
 
 @contextlib.contextmanager
@@ -868,9 +1102,9 @@ class MAWeightUpdate(pl.Callback):
 
 # modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11
 def sinkhorn_knopp(
-    logits : torch.Tensor,
-    eps : float=0.05,
-    n_iter: int=3,
+    logits: torch.Tensor,
+    eps: float = 0.05,
+    n_iter: int = 3,
     is_hard_assignment: bool = False,
     world_size: int = 1,
     is_double_prec: bool = True,

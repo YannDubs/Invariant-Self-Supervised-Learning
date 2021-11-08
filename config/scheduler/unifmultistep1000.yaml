@@ -1,3 +1,6 @@
+defaults:
+  - base
+
 name: unifmultistep1000
 modes: ["UniformMultiStepLR"] # list of scheduler to use
 kwargs:
@@ -5,4 +8,3 @@ kwargs:
   UniformMultiStepLR:
     decay_factor: 1000
     k_steps: 3
-    epochs: ${trainer.max_epochs}

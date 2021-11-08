@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -85,7 +86,10 @@ def main(cfg):
         # if multiple tables also add "merged" that contains all
         aggregator.merge_tables(list(aggregator.tables.keys()))
 
-    aggregator.subset(cfg.col_val_subset)
+    aggregator.subset(**cfg.col_val_subset)
+    aggregator.fillna(**cfg.fillna)
+    aggregator.cols_to_str(*cfg.cols_to_str)
+    aggregator.replace(**cfg.replace)
 
     for f in cfg.agg_mode:
 
@@ -239,13 +243,13 @@ class ResultAggregator(PostPlotter):
         self.tables[table_name] = pd.concat(results, axis=0).set_index(param_name)
         self.param_names[table_name] = param_name
 
-    def subset(self, col_val):
+    def subset(self, **col_val):
         """Subset all tables by keeping only the given values in given columns.
 
         Parameters
         ----------
-        col_val : dict
-            A dictionary where the keys are the columns to subset and values are a list of values to keep.
+        col_val :
+            Keys are the columns to subset and values are a list of values to keep.
         """
         for col, val in col_val.items():
             logger.debug("Keeping only val={val} for col={col}.")
@@ -260,6 +264,31 @@ class ResultAggregator(PostPlotter):
                     logger.info(f"Empty table after filtering {col}={val}")
 
                 self.tables[k] = table.set_index(self.tables[k].index.names)
+
+    def fillna(self, **values):
+        """Fill nans in all tables. Directly call `df.fillna`."""
+        for k, df in self.tables.items():
+            self.tables[k] = (
+                df.reset_index().fillna(value=values).set_index(df.index.names)
+            )
+
+    def cols_to_str(self, *cols):
+        """Fill nans in all tables. Directly call `df.fillna`."""
+        for k, df in self.tables.items():
+            table = df.reset_index()
+            for col in cols:
+                if col in table.columns:
+                    table[col] = table[col].astype(str)
+
+            self.tables[k] = table.set_index(df.index.names)
+
+    def replace(self, **values):
+        """Fill nans in all tables. Directly call `df.fillna`."""
+        if len(values) > 0:
+            for k, df in self.tables.items():
+                self.tables[k] = (
+                    df.reset_index().replace(value=values).set_index(df.index.names)
+                )
 
     @data_getter
     @table_summarizer
@@ -539,17 +568,14 @@ class ResultAggregator(PostPlotter):
 
         elif mode == "lmplot":
             used_kwargs = dict(
-                legend="full",
-                sharey=sharey,
-                sharex=sharex,
-                legend_out=legend_out,
+                legend="full", sharey=sharey, sharex=sharex, legend_out=legend_out,
             )
             used_kwargs.update(kwargs)
 
             sns_plot = sns.lmplot(data=data, **used_kwargs)
 
         else:
-            raise ValueError(f"Unkown mode={mode}.")
+            raise ValueError(f"Unknown mode={mode}.")
 
         if is_x_errorbar or is_y_errorbar:
             xerr, yerr = None, None
@@ -564,7 +590,9 @@ class ResultAggregator(PostPlotter):
             sns_plot.map_dataframe(add_errorbars, yerr=yerr, xerr=xerr)
 
         if logbase_x != 1 or logbase_y != 1:
-            sns_plot.map_dataframe(set_log_scale, basex=logbase_x, basey=logbase_y)
+            sns_plot.map_dataframe(
+                set_log_scale, basex=logbase_x, basey=logbase_y, **kwargs
+            )
 
         # TODO remove when waiting for https://github.com/mwaskom/seaborn/issues/2456
         if xlabel != "":
@@ -678,8 +706,8 @@ def add_errorbars(data, yerr, xerr, **kwargs):
 
 def set_log_scale(data, basex, basey, **kwargs):
     """Set the log scales as desired."""
-    x_data = data["x"].unique()
-    y_data = data["y"].unique()
+    x_data = data[kwargs["x"]].unique()
+    y_data = data[kwargs["y"]].unique()
     plt.xscale(**kwargs_log_scale(x_data, base=basex))
     plt.yscale(**kwargs_log_scale(y_data, base=basey))
 

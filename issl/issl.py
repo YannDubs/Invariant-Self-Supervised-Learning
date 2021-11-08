@@ -293,7 +293,7 @@ class ISSLModule(pl.LightningModule):
             append_optimizer_scheduler_(
                 self.hparams.optimizer_eval,
                 self.hparams.scheduler_eval,
-                self.evaluator.parameters(),
+                self.get_specific_parameters("evaluator"),
                 optimizers,
                 schedulers,
                 name="lr_evaluator",

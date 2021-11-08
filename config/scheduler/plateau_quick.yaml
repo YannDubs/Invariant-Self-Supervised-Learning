@@ -1,3 +1,7 @@
+defaults:
+  - base
+# TODO check that warmup works with plateau
+
 name: plateau_quick
 modes: ["ReduceLROnPlateau"] # list of scheduler to use
 kwargs:

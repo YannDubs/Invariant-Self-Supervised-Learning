@@ -34,6 +34,11 @@ representor=std_gen_smallZ,cntr_stdA
 seed=1,2,3
 "
 
+kwargs_multi="
+representor=gen_stdA,gen_stdA_V,std_cntr
+seed=1,2,3
+"
+
 
 # difference for gen: linear resnet / augmentations / larger dim
 
@@ -49,4 +54,29 @@ if [ "$is_plot_only" = false ] ; then
   done
 fi
 
-wait 
+wait
+
+
+# for predictor
+python utils/aggregate.py \
+       experiment=$experiment  \
+       $col_val_subset \
+       patterns.representor=null \
+       +cols_to_str=["tasks"] \
+       +fillna.tasks="All" \
+       +collect_data.params_to_add.n_tasks="data.kwargs.dataset_kwargs.n_agg_tasks" \
+       +collect_data.params_to_add.tasks="data.kwargs.dataset_kwargs.max_k_ary_agg" \
+       +plot_scatter_lines.x="n_tasks" \
+       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+       +plot_scatter_lines.filename="lines_acc_vs_agg" \
+       +plot_scatter_lines.hue="tasks" \
+       +plot_scatter_lines.style="tasks" \
+       +plot_scatter_lines.col="repr" \
+       +plot_scatter_lines.logbase_x=2 \
+       +plot_scatter_lines.sharey=True \
+       agg_mode=[plot_scatter_lines]
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       $col_val_subset \
+       agg_mode=[summarize_metrics]

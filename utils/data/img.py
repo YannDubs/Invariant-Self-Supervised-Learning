@@ -44,12 +44,7 @@ from torchvision.transforms import (
 from tqdm import tqdm
 
 from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy
-from .augmentations import (
-    CIFAR10Policy,
-    ImageNetPolicy,
-    get_finetune_augmentations,
-    get_simclr_augmentations,
-)
+from .augmentations import get_simclr_augmentations
 from .base import ISSLDataModule, ISSLDataset
 from .helpers import (
     Caltech101BalancingWeights,
@@ -121,9 +116,11 @@ class ISSLImgDataset(ISSLDataset):
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|img). I.e. this should define the
         coarsest possible equivalence relation with respect to which to be invariant. It can be a set of augmentations
-        (see self.augmentations) and/or "label" or "perm_label" or "{i}_equiv". In the "label" case it samples randomly
-        an image with the same label (slow if too many labels). "perm_label" then similar but it randomly samples an image
-        with a different (but fixed => permutation) label.
+        (see self.augmentations) and/or "label" or "perm_label" or "data-standard" or "coarser". In the "label" case
+        it samples randomly an image with the same label (slow if too many labels). "perm_label" then similar but it
+        randomly samples an image with a different (but fixed => permutation) label. "data-standard" appends the standard
+        augmentation for that dataset. "coarser" use a coarser grain equivalence class than the actual one, specifically,
+        targets modulo 2.
 
     train_x_augmentations : set of str or "a_augmentations" , optional
         Augmentations to use for the source input, i.e., p(X|img). I.e. standard augmentations that are
@@ -191,19 +188,23 @@ class ISSLImgDataset(ISSLDataset):
         )
 
         self.is_label_aug = False
+        self.is_coarser_Mx = False
         self.perm_Mx = None
         self.n_sub_label = n_sub_label
 
-        if "label" in a_augmentations:
+        if "label" in self.a_augmentations:
             self.is_label_aug = True
             self.a_augmentations.remove("label")
-        if "perm_label" in a_augmentations:
+        if "perm_label" in self.a_augmentations:
             assert not self.is_label_aug, "cannot have `label` and `perm_label`"
             assert self.is_clfs["target"], "`perm_label` only in clf"
             self.is_label_aug = True
             # Mx permuter simply increases by 1. Attention: self.n_Mxs must be computed later
             self.perm_Mx = lambda x: (x + 1) % self.n_Mxs
             self.a_augmentations.remove("perm_label")
+        if "coarser" in self.a_augmentations:
+            self.is_coarser_Mx = True
+            self.a_augmentations.remove("coarser")
 
         self.train_x_augmentations = train_x_augmentations
         self.val_x_augmentations = val_x_augmentations
@@ -269,6 +270,10 @@ class ISSLImgDataset(ISSLDataset):
         else:
             self._Mxs = np.array(range(len(self)))
 
+        if self.is_coarser_Mx:
+            targets = self.get_targets()
+            self._Mxs = targets % 2
+
         return self._Mxs
 
     def set_eval_(self):
@@ -277,6 +282,12 @@ class ISSLImgDataset(ISSLDataset):
     @abc.abstractmethod
     def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
         """Return the unaugmented image (in PIL format) and target."""
+        ...
+
+    @property
+    @abc.abstractmethod
+    def standard_augmentations(self) -> list[str]:
+        """Return the standard augmentations for the dataset."""
         ...
 
     @classmethod  # class method property does not work before python 3.9
@@ -294,6 +305,12 @@ class ISSLImgDataset(ISSLDataset):
                 return self.sample_p_XlI_train
             else:
                 raise ValueError(f"Unknown str augmentor={augmentations}.")
+
+        if "data-standard" in augmentations:
+            # appends the data standard augmentations
+            augmentations = list(augmentations)
+            augmentations.remove("data-standard")
+            augmentations += self.standard_augmentations
 
         choices_PIL, choices_tens = (
             self.augmentations["PIL"],
@@ -323,7 +340,7 @@ class ISSLImgDataset(ISSLDataset):
         """
         shape = self.shapes["input"]
 
-        return dict(
+        augmentations = dict(
             PIL={
                 "rotation--": RandomRotation(15),
                 "y-translation--": RandomAffine(0, translate=(0, 0.15)),
@@ -354,20 +371,29 @@ class ISSLImgDataset(ISSLDataset):
                 "hflip": RandomHorizontalFlip(p=0.5),
                 "vflip": RandomVerticalFlip(p=0.5),
                 "resize-crop": RandomResizedCrop(
-                    size=(shape[1], shape[2]), scale=(0.3, 1.0), ratio=(0.7, 1.4)
+                    size=(shape[1], shape[2]),
+                    scale=(0.2, 1.0),
+                    ratio=(3 / 4, 4 / 3),
+                    interpolation=Image.BICUBIC,
                 ),
                 "resize": Resize(min(shape[1], shape[2]), interpolation=Image.BICUBIC),
                 "crop": RandomCrop(size=(shape[1], shape[2])),
-                # TODO add the dataset specific augmentations + SSL specific
-                "auto-cifar10": CIFAR10Policy(),
-                "auto-imagenet": ImageNetPolicy(),
-                # NB you should use those 3 also at eval time
-                "simclr-cifar10": get_simclr_augmentations("cifar10", shape[-1]),
-                "simclr-imagenet": get_simclr_augmentations("imagenet", shape[-1]),
-                "simclr-finetune": get_finetune_augmentations(shape[-1]),
+                "simclr-imagenet": get_simclr_augmentations(
+                    shape[-1], dataset="imagenet"
+                ),
             },
             tensor={"erasing": RandomErasing(value=0.5),},
         )
+
+        try:
+            # might not be possible depending on the dataset
+            augmentations["PIL"]["simclr"] = get_simclr_augmentations(
+                shape[-1], dataset=self.dataset_name
+            )
+        except ValueError:
+            pass
+
+        return augmentations
 
     def get_img_from_Mx(self, Mx: int) -> Any:
         """Sample a random image from the corresponding equivalence class."""
@@ -574,6 +600,16 @@ class MnistDataset(ISSLImgDataset, MNIST):
     def dataset_name(self) -> str:
         return "MNIST"
 
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return [
+            "x-translation--",
+            "y-translation--",
+            "rotation--",
+            "scale--",
+            "shear--",
+        ]
+
 
 class MnistDataModule(ISSLImgDataModule):
     @property
@@ -601,6 +637,10 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
     @property
     def dataset_name(self) -> str:
         return "CIFAR10"
+
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr"]
 
 
 class Cifar10DataModule(ISSLImgDataModule):
@@ -630,6 +670,10 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
     def dataset_name(self) -> str:
         return "CIFAR100"
 
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr"]
+
 
 class Cifar100DataModule(ISSLImgDataModule):
     @property
@@ -656,6 +700,10 @@ class STL10Dataset(ISSLImgDataset, STL10):
     @property
     def dataset_name(self) -> str:
         return "STL10"
+
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr"]
 
 
 class STL10DataModule(ISSLImgDataModule):
@@ -729,6 +777,10 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
 
     def __len__(self) -> int:
         return ImageNet.__len__(self)
+
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr-imagenet"]
 
 
 class ImagenetDataModule(ISSLImgDataModule):
@@ -871,6 +923,10 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
             split = "train"
 
         return split
+
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr-imagenet"]
 
     @property
     @abc.abstractmethod
@@ -1248,6 +1304,10 @@ class TinyImagenetDataset(ExternalImgDataset):
     def dataset_name(self) -> str:
         return "tiny-imagenet-200"
 
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr"]
+
 
 class TinyImagenetDataModule(ISSLImgDataModule):
     @property
@@ -1362,6 +1422,10 @@ class CocoClipDataset(ExternalImgDataset):
     @property
     def __len__(self) -> int:
         return self.length
+
+    @property
+    def standard_augmentations(self) -> list[str]:
+        return ["simclr"]
 
 
 class CocoClipDataModule(ISSLImgDataModule):

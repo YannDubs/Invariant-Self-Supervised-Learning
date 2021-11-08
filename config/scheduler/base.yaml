@@ -1,0 +1,5 @@
+kwargs:
+  base:
+    is_warmup_lr: False
+    warmup_epochs: 10
+    epochs: ${trainer.max_epochs}

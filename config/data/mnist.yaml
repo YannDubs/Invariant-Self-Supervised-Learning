@@ -7,4 +7,3 @@ kwargs:
   val_size: 0.05
   dataset_kwargs:
     is_normalize: False
-    a_augmentations: [x-translation, y-translation,rotation,scale,shear] # don't use color changing because black and white

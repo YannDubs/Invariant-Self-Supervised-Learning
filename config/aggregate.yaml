@@ -5,6 +5,9 @@ defaults:
 experiment: ???
 agg_mode: [summarize_metrics] # plot_scatter_lines
 col_val_subset : {}
+fillna: {}
+cols_to_str: []
+replace: {}
 
 patterns:
   # name, pattern to find it

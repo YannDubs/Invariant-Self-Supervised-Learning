@@ -25,7 +25,7 @@ hydra:
     partition: atlas
     comment: null
     constraint: null
-    exclude: atlas5,atlas6,atlas9
+    exclude: atlas5,atlas6,atlas8,atlas9
     array_parallelism: 30
 
     max_num_timeout: 3 # allow resume from checkpointing

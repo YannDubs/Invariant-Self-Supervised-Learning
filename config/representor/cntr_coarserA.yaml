@@ -1,14 +1,13 @@
 # @package _global_
 defaults:
-  - gen
+  - cntr
 
 representor:
-  name: gen_stdA
-  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
+  name: cntr_coarserA
 
 data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "augmentation"
-      a_augmentations: ["data-standard"]
+      a_augmentations: ["coarser"]
       train_x_augmentations: []

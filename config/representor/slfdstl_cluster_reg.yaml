@@ -11,7 +11,7 @@ data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "augmentation"
-      a_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      a_augmentations: ["data-standard"]
       train_x_augmentations: []
 
 decodability:

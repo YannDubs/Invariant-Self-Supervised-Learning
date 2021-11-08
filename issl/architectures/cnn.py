@@ -98,6 +98,10 @@ class ResNet(nn.Module):
             self.resnet.conv1 = nn.Conv2d(
                 in_shape[0], 64, kernel_size=3, stride=1, padding=1, bias=False
             )
+
+        if self.in_shape[1] < 50:
+            # following https://github.com/htdt/self-supervised/blob/d24f3c722ac4e945161a9cd8c830bf912403a8d7/model.py#L19
+            # this should only be removed for cifar
             self.resnet.maxpool = nn.Identity()
 
         if self.bottleneck is None:

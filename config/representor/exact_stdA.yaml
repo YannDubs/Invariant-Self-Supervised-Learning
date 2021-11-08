@@ -10,4 +10,4 @@ data_repr:
     dataset_kwargs:
       aux_target:  "Mx"
       a_augmentations: [] # should have a data standard augmentation
-      train_x_augmentations: [x-translation--,y-translation--,rotation--,scale--,shear--]
+      train_x_augmentations: ["data-standard"]

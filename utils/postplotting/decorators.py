@@ -198,30 +198,30 @@ def single_plot(fn):
         with plot_config(**used_plot_config):
             sns_plot = fn(self, *args, data=pretty_data, **pretty_kwargs)
 
-        for ax in sns_plot.axes.flat:
-            plt.setp(ax.texts, text="")
-        sns_plot.set_titles(row_template=row_title, col_template=col_title)
+            for ax in sns_plot.axes.flat:
+                plt.setp(ax.texts, text="")
+            sns_plot.set_titles(row_template=row_title, col_template=col_title)
 
-        if x_rotate != 0:
-            # calling directly `set_xticklabels` on FacetGrid removes the labels sometimes
-            for axes in sns_plot.axes.flat:
-                axes.set_xticklabels(axes.get_xticklabels(), rotation=x_rotate)
+            if x_rotate != 0:
+                # calling directly `set_xticklabels` on FacetGrid removes the labels sometimes
+                for axes in sns_plot.axes.flat:
+                    axes.set_xticklabels(axes.get_xticklabels(), rotation=x_rotate)
 
-        if is_no_legend_title:
-            #! not going to work well if is_legend_out (double legend)
-            for ax in sns_plot.fig.axes:
-                handles, labels = ax.get_legend_handles_labels()
-                if len(handles) > 1:
-                    ax.legend(handles=handles[1:], labels=labels[1:])
+            if is_no_legend_title:
+                #! not going to work well if is_legend_out (double legend)
+                for ax in sns_plot.fig.axes:
+                    handles, labels = ax.get_legend_handles_labels()
+                    if len(handles) > 1:
+                        ax.legend(handles=handles[1:], labels=labels[1:])
 
-        sns_plot.set(**set_kwargs)
+            sns_plot.set(**set_kwargs)
 
-        if not legend_out:
-            plt.legend()
+            if not legend_out:
+                plt.legend()
 
         if self.is_return_plots:
             return sns_plot
         else:
-            save_fig(sns_plot, f"{filename}.png", dpi=self.dpi)
+            save_fig(sns_plot, f"{filename}.pdf", dpi=self.dpi)
 
     return helper

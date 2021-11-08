@@ -1,4 +1,8 @@
+defaults:
+  - base
+
 name: cosine_restart
+# TODO don't think this works currently with lr warmup
 modes: ["CosineAnnealingWarmRestarts"] # list of scheduler to use
 kwargs:
   # all kwargs

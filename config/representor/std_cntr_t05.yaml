@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - std_cntr
+
+representor:
+  name: std_cntr_t05
+
+decodability:
+  kwargs:
+    temperature: 0.5
