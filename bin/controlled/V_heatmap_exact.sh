@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"fig_V_heatmap"
+experiment=$prfx"fig_V_heatmap_exact"
 notes="
 **Goal**: figure showing effect of predictive family depending on downstream family.
 "
@@ -31,22 +31,14 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-architecture@predictor=linear,mlp_h1024_l1,mlp_h2048_l3
+architecture@predictor=linear,mlp_h128_l1,mlp_h2048_l2
 seed=1
 "
-kwargs_multi="
-architecture@predictor=linear
-seed=1
-"
-
 # need to rerun with seed: 3 once happy
 
 
-# difference for gen: linear resnet / augmentations / larger dim
-
-
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "representor=std_cntr encoder.z_shape=512" "representor=cntr_stdA,cntr_stdA_mlpS,cntr_stdA_mlpL encoder.z_shape=2048"
+  for kwargs_dep in  "representor=exact_stdA,exact_stdA_mlpXS,exact_stdA_mlp"
   do
     # on mnist typically z_shape would be quite small but we say that it should be larger
 
