@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"fig_V_heatmap_exact"
+experiment=$prfx"V_heatmap_exact"
 notes="
 **Goal**: figure showing effect of predictive family depending on downstream family.
 "
