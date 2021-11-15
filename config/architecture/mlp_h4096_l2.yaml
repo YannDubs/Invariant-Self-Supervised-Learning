@@ -1,0 +1,6 @@
+defaults:
+  - mlp_h2048_l2
+
+kwargs:
+  arch_kwargs:
+    hid_dim: 4096

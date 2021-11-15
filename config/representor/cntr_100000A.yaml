@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - cntr
+
+representor:
+  name: cntr_100000A
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      n_sub_label: 10000 # 10000 per label => 100000 in total

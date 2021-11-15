@@ -177,6 +177,40 @@ def tmp_seed(seed: Optional[int], is_cuda: bool = torch.cuda.is_available()):
                 torch.cuda.set_rng_state(torch_cuda_state)
 
 
+def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
+    """Initialize standard layers and return whether was intitialized."""
+    # all standard layers
+    if isinstance(module, nn.modules.conv._ConvNd):
+        # used in https://github.com/brain-research/realistic-ssl-evaluation/
+        nn.init.kaiming_normal_(
+            module.weight, mode="fan_out", nonlinearity=nonlinearity
+        )
+        try:
+            nn.init.zeros_(module.bias)
+        except AttributeError:
+            pass
+
+    elif isinstance(module, nn.Linear):
+        nn.init.kaiming_uniform_(module.weight, nonlinearity=nonlinearity)
+        try:
+            nn.init.zeros_(module.bias)
+        except AttributeError:
+            pass
+
+    elif isinstance(module, nn.BatchNorm2d):
+        try:
+            module.weight.data.fill_(1)
+            module.bias.data.zero_()
+        except AttributeError:
+            # if affine = False
+            pass
+
+    else:
+        return False
+
+    return True
+
+
 def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
     """Initialize a module and all its descendents.
 
@@ -188,38 +222,17 @@ def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
     nonlinearity : str, optional
         Name of the nn.functional activation. Used for initialization.
     """
+    init_std_modules(module)  # in case you gave a standard module
+
     # loop over direct children (not grand children)
     for m in module.children():
 
-        # all standard layers
-        if isinstance(m, torch.nn.modules.conv._ConvNd):
-            # used in https://github.com/brain-research/realistic-ssl-evaluation/
-            nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity=nonlinearity)
-            try:
-                nn.init.zeros_(m.bias)
-            except AttributeError:
-                pass
-
-        elif isinstance(m, nn.Linear):
-            nn.init.kaiming_uniform_(m.weight, nonlinearity=nonlinearity)
-            try:
-                nn.init.zeros_(m.bias)
-            except AttributeError:
-                pass
-
-        elif isinstance(m, nn.BatchNorm2d):
-            try:
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            except AttributeError:
-                # if affine = False
-                pass
-
+        if init_std_modules(m):
+            pass
         elif hasattr(m, "reset_parameters"):
             # if has a specific reset
             # Imp: don't go in grand children because you might have specific weights you don't want to reset
             m.reset_parameters()
-
         else:
             weights_init(m, nonlinearity=nonlinearity)  # go to grand children
 

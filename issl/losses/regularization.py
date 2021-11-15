@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from issl import get_marginalDist
-from issl.helpers import BatchRMSELoss, kl_divergence
+from issl.helpers import BatchRMSELoss, at_least_ndim, kl_divergence
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
@@ -17,6 +17,8 @@ def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
         return CoarseningRegularizer(**kwargs)
     elif mode == "prior":
         return PriorRegularizer(**kwargs)
+    elif mode == "coarsenerMx":
+        return CoarseningRegularizerMx(**kwargs)
     elif mode is None:
         return None
     else:
@@ -174,3 +176,81 @@ class PriorRegularizer(nn.Module):
         logs["H_q_Z"] = logs["I_q_ZX"] + logs["H_ZlX"]
         other = dict()
         return kl, logs, other
+
+
+class CoarseningRegularizerMx(nn.Module):
+    """Similar to CoarseningRegularizer but the input is Mx (which can generally not be encoded with p(Z|X)) rather than
+    some a \in \mathcal{X}.
+
+    Parameters
+    ---------
+    loss : {"l2", "cosine", "l1"}, optional
+        What loss to use to bring any enc(x) associated with the same Mx closer together. .
+    """
+
+    def __init__(self, loss: Any) -> None:
+        super().__init__()
+        self.loss = loss
+
+    def forward(
+        self, z: torch.Tensor, Mx: torch.Tensor, _, __,
+    ) -> tuple[torch.Tensor, dict, dict]:
+        """Contrast examples and compute the upper bound on R[A|Z].
+
+        Parameters
+        ----------
+        z : Tensor shape=[batch_size, z_dim]
+            Samples from the encoder.
+
+        Mx : Tensor shape=[batch_size, *Mx_shape]
+            Maximal invariants.
+
+        Returns
+        -------
+        loss : torch.Tensor shape=[batch_shape]
+            Estimate of the loss. Note that if there are no 2 batches with the same Mx, then will
+            filter those examples out. So the final shape might be smaller.
+
+        logs : dict
+            Additional values to log.
+
+        other : dict
+            Additional values to return.
+        """
+        # shape=[batch_size, Mx_dim]
+        Mx = at_least_ndim(Mx, ndim=2).flatten(1)
+        # shape=[batch_size, z_dim]
+        z = z.flatten(1)
+
+        # shape=[batch_size, batch_size]
+        mask_Mx = torch.eq(Mx.T, Mx).float()
+        mask_Mx.fill_diagonal_(0)
+
+        # shape=[batch_size, batch_size]
+        if self.loss == "l2":
+            dist = torch.cdist(z, z, p=2.0)
+
+        elif self.loss == "l1":
+            dist = torch.cdist(z, z, p=1.0)
+
+        elif self.loss == "cosine":
+            dist = F.cosine_similarity(
+                z.unsqueeze(-1), z.T.unsqueeze(0), dim=1, eps=1e-08
+            )
+
+        else:
+            raise ValueError(f"Unknown loss={self.loss}.")
+
+        # shape : between [0] and [batch]. Mask out examples where there are no 2 with same Mx
+        n_select = mask_Mx.sum(1)
+        mask = n_select > 0
+        if mask.any():
+            loss = (mask_Mx * dist).sum(1).masked_select(mask)
+            loss = loss / n_select.masked_select(mask)
+        else:
+            loss = None
+
+        logs = dict()
+        other = dict()
+
+        return loss, logs, other

@@ -2,12 +2,14 @@ defaults:
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
+is_force_gpu: True
 experiment: ???
 agg_mode: [summarize_metrics] # plot_scatter_lines
 col_val_subset : {}
 fillna: {}
 cols_to_str: []
 replace: {}
+sort: null
 
 patterns:
   # name, pattern to find it

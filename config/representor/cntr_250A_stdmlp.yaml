@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - cntr_250A_mlp
+
+representor:
+  name: cntr_250A_stdmlp
+
+decodability:
+  kwargs:
+    is_pred_proj_same: True

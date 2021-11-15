@@ -1,0 +1,14 @@
+# @package _global_
+defaults:
+  - cntr_stdA
+
+representor:
+  name: cntr_stdA_mlpS
+
+decodability:
+  kwargs:
+    predictor_kwargs:
+      architecture: "mlp"
+      hid_dim: 1024
+      n_hid_layers: 1
+      norm_layer: "batch"

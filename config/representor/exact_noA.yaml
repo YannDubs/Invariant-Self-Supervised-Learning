@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - exact
+
+representor:
+  name: exact_noA
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      a_augmentations: []

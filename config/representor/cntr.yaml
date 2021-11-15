@@ -24,7 +24,7 @@ decodability:
     is_normalize_proj: True
     is_project: True
     is_pred_proj_same: False
-    predictor_kwargs: # will be replaced by proojector when `is_pred_proj_same`
+    predictor_kwargs: # will be replaced by projector when `is_pred_proj_same`
       architecture: "linear"
       out_shape: 128
     projector_kwargs:

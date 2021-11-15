@@ -40,6 +40,9 @@ class ISSLModule(pl.LightningModule):
 
         self.stage = self.hparams.stage  # allow changing to stages
 
+        # input example to get shapes for summary
+        self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
+
     @property
     def final_beta(self):
         """Return the final beta to use."""
@@ -202,6 +205,7 @@ class ISSLModule(pl.LightningModule):
 
         # MODEL
         if curr_opt == "issl":
+
             loss, logs, other = self.step(batch)
 
             # Imp: waiting for torch lightning #1243

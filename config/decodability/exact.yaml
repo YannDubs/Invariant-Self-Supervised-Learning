@@ -9,6 +9,7 @@ decodability:
     z_shape: ${encoder.z_shape}
     m_shape: ${data.aux_shape}
     loss:  CrossEntropyLoss
+    is_classification: aux_is_clf
     predictor_kwargs: 
       architecture: linear
 

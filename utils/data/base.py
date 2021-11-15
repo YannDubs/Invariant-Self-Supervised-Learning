@@ -201,9 +201,7 @@ class ISSLDataset(abc.ABC):
 
         return is_clf["target"], is_clf[self.aux_target]
 
-    def get_shapes(
-        self,
-    ) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
+    def get_shapes(self,) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
         """Return `shapes` for the target, aux_target, all agg_target."""
         shapes = self.shapes
         shapes["representative"] = shapes["input"]
@@ -248,8 +246,8 @@ class ISSLDataModule(LightningDataModule):
     seed : int, optional
         Pseudo random seed.
 
-    reload_dataloaders_every_n_epochs : bool, optional
-        Whether to reload (all) dataloaders at each epoch.
+    reload_dataloaders_every_n_epochs : int, optional
+        Reload dataloaders every n epochs. If 0, no reload.
 
     subset_train_size : float or int, optional
         Will subset the training data in a balanced fashion. If float, should be
@@ -258,7 +256,7 @@ class ISSLDataModule(LightningDataModule):
         subset the data.
 
     is_test_nonsubset_train : bool, optional
-        Whether to use the training set that is not subset. This only makes sense
+        Whether to test on the training set that is not subset. This only makes sense
         if `subset_train_size` is not None, and ensures that you are testing on the
         "rest"  of the training set. This is particularly helpful if you want to
         approximate the fact that representation learning has access to the entire
@@ -279,10 +277,11 @@ class ISSLDataModule(LightningDataModule):
         batch_size: int = 128,
         val_batch_size: Optional[int] = None,
         seed: int = 123,
-        reload_dataloaders_every_n_epochs: bool = False,
+        reload_dataloaders_every_n_epochs: int = 0,
         subset_train_size: Optional[float] = None,
         is_test_nonsubset_train: bool = False,
         dataset_kwargs: dict = {},
+        is_shuffle_train: bool = True,
     ) -> None:
         super().__init__()
         self.data_dir = data_dir
@@ -296,6 +295,7 @@ class ISSLDataModule(LightningDataModule):
         self.subset_train_size = subset_train_size
         self.is_test_nonsubset_train = is_test_nonsubset_train
         self.dataset_kwargs = dataset_kwargs
+        self.is_shuffle_train = is_shuffle_train
 
     @property
     def Dataset(self) -> Any:
@@ -392,7 +392,8 @@ class ISSLDataModule(LightningDataModule):
     ) -> DataLoader:
         """Return the training dataloader while possibly modifying dataset kwargs."""
         data_kwargs = kwargs.pop("dataset_kwargs", {})
-        if self.reload_dataloaders_every_n_epochs or len(data_kwargs) > 0:
+        if self.reload_dataloaders_every_n_epochs > 0 or len(data_kwargs) > 0:
+            logger.info("Reloading train dataloader.")
             curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
             train_dataset = self.get_train_dataset_subset(**curr_kwargs)
 
@@ -405,7 +406,7 @@ class ISSLDataModule(LightningDataModule):
         return DataLoader(
             train_dataset,
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=self.is_shuffle_train,
             num_workers=self.num_workers,
             pin_memory=True,
             **kwargs,
@@ -414,7 +415,8 @@ class ISSLDataModule(LightningDataModule):
     def val_dataloader(self, batch_size: Optional[int] = None, **kwargs) -> DataLoader:
         """Return the validation dataloader while possibly modifying dataset kwargs."""
         data_kwargs = kwargs.pop("dataset_kwargs", {})
-        if self.reload_dataloaders_every_n_epochs or len(data_kwargs) > 0:
+        if self.reload_dataloaders_every_n_epochs > 0 or len(data_kwargs) > 0:
+            logger.info("Reloading val dataloader.")
             curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
             self.val_dataset = self.get_val_dataset(**curr_kwargs)
 
@@ -433,7 +435,8 @@ class ISSLDataModule(LightningDataModule):
     def test_dataloader(self, batch_size: Optional[int] = None, **kwargs) -> DataLoader:
         """Return the test dataloader while possibly modifying dataset kwargs."""
         data_kwargs = kwargs.pop("dataset_kwargs", {})
-        if self.reload_dataloaders_every_n_epochs or len(data_kwargs) > 0:
+        if self.reload_dataloaders_every_n_epochs > 0 or len(data_kwargs) > 0:
+            logger.info("Reloading test dataloader.")
             # in the case where `self.is_test_nonsubset_train` this is not 100% correct
             # because _test_dataset is not used. SO kwargs are effectively disregarded
             curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)

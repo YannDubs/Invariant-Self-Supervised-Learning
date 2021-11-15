@@ -13,7 +13,7 @@ import math
 import os
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 import hydra
 import matplotlib.pyplot as plt
@@ -102,7 +102,7 @@ def main(cfg):
         initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
 
         logger.info("Train representor ...")
-        repr_trainer.fit(representor, datamodule=repr_datamodule)
+        fit_(repr_trainer, representor, repr_datamodule, repr_cfg)
         save_pretrained(repr_cfg, repr_trainer, stage)
     else:
         logger.info("Load pretrained representor ...")
@@ -117,7 +117,10 @@ def main(cfg):
 
     if repr_cfg.evaluation.representor.is_evaluate:
         logger.info("Evaluate representor ...")
-        repr_res = evaluate(repr_trainer, repr_datamodule, repr_cfg, stage)
+        is_eval_train = repr_cfg.evaluation.representor.is_eval_train
+        repr_res = evaluate(
+            repr_trainer, repr_datamodule, repr_cfg, stage, is_eval_train=is_eval_train
+        )
     else:
         repr_res = load_results(repr_cfg, stage)
 
@@ -168,7 +171,7 @@ def main(cfg):
                 pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
 
             logger.info(f"Train predictor on {data} ...")
-            pred_trainer.fit(predictor, datamodule=pred_datamodule)
+            fit_(pred_trainer, predictor, pred_datamodule, pred_cfg)
             save_pretrained(pred_cfg, pred_trainer, stage, is_sklearn=is_sklearn)
 
         else:
@@ -298,7 +301,7 @@ def set_cfg(cfg: Container, stage: str) -> Container:
 
 
 def instantiate_datamodule_(
-    cfg: Container, pre_representor: Optional[ISSLModule] = None
+    cfg: Container, pre_representor: Optional[pl.Trainer] = None
 ) -> pl.LightningDataModule:
     """Instantiate dataset."""
 
@@ -447,11 +450,6 @@ def get_trainer(
 ) -> pl.Trainer:
     """Instantiate trainer."""
 
-    # Resume training ?
-    last_checkpoint = Path(cfg.checkpoint.kwargs.dirpath) / LAST_CHECKPOINT
-    if last_checkpoint.exists():
-        cfg.trainer.resume_from_checkpoint = str(last_checkpoint)
-
     kwargs = dict(**cfg.trainer)
 
     # PARALLEL PROCESSING
@@ -467,7 +465,6 @@ def get_trainer(
     trainer = pl.Trainer(
         logger=get_logger(cfg, module, is_representor),
         callbacks=get_callbacks(cfg, is_representor),
-        checkpoint_callback=True,
         **kwargs,
     )
 
@@ -477,6 +474,23 @@ def get_trainer(
     trainer.checkpoint_connector.hpc_save = lambda *args, **kwargs: None
 
     return trainer
+
+
+def fit_(
+    trainer: pl.Trainer,
+    module: pl.LightningModule,
+    datamodule: pl.LightningDataModule,
+    cfg: NamespaceMap,
+):
+    """Fit the module."""
+    kwargs = dict()
+
+    # Resume training ?
+    last_checkpoint = Path(cfg.checkpoint.kwargs.dirpath) / LAST_CHECKPOINT
+    if last_checkpoint.exists():
+        kwargs["ckpt_path"] = str(last_checkpoint)
+
+    trainer.fit(module, datamodule=datamodule, **kwargs)
 
 
 def placeholder_fit(
@@ -508,7 +522,7 @@ def save_pretrained(
     if not is_sklearn:
         # restore best checkpoint
         best = trainer.checkpoint_callback.best_model_path
-        trainer.checkpoint_connector.restore_model_weights(best)
+        trainer.checkpoint_connector.resume_start(best)
 
     # save
     dest_path = Path(cfg.paths.pretrained.save)
@@ -527,7 +541,7 @@ def is_trained(cfg: NamespaceMap, stage: str) -> bool:
 
 
 def load_pretrained(
-    cfg: NamespaceMap, Module: pl.LightningModule, stage: str, **kwargs
+    cfg: NamespaceMap, Module: Type[pl.LightningModule], stage: str, **kwargs
 ) -> pl.LightningModule:
     """Load the best checkpoint from the latest run that has the same name as current run."""
     save_path = Path(cfg.paths.pretrained.load)
@@ -543,7 +557,7 @@ def load_pretrained(
 # noinspection PyBroadException
 def evaluate(
     trainer: pl.Trainer,
-    datamodule: ISSLDataModule,
+    datamodule: pl.LightningDataModule,
     cfg: NamespaceMap,
     stage: str,
     is_eval_train: bool = False,
@@ -610,7 +624,7 @@ def evaluate(
 
 def load_results(cfg: NamespaceMap, stage: str) -> dict:
     """
-    Load the results that were previously saved or return empty dict. Useful in case you get_trainer
+    Load the results that were previously saved or return empty dict. Useful in case you
     preempted but still need access to the results.
     """
     # noinspection PyBroadException

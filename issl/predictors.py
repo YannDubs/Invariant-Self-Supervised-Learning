@@ -141,6 +141,10 @@ class Predictor(pl.LightningModule):
         if self.is_agg_target:
             y, y_agg = y
 
+            if isinstance(y_agg, torch.Tensor):
+                # sometimes will be list of labels and other time tensor => make all list
+                y_agg = y_agg.unbind(-1)
+
         # list of Y_hat. Each Y_hat shape: [batch_size,  *target_shape]
         Y_hat, Ys_hat_agg = self(x)
 
@@ -177,11 +181,7 @@ class Predictor(pl.LightningModule):
 
         return loss, logs
 
-    def loss(
-        self,
-        Y_hat: torch.Tensor,
-        y: torch.Tensor,
-    ) -> tuple[torch.Tensor, dict]:
+    def loss(self, Y_hat: torch.Tensor, y: torch.Tensor,) -> tuple[torch.Tensor, dict]:
         """Compute the MSE or cross entropy loss."""
 
         loss = prediction_loss(Y_hat, y, self.is_clf)
@@ -214,6 +214,7 @@ class Predictor(pl.LightningModule):
     def training_step(
         self, batch: torch.Tensor, batch_idx: torch.Tensor
     ) -> Optional[torch.Tensor]:
+
         loss, logs = self.step(batch)
         self.log_dict(
             {

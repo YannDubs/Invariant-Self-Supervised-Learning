@@ -32,7 +32,7 @@ def format_resolver(x: Any, pattern: str) -> str:
     return f"{x:{pattern}}"
 
 
-def list2str_resolver(l: list) -> list:
+def list2str_resolver(l: list) -> str:
     if len(l) > 0:
         return "_".join(str(el) for el in sorted(l))
     else:
@@ -300,7 +300,7 @@ class SklearnTrainer:
 
 def apply_representor(
     datamodule: pl.LightningDataModule,
-    representor: pl.LightningModule,
+    representor: pl.Trainer,
     is_eval_on_test: bool = True,
     is_agg_target: bool = False,
     **kwargs,
@@ -308,10 +308,11 @@ def apply_representor(
     """Apply a representor on every example (precomputed) of a datamodule and return a new datamodule."""
 
     # ensure that you will not be augmenting
-    train_dataset = datamodule.train_dataset
-    subset2dataset(train_dataset).curr_split = "validation"
+    train_dataset = deepcopy(datamodule.train_dataset)
+    subset2dataset(train_dataset).set_eval_()
 
     out_train = representor.predict(
+        model=representor.lightning_module,
         ckpt_path=None,  # use current model
         dataloaders=[
             datamodule.train_dataloader(
@@ -320,10 +321,12 @@ def apply_representor(
         ],
     )
     out_val = representor.predict(
+        model=representor.lightning_module,
         ckpt_path=None,
         dataloaders=[datamodule.val_dataloader(batch_size=64, drop_last=False)],
     )
     out_test = representor.predict(
+        model=representor.lightning_module,
         ckpt_path=None,
         dataloaders=[
             datamodule.eval_dataloader(is_eval_on_test, batch_size=64, drop_last=False)

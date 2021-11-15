@@ -5,20 +5,23 @@ the file `config/aggregate.yaml` for details about the configs. or use `python u
 """
 from __future__ import annotations
 
-import glob
 import logging
 import os
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
+import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
 import hydra
+from matplotlib.ticker import FuncFormatter
 from omegaconf import OmegaConf
+from sklearn.preprocessing import minmax_scale
 
 try:
     import sklearn.metrics
@@ -68,6 +71,13 @@ def main_cli(cfg):
 
 def main(cfg):
 
+    if cfg.is_force_gpu and not torch.cuda.is_available():
+        # force cuda in case you don't want to run on the intitial node
+        logger.info(
+            "Not aggregating because you asked for GPU which is not available. If that was on purpose, use `is_force_gpu=False`."
+        )
+        return
+
     begin(cfg)
 
     # make sure you are using primitive types from now on because omegaconf does not always work
@@ -86,10 +96,11 @@ def main(cfg):
         # if multiple tables also add "merged" that contains all
         aggregator.merge_tables(list(aggregator.tables.keys()))
 
-    aggregator.subset(**cfg.col_val_subset)
     aggregator.fillna(**cfg.fillna)
     aggregator.cols_to_str(*cfg.cols_to_str)
     aggregator.replace(**cfg.replace)
+    aggregator.sort(cfg.sort)
+    aggregator.subset(**cfg.col_val_subset)
 
     for f in cfg.agg_mode:
 
@@ -288,6 +299,14 @@ class ResultAggregator(PostPlotter):
             for k, df in self.tables.items():
                 self.tables[k] = (
                     df.reset_index().replace(value=values).set_index(df.index.names)
+                )
+
+    def sort(self, col: Optional[Union[Sequence[str], str]]):
+        """Sort column."""
+        if col is not None:
+            for k, df in self.tables.items():
+                self.tables[k] = (
+                    df.reset_index().sort_values(by=col).set_index(df.index.names)
                 )
 
     @data_getter
@@ -500,8 +519,8 @@ class ResultAggregator(PostPlotter):
             Whether to put the legend outside of the figure.
 
         is_no_legend_title : bool, optional
-            Whether to remove the legend title. If `is_legend_out` then will actually duplicate the
-            legend :/, the best in that case is to remove the test of the legend column .
+            Whether to remove the legend title. If `legend_out` then will actually duplicate the
+            legend :/, the best in that case is to remove the text of the legend column .
 
         set_kwargs : dict, optional
             Additional arguments to `FacetGrid.set`. E.g.
@@ -641,15 +660,132 @@ class ResultAggregator(PostPlotter):
                     )
                 except:
                     logger.exception(f"Could not plot {monitor}. Error:")
-                    pass
 
                 # saving
                 nice_monitor = monitor.replace("/", "_")
                 filename = self.save_dir / f"optuna_{plot_f_str}_{nice_monitor}"
                 save_fig(out, filename, self.dpi)
 
+    @data_getter
+    @folder_split
+    @single_plot
+    def plot_heatmap(
+        self,
+        x,
+        y,
+        metric,
+        data=None,
+        filename: str = "heatmap_{y}_vs_{x}",
+        col: Optional[str] = None,
+        row: Optional[str] = None,
+        normalize: Optional[str] = "row",
+        cbar_label: Optional[str] = None,
+        is_percentage: bool = False,
+        folder_col=None,
+        logbase_x: Optional[int] = 1,
+        logbase_y: Optional[int] = 1,
+        sharex: bool = True,
+        sharey: bool = True,
+        legend_out: bool = True,
+        is_no_legend_title: bool = False,
+        set_kwargs: set = {},
+        x_rotate: float = 0,
+        cols_vary_only: Optional[str] = None,
+        cols_to_agg: Sequence[str] = [],
+        aggregates: Sequence[str] = ["mean", "sem"],
+        row_title: str = "{row_name}",
+        col_title: str = "{col_name}",
+        plot_config_kwargs: dict = {},
+        xlabel: str = "",
+        ylabel: str = "",
+        **kwargs,
+    ):
+        """Plot a heatmap.
+
+        Parameters
+        ----------
+        x : str
+            Column name of x axis of heatmaps.
+
+        y : str
+            Column name of y axis of heatmaps.
+
+        metric : str
+            Column name of the metric to plot.
+
+        col : str, optional
+            Column name in data for plotting multiple heatmaps, one per columns.
+
+        row : str, optional
+            Column name in data for plotting multiple heatmaps, one per columns.
+
+        normalize : ["row","col",None], optional
+            Whether to normalize the values by row (single 1 per row), by column (single 1 per col)
+        or not to.
+
+        cbar_label : str, optional
+            Name for the colorbar.
+
+        is_percentage : bool, optional
+            Whether to use percentage for the annotation of the heatmap.
+
+        kwargs :
+            Additional arguments to `sns.heatmap`.
+        """
+        fmt = lambda x, pos: "{:.0%}".format(x)
+        dflt_kwargs = dict(annot=True, linewidths=0.5, fmt=fmt)
+
+        if is_percentage:
+            dflt_kwargs.update(dict(fmt=".0%", cbar_kws={"format": FuncFormatter(fmt)}))
+
+        if cbar_label is not None:
+            dflt_kwargs["cbar_kws"] = {"label": self.pretty_renamer[cbar_label]}
+
+        dflt_kwargs.update(kwargs)
+
+        sns_plot = sns.FacetGrid(
+            data,
+            row=row,
+            col=col,
+            dropna=False,
+            sharex=sharex,
+            sharey=sharey,
+            aspect=1.5,
+            height=6,
+        )
+
+        sns_plot.map_dataframe(
+            draw_heatmap, x, y, metric, normalize=normalize, **kwargs,
+        )
+        sns_plot.fig.tight_layout()
+
+        return sns_plot
+
 
 # HELPERS
+
+
+def draw_heatmap(x, y, values, normalize=None, **kwargs):
+    data = kwargs.pop("data")
+    mat = data.reset_index().pivot(index=y, columns=x, values=values)
+
+    if normalize is None:
+        pass
+    elif normalize == "row":
+        mat = pd.DataFrame(
+            minmax_scale(mat.values, axis=1), columns=mat.columns, index=mat.index
+        )
+    elif normalize == "col":
+        mat = pd.DataFrame(
+            minmax_scale(mat.values, axis=0), columns=mat.columns, index=mat.index
+        )
+    else:
+        raise ValueError(f"Unknown normalize={normalize}")
+
+    ax = sns.heatmap(mat, **kwargs)
+    ax.invert_yaxis()
+    for label in ax.get_yticklabels():
+        label.set_rotation(0)
 
 
 def path_to_params(path):

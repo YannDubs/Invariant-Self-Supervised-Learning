@@ -179,6 +179,7 @@ def single_plot(fn):
             "row_title",
             "col_title",
             "x_rotate",
+            "legend_out",
             "is_no_legend_title",
             "set_kwargs",
         ]

@@ -15,7 +15,7 @@ data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "Mx"
-      a_augmentations: ["label"] 
+      a_augmentations: ["label"]
       train_x_augmentations: []
 
 decodability:

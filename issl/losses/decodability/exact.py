@@ -1,16 +1,15 @@
 """cross entropy to minimize directly R[M(X)|Z] and thus ensure decodability."""
 from __future__ import annotations
 
-import copy
-import queue
-from collections import Callable, Sequence
-from typing import Any, Optional
+from collections import Sequence
+from typing import Any
 
 import torch
 import torch.nn as nn
+from torchmetrics.functional import accuracy
+
 from issl.architectures import get_Architecture
 from issl.helpers import weights_init
-from torch.nn import functional as F
 
 __all__ = [
     "ExactISSL",
@@ -35,6 +34,9 @@ class ExactISSL(nn.Module):
 
     predictor_kwargs : dict, optional
         Arguments to get `Predictor` from `get_Architecture`.
+
+    is_classification : bool, optional
+        Whether or not Mx can be classified. WIll add accuracies.
     """
 
     def __init__(
@@ -43,12 +45,14 @@ class ExactISSL(nn.Module):
         m_shape: Sequence[int],
         loss: str = "CrossEntropyLoss",
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
+        is_classification: bool = True,
     ) -> None:
         super().__init__()
         self.z_shape = z_shape
         self.compute_loss = getattr(nn, loss)(reduction="none")
         self.m_shape = m_shape
         self.predictor_kwargs = predictor_kwargs
+        self.is_classification = is_classification
 
         Predictor = get_Architecture(
             in_shape=self.z_shape, out_shape=self.m_shape, **self.predictor_kwargs
@@ -91,6 +95,10 @@ class ExactISSL(nn.Module):
         hat_R_mlz = self.compute_loss(M_pred, m)
 
         logs = dict()
+        if self.is_classification:
+            logs["Mx_acc"] = accuracy(M_pred.argmax(dim=-1), m)
+            logs["Mx_err"] = 1 - logs["Mx_acc"]
+
         other = dict()
 
         return hat_R_mlz, logs, other

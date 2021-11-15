@@ -30,9 +30,15 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=cntr,cntr_60A,cntr_stdA,cntr_noA,cntr_coarserA
+representor=cntr,cntr_250A,cntr_stdA,cntr_noA,cntr_coarserA
 encoder.z_shape=2,4,8,16,32,64,128,512,2048,8192
 seed=1,2,3
+"
+
+kwargs_multi="
+representor=cntr,cntr_250A,cntr_1000A,cntr_stdA,cntr_noA,cntr_coarserA
+encoder.z_shape=2,4,8,16,32,64,128,250,512,1024,2048
+seed=1
 "
 
 # difference for gen: linear resnet / augmentations / larger dim
@@ -51,3 +57,22 @@ fi
 
 wait
 
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       "+col_val_subset.repr=[cntr,cntr_250A,cntr_stdA,cntr_noA,cntr_coarserA]" \
+       patterns.representor=null \
+       +kwargs.pretty_renamer.Cntr_250A="Minimal" \
+       +kwargs.pretty_renamer.Cntr_1000A="Minimal--" \
+       +kwargs.pretty_renamer.Cntr_Stda="Standard" \
+       +kwargs.pretty_renamer.Cntr_Noa="None" \
+       +kwargs.pretty_renamer.Cntr_Coarsera="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr="Minimal++" \
+       +plot_scatter_lines.x="zdim" \
+       +plot_scatter_lines.y="test/pred/accuracy_score" \
+       +plot_scatter_lines.filename="lines_acc_vs_samples" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.logbase_x=2 \
+       +plot_scatter_lines.legend_out=False \
+       agg_mode=[plot_scatter_lines]

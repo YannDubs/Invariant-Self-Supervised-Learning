@@ -11,6 +11,7 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
+from torchvision.transforms import InterpolationMode
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader, random_split
@@ -150,6 +151,12 @@ class ISSLImgDataset(ISSLDataset):
     curr_split : str, optional
         Which data split you are considering.
 
+    is_shuffle_targets : bool, optional
+        Shuffle targets which is useful if want labels to be uncorrelated with inputs.
+        
+    is_shuffle_Mx : bool, optional
+        Shuffle the maximal invariants.
+
     n_sub_label : int, optional
         Number of sub equivalence classes to augment to when using `a_augmentations=label` or `a_augmentations=permlabel`.
         Specifically instead of augmenting uniformly to images inside the label class, will do so in a subpartition of the
@@ -165,17 +172,18 @@ class ISSLImgDataset(ISSLDataset):
     def __init__(
         self,
         *args,
-        a_augmentations: Sequence[str] = {},
-        train_x_augmentations: Union[Sequence[str], str] = {},
-        val_x_augmentations: Union[Sequence[str], str] = {},
+        a_augmentations: Sequence[str] = [],
+        train_x_augmentations: Union[Sequence[str], str] = [],
+        val_x_augmentations: Union[Sequence[str], str] = [],
         is_normalize: bool = True,
         normalization: Optional[str] = None,
         base_resize: str = "resize",
         curr_split: str = "train",
+        is_shuffle_targets: bool = False,
+            is_shuffle_Mx: bool=False,
         n_sub_label: int = 1,
         **kwargs,
     ):
-
         self.base_resize = base_resize
         self.n_Mxs = -1  # tmp until gets allocated
 
@@ -187,30 +195,37 @@ class ISSLImgDataset(ISSLDataset):
             **kwargs,
         )
 
-        self.is_label_aug = False
+        self.is_Mx_aug = False
         self.is_coarser_Mx = False
         self.perm_Mx = None
         self.n_sub_label = n_sub_label
+        self.is_shuffle_targets = is_shuffle_targets
+        self.is_shuffle_Mx = is_shuffle_Mx
+
+        if self.is_shuffle_targets:
+            # need to shuffle before computing Mx
+            self.shuffle_targets_()
 
         if "label" in self.a_augmentations:
-            self.is_label_aug = True
+            self.is_Mx_aug = True
             self.a_augmentations.remove("label")
         if "perm_label" in self.a_augmentations:
-            assert not self.is_label_aug, "cannot have `label` and `perm_label`"
+            assert not self.is_Mx_aug, "cannot have `label` and `perm_label`"
             assert self.is_clfs["target"], "`perm_label` only in clf"
-            self.is_label_aug = True
+            self.is_Mx_aug = True
             # Mx permuter simply increases by 1. Attention: self.n_Mxs must be computed later
             self.perm_Mx = lambda x: (x + 1) % self.n_Mxs
             self.a_augmentations.remove("perm_label")
         if "coarser" in self.a_augmentations:
             self.is_coarser_Mx = True
+            self.is_Mx_aug = True
             self.a_augmentations.remove("coarser")
 
         self.train_x_augmentations = train_x_augmentations
         self.val_x_augmentations = val_x_augmentations
 
         self.curr_split = curr_split
-        self.n_Mxs = len(np.unique(self.Mxs))
+        self.n_Mxs = len(np.unique(self.Mxs))  # also precompute Mx
 
     @property
     def curr_split(self) -> str:
@@ -244,12 +259,20 @@ class ISSLImgDataset(ISSLDataset):
         if hasattr(self, "targets"):
             # some dataset already load them by default (a.g. MNIST)
             return self.targets
-        if hasattr(self, "_targets"):
-            # in vase precomputed
-            return self._targets
-        self._targets = np.stack(
-            [to_numpy(self.get_img_target(i)[1]) for i in range(len(self))]
-        )
+
+        if not hasattr(self, "_targets"):
+            self._targets = np.stack(
+                [to_numpy(self.get_img_target(i)[1]) for i in range(len(self))]
+            )
+
+        return self._targets
+
+    def shuffle_targets_(self):
+        targets = self.get_targets()
+        with tmp_seed(self.seed):
+            if isinstance(targets, torch.Tensor):
+                targets = targets.numpy()
+            np.random.shuffle(targets)  # inplace
 
     @property
     def Mxs(self) -> np.ndarray:
@@ -257,14 +280,28 @@ class ISSLImgDataset(ISSLDataset):
         if hasattr(self, "_Mxs"):
             return self._Mxs
 
-        if self.is_label_aug:
-            targets = self.get_targets()
+        if self.is_Mx_aug:
+            targets = np.array(self.get_targets())
             if self.n_sub_label > 1:
+                assert len(self) % self.n_sub_label == 0
                 with tmp_seed(self.seed):
-                    sub_labels = np.random.randint(self.n_sub_label, size=len(self))
-                self._Mxs = targets * self.n_sub_label + sub_labels
-                # the remainder (i.e. Mx % n_sub_label) will give the sub class
-                # the main part (i.e. Mx // n_sub_label) will give the targets
+                    self._Mxs = targets * self.n_sub_label
+                    for t in np.unique(targets):
+                        idcs_t = targets == t
+                        sub_labels_t = np.random.randint(
+                            self.n_sub_label, size=idcs_t.sum()
+                        )
+                        if self.is_train:
+                            # ensure that at least one ex per sub label during training
+                            assert len(sub_labels_t) > self.n_sub_label
+                            sub_labels_t[: self.n_sub_label] = np.arange(
+                                self.n_sub_label
+                            )
+                            np.random.shuffle(sub_labels_t)
+
+                        self._Mxs[idcs_t] += sub_labels_t
+                    # the remainder (i.e. Mx % n_sub_label) will give the sub class
+                    # the main part (i.e. Mx // n_sub_label) will give the targets
             else:
                 self._Mxs = targets
         else:
@@ -273,6 +310,12 @@ class ISSLImgDataset(ISSLDataset):
         if self.is_coarser_Mx:
             targets = self.get_targets()
             self._Mxs = targets % 2
+
+        if self.is_shuffle_Mx:
+            with tmp_seed(self.seed):
+                if isinstance(self._Mxs, torch.Tensor):
+                    self._Mxs = self._Mxs.numpy()
+                np.random.shuffle(self._Mxs)
 
         return self._Mxs
 
@@ -374,9 +417,11 @@ class ISSLImgDataset(ISSLDataset):
                     size=(shape[1], shape[2]),
                     scale=(0.2, 1.0),
                     ratio=(3 / 4, 4 / 3),
-                    interpolation=Image.BICUBIC,
+                    interpolation=InterpolationMode.BICUBIC,
                 ),
-                "resize": Resize(min(shape[1], shape[2]), interpolation=Image.BICUBIC),
+                "resize": Resize(
+                    min(shape[1], shape[2]), interpolation=InterpolationMode.BICUBIC
+                ),
                 "crop": RandomCrop(size=(shape[1], shape[2])),
                 "simclr-imagenet": get_simclr_augmentations(
                     shape[-1], dataset="imagenet"
@@ -412,13 +457,13 @@ class ISSLImgDataset(ISSLDataset):
         choices = (Mxs == Mx).nonzero(as_tuple=True)[0]
         index = choices[torch.randint(len(choices), size=[])]
 
-        img, curr_target = self.get_img_target(index)
+        img, _ = self.get_img_target(index)
 
         return img
 
     def sample_p_Alx(self, _: Any, Mx: Any) -> Any:
         # load raw image
-        if self.is_label_aug:
+        if self.is_Mx_aug:
             img = self.get_img_from_Mx(Mx)
         else:
             index = Mx
@@ -429,7 +474,7 @@ class ISSLImgDataset(ISSLDataset):
         return a
 
     def get_representative(self, Mx: Any) -> Any:
-        if self.is_label_aug:
+        if self.is_Mx_aug:
             # TODO one issue is that representative will actually be different during test / val /train
             with tmp_seed(self.seed, is_cuda=False):
                 # to fix the representative use the same seed. Note that cannot set seed inside
@@ -461,7 +506,7 @@ class ISSLImgDataset(ISSLDataset):
             if not self.is_train:
                 trnsfs += [
                     # resize smallest to 224
-                    Resize(224, interpolation=Image.BICUBIC),
+                    Resize(224, interpolation=InterpolationMode.BICUBIC),
                     CenterCrop((224, 224)),
                 ]
         elif self.base_resize is None:
@@ -715,7 +760,7 @@ class STL10DataModule(ISSLImgDataModule):
 # STL10 Unlabeled #
 class STL10UnlabeledDataset(STL10Dataset):
     def __init__(self, *args, curr_split: str = "train", **kwargs) -> Any:
-        curr_split = "unlabeled" if curr_split == "train" else curr_split
+        curr_split = "train+unlabeled" if curr_split == "train" else curr_split
         super().__init__(*args, curr_split=curr_split, **kwargs)
 
 

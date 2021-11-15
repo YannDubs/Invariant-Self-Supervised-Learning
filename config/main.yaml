@@ -79,6 +79,7 @@ evaluation:
     ckpt_path: "best"
     is_evaluate: ${representor.is_train}
     is_online_eval: True
+    is_eval_train: False # whether to evaluate the representor on train. Can be slow
   predictor:
     ckpt_path: "best"
     is_evaluate: ${predictor.is_train}
@@ -93,28 +94,38 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
     kwargs:
       logging_interval : epoch
 
+  RichProgressBar:
+    is_use : true
+    kwargs:
+      refresh_rate_per_second: 0.1
+
+  RichModelSummary:
+    is_use: true
+    kwargs:
+      max_depth: 4
+
 trainer:
   #default_root_dir: ${paths.results}
   max_epochs: 100
-  #detect_anomaly: false # makes it slower if true #TODO uncomment once you have pytorch 1.5
-  progress_bar_refresh_rate: 10000 # increase to show progress bar  #DEV
-  resume_from_checkpoint: null # string to checkpoint if you want to resume
-  gradient_clip_val: 3 # 0 means no clip
+  detect_anomaly: false # makes it slower if true
+  enable_progress_bar: True
+  gradient_clip_val: 2 # null to disable
+  gradient_clip_algorithm: "value" # "norm" to clip by norm (problem is if one val is inf, then all is 0)
   reload_dataloaders_every_n_epochs: 0
   log_every_n_steps: 200
   val_check_interval: 1.0 # decrease for subepoch checkpointing
+  enable_checkpointing: True
 
   # ENGINEERING / SPEED #
   gpus: 1
   num_nodes: 1  # number gpu nodes
-  precision: 16 # use 16 bit for speed # TODO "b16" once use pytorch lightning 1.5
+  precision: 16 # use 16 bit for speed # TODO use "b16" once it is not experiemntal (maybe lightning 1.6)
   accumulate_grad_batches: 1
   sync_batchnorm: false # whether to synchronize batch norm over GPUs
 
   # DEBUGGING #
   fast_dev_run: false # use true to make a quick test (not full epoch)
   overfit_batches: 0.0 # use 0.01 to make sure you can overfit 1% of training data => training works
-  weights_summary: full # full to print show the entire model, top nly prints the top module
   profiler: null # use `simple` or `"advanced"` to find bottleneck
 
 ########## REPRESENTOR ##########
