@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"aug_dim"
+experiment=$prfx"aug_dim_reg"
 notes="
 **Goal**: figure showing effect of augmentations on the necessary dimensionality.
 "
@@ -33,11 +33,15 @@ kwargs_multi="
 representor=cntr,cntr_250A,cntr_stdA,cntr_1000A_shuffle,cntr_noA,cntr_coarserA
 encoder.z_shape=2,4,8,16,64,250,1024,4096
 seed=1,2,3
+regularizer=huber
+representor.loss.beta=1e-3,1e-1,1e0,1e1
 "
 
 kwargs_multi="
-representor=cntr,cntr_250A,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA
-encoder.z_shape=2,4,8,10,16,64,250,1024,4096
+representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA
+encoder.z_shape=2,8,16,64,250,1024
+regularizer=huber
+representor.loss.beta=1e0,1e1
 seed=1
 "
 
@@ -73,7 +77,7 @@ python utils/aggregate.py \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_samples" \
        +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.style="beta" \
        +plot_scatter_lines.logbase_x=2 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]

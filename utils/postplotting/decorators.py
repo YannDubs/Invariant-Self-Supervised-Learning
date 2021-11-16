@@ -199,8 +199,9 @@ def single_plot(fn):
         with plot_config(**used_plot_config):
             sns_plot = fn(self, *args, data=pretty_data, **pretty_kwargs)
 
-            for ax in sns_plot.axes.flat:
-                plt.setp(ax.texts, text="")
+            # THIS WAS MESSING UP WITH heatmap (removing text). But could double write text now ? TODO: check
+            # for ax in sns_plot.axes.flat:
+            #    plt.setp(ax.texts, text="")
             sns_plot.set_titles(row_template=row_title, col_template=col_title)
 
             if x_rotate != 0:

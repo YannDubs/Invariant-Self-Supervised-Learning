@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"V_heatmap_exact"
+experiment=$prfx"V_heatmap_1000A"
 notes="
 **Goal**: figure showing effect of predictive family depending on downstream family.
 "
@@ -31,14 +31,18 @@ $add_kwargs
 
 # every arguments that you are sweeping over
 kwargs_multi="
-architecture@predictor=linear,mlp_h128_l1,mlp_h2048_l2
+architecture@predictor=linear,mlp_h32_l1,mlp_h2048_l2
 seed=1
 "
+
 # need to rerun with seed: 3 once happy
 
 
+# difference for gen: linear resnet / augmentations / larger dim
+
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "representor=exact_stdA,exact_stdA_mlpXS,exact_stdA_mlp"
+  for kwargs_dep in  "representor=std_cntr_1000A encoder.z_shape=512" "representor=cntr_1000A,cntr_1000A_mlpXXS,cntr_1000A_mlp encoder.z_shape=2048"
   do
     # on mnist typically z_shape would be quite small but we say that it should be larger
 
@@ -62,6 +66,7 @@ python utils/aggregate.py \
        +plot_heatmap.cols_to_agg=["seed"] \
        +plot_heatmap.metric="test/pred/acc_agg_mean" \
        +plot_heatmap.filename="heatmap_V" \
+       +plot_heatmap.is_percentage=true \
        agg_mode=[plot_heatmap]
 
 

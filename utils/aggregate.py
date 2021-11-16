@@ -678,7 +678,7 @@ class ResultAggregator(PostPlotter):
         filename: str = "heatmap_{y}_vs_{x}",
         col: Optional[str] = None,
         row: Optional[str] = None,
-        normalize: Optional[str] = "row",
+        normalize: Optional[str] = None,
         cbar_label: Optional[str] = None,
         is_percentage: bool = False,
         folder_col=None,
@@ -732,11 +732,11 @@ class ResultAggregator(PostPlotter):
         kwargs :
             Additional arguments to `sns.heatmap`.
         """
-        fmt = lambda x, pos: "{:.0%}".format(x)
-        dflt_kwargs = dict(annot=True, linewidths=0.5, fmt=fmt)
+        dflt_kwargs = dict(annot=True, linewidths=0.5, fmt=".2f")
 
         if is_percentage:
-            dflt_kwargs.update(dict(fmt=".0%", cbar_kws={"format": FuncFormatter(fmt)}))
+            fmt = lambda x, pos: "{:.0%}".format(x)
+            dflt_kwargs.update(dict(fmt=".1%", cbar_kws={"format": FuncFormatter(fmt)}))
 
         if cbar_label is not None:
             dflt_kwargs["cbar_kws"] = {"label": self.pretty_renamer[cbar_label]}
@@ -755,7 +755,7 @@ class ResultAggregator(PostPlotter):
         )
 
         sns_plot.map_dataframe(
-            draw_heatmap, x, y, metric, normalize=normalize, **kwargs,
+            draw_heatmap, x, y, metric, normalize=normalize, **dflt_kwargs,
         )
         sns_plot.fig.tight_layout()
 

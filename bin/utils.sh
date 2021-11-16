@@ -12,6 +12,10 @@ main="main.py"
 # MODE ?
 while getopts ':s:p:m:t:v:a:c:' flag; do
   case "${flag}" in
+    p )
+      prfx="${OPTARG}"
+      echo "prefix=$prfx ..."
+      ;;
     s )
       server="${OPTARG}"
       add_kwargs="${add_kwargs} server=$server"

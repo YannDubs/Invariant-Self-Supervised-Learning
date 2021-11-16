@@ -18,6 +18,9 @@ PRETTY_RENAMER = StrFormatter(
         "Lr": "Learning Rate",
         "Test/Pred/": "",
         "Train/Pred/": "Train ",
+        "Zdim": r"$\mathcal{Z}$ dim.",
+        "Pred": "Downstream Pred.",
+        "Repr": "ISSL",
         # Project specific
         "Accuracy Score": "Acc",
         "Std Gen Smallz": "Std. Gen. ISSL",

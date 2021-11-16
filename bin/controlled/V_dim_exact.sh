@@ -13,7 +13,7 @@ source `dirname $0`/../utils.sh
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
-+logger.wandb_kwargs.project=mnist
++logger.wandb_kwargs.project=controlled
 trainer.max_epochs=50
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18

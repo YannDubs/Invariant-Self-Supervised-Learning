@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - exact
+
+representor:
+  name: exact_60A
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      n_sub_label: 6 # 6 per label => 60 in total

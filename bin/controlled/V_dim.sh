@@ -35,7 +35,6 @@ $add_kwargs
 kwargs_multi="
 encoder.z_shape=2,4,8,16,32,64,128,512,2048
 seed=1,2,3
-data_pred.all_data=[data_repr_agg16]
 "
 
 # every arguments that you are sweeping over
@@ -49,7 +48,7 @@ seed=1
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in   "representor=cntr_250A_mlpXS architecture@predictor=mlp_h128_l1" "representor=cntr_250A,cntr_250A_stdmlp architecture@predictor=linear" "representor=cntr_250A_mlp architecture@predictor=mlp_h2048_l2"
+  for kwargs_dep in   "representor=cntr_250A_mlpXXS architecture@predictor=mlp_h32_l1" #"representor=cntr_250A_mlpXS architecture@predictor=mlp_h128_l1" "representor=cntr_250A,cntr_250A_stdmlp architecture@predictor=linear" "representor=cntr_250A_mlp architecture@predictor=mlp_h2048_l2"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
@@ -66,8 +65,9 @@ python utils/aggregate.py \
        experiment=$experiment  \
        $col_val_subset \
        patterns.representor=null \
-       "+col_val_subset.repr=[cntr_250A,cntr_250A_stdmlp,cntr_250A_mlp,cntr_250A_mlpXS]" \
+       "+col_val_subset.repr=[cntr_250A,cntr_250A_stdmlp,cntr_250A_mlp,cntr_250A_mlpXS,cntr_250A_mlpXXS]" \
        +kwargs.pretty_renamer.Cntr_250A_Mlpxs="calF" \
+       +kwargs.pretty_renamer.Cntr_250A_Mlpxxs="calF -" \
        +kwargs.pretty_renamer.Cntr_250A_Mlp="calF ++" \
        +kwargs.pretty_renamer.Cntr_250A_Stdmlp="Standard" \
        +kwargs.pretty_renamer.Cntr_250A="calF --" \

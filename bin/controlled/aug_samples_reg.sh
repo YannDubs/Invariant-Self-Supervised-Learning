@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"aug_samples_exact"
+experiment=$prfx"aug_samples_reg"
 notes="
 **Goal**: figure showing effect of augmentations on the necessary # samples.
 "
@@ -27,13 +27,14 @@ timeout=$time
 $add_kwargs
 "
 
+
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_250A,exact_1000A,exact_stdA,exact_noA,exact_coarserA
+representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA
+regularizer=huber
+representor.loss.beta=1e-1,1e0,1e1,1e2
 seed=1
 "
-
-# difference for gen: linear resnet / augmentations / larger dim
 
 
 if [ "$is_plot_only" = false ] ; then
@@ -51,45 +52,45 @@ wait
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.repr=[exact,exact_250A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+       "+col_val_subset.repr=[cntr,cntr_250A,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
-       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +kwargs.pretty_renamer.Cntr_250A="Minimal" \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Cntr_Stda="Standard" \
+       +kwargs.pretty_renamer.Cntr_Noa="None" \
+       +kwargs.pretty_renamer.Cntr_Coarsera="Coarser" \
+       +kwargs.pretty_renamer.Cntr="Minimal ++" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_acc_vs_samples" \
        +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.style="beta" \
        +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
 
 
   python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.repr=[exact,exact_250A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+       "+col_val_subset.repr=[cntr,cntr_250A,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
-       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +kwargs.pretty_renamer.Cntr_250A="Minimal" \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Cntr_Stda="Standard" \
+       +kwargs.pretty_renamer.Cntr_Noa="None" \
+       +kwargs.pretty_renamer.Cntr_Coarsera="Coarser" \
+       +kwargs.pretty_renamer.Cntr="Minimal ++" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_samples_agg" \
        +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.style="beta" \
        +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
 
 

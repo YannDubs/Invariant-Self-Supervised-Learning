@@ -16,7 +16,7 @@ trainer.max_epochs=50
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
-data_pred.all_data=[data_repr_agg,data_repr_10,data_repr_20,data_repr_100,data_repr_1000]
+data_pred.all_data=[data_repr_agg,data_repr_10,data_repr_100,data_repr_1000]
 predictor=sk_logistic
 data_repr.kwargs.val_size=2
 +data_pred.kwargs.val_size=2
@@ -32,17 +32,10 @@ $add_kwargs
 #representor=cntr,cntr_1000A,cntr_100000A,cntr_noA,cntr_coarserA
 kwargs_multi="
 data@data_repr=mnist,mnist_shuffled
-representor=exact,exact_60A,exact_250A,exact_1000A,exact_1000A_shuffle,exact_50000A,exact_noA,exact_coarserA
-regularizer=l2Mx
-+data_repr.kwargs.is_shuffle_train=False
-"
-
-kwargs_multi="
-data@data_repr=mnist
-representor=exact_50000A,exact_coarserA
+representor=exact,exact_1000A,exact_1000A_shuffle,exact_50000A,exact_noA,exact_coarserA
 regularizer=l2Mx
 representor.loss.beta=1e-1
-data_pred.all_data=[data_repr_agg]
++data_repr.kwargs.is_shuffle_train=False
 "
 
 
