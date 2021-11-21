@@ -12,16 +12,16 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional, Union
 
-import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib.ticker import FuncFormatter
+from sklearn.preprocessing import minmax_scale
 
 import hydra
-from matplotlib.ticker import FuncFormatter
+import torch
 from omegaconf import OmegaConf
-from sklearn.preprocessing import minmax_scale
 
 try:
     import sklearn.metrics
@@ -47,6 +47,7 @@ from utils.helpers import (  # isort:skip
     omegaconf2namespace,
     format_resolver,
     replace_keys,
+    remove_rf,
 )
 from utils.postplotting import (  # isort:skip
     PRETTY_RENAMER,
@@ -84,6 +85,12 @@ def main(cfg):
     cfg = omegaconf2namespace(cfg)
 
     aggregator = ResultAggregator(pretty_renamer=PRETTY_RENAMER, **cfg.kwargs)
+
+    base_path = aggregator.base_dir / Path(cfg.base_path)
+    for job_id in cfg.job_id_to_rm:
+        logger.info(f"Removing undesired job={job_id} ..")
+        for f in base_path.glob(f"**/jid_*_{job_id}_*"):
+            remove_rf(f)
 
     logger.info(f"Collecting the data ..")
     for name, pattern in cfg.patterns.items():
@@ -153,6 +160,7 @@ class ResultAggregator(PostPlotter):
         self.tables = dict()
         self.param_names = dict()
         self.cfgs = dict()
+        self.job_ids = set()
 
     def merge_tables(self, to_merge=["representor", "predictor"]):
         """Add one large table called `"merged"` that concatenates other tables."""
@@ -213,6 +221,11 @@ class ResultAggregator(PostPlotter):
             # make dict of params
             params = path_to_params(path_clean)
 
+            try:
+                self.job_ids.add(params["jid"].split("_")[1])
+            except:
+                pass
+
             for p in params_to_rm:
                 params.pop(p)
 
@@ -253,6 +266,8 @@ class ResultAggregator(PostPlotter):
         param_name = list(params.keys())
         self.tables[table_name] = pd.concat(results, axis=0).set_index(param_name)
         self.param_names[table_name] = param_name
+
+        logger.info(f"All job_ids={self.job_ids}.")
 
     def subset(self, **col_val):
         """Subset all tables by keeping only the given values in given columns.
@@ -559,6 +574,7 @@ class ResultAggregator(PostPlotter):
             Additional arguments to underlying seaborn plotting function. E.g. `col`, `row`, `hue`,
             `style`, `size` ...
         """
+
         kwargs["x"] = x
         kwargs["y"] = y
 

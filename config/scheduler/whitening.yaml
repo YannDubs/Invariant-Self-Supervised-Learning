@@ -7,7 +7,7 @@ modes: ["MultiStepLR"]
 kwargs:
   MultiStepLR:
     milestones: [-50,-25]
-    gamma: 0.1
+    gamma: 0.2
 
   base:
     is_warmup_lr: True

@@ -25,13 +25,13 @@ data_repr.kwargs.val_size=2
 +trainer.limit_val_batches=0
 representor=std_cntr
 timeout=$time
-$add_kwargs
+
 "
 
 
 # every arguments that you are sweeping over
 kwargs_multi="
-architecture@predictor=linear,mlp_h128_l1,mlp_h2048_l2
+architecture@predictor=linear,mlp_h32_l1,mlp_h128_l1,mlp_h2048_l2
 seed=1
 "
 
@@ -46,7 +46,7 @@ if [ "$is_plot_only" = false ] ; then
   do
     # on mnist typically z_shape would be quite small but we say that it should be larger
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

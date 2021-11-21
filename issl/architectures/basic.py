@@ -70,6 +70,7 @@ class MLP(nn.Module):
             Dropout(p=dropout_p),
         )
         layers = []
+        # start at 1 because pre_block
         for _ in range(1, n_hid_layers):
             layers += [
                 nn.Linear(hid_dim, hid_dim, bias=is_bias),

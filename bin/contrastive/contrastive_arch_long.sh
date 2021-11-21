@@ -20,7 +20,7 @@ data_pred.all_data=[data_repr_agg,data_repr_30,data_repr_100,data_repr_1000]
 predictor=sk_logistic
 optimizer@optimizer_issl=Adam_lr3e-4_w0
 timeout=$time
-$add_kwargs
+
 "
 
 
@@ -35,7 +35,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

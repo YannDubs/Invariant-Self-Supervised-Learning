@@ -27,7 +27,7 @@ data_repr.kwargs.val_size=2
 +trainer.limit_val_batches=0
 representor=cntr
 timeout=$time
-$add_kwargs
+
 "
 
 
@@ -45,7 +45,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in   "representor=cntr_1000A architecture@predictor=linear" "representor=cntr_1000A_mlp,cntr_1000A_stdmlp architecture@predictor=mlp_h2048_l1"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

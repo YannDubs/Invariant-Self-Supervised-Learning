@@ -24,7 +24,7 @@ data_repr.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
 timeout=$time
-$add_kwargs
+
 "
 
 
@@ -41,7 +41,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

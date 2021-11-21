@@ -24,7 +24,7 @@ data_repr.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
 timeout=$time
-$add_kwargs
+
 "
 
 
@@ -32,7 +32,7 @@ $add_kwargs
 kwargs_multi="
 representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA
 regularizer=huber
-representor.loss.beta=1e-1,1e0,1e1,1e2
+representor.loss.beta=1e-3
 seed=1
 "
 
@@ -41,7 +41,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

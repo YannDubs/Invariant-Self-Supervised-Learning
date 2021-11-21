@@ -21,7 +21,7 @@ predictor=sk_logistic
 optimizer@optimizer_issl=Adam_lr3e-4_w0
 decodability.kwargs.ema_weight_prior=0.9
 timeout=$time
-$add_kwargs
+
 "
 
 
@@ -38,7 +38,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  "" "representor=slfdstl_prior_stoch representor.loss.beta=1e-4,1e-3,1e-2,0.1" "regularizer=rmse,huber representor.loss.beta=1e-4,1e-3,1e-2,0.1"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

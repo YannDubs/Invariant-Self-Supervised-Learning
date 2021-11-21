@@ -10,22 +10,25 @@ fillna: {}
 cols_to_str: []
 replace: {}
 sort: null
+base_path: results/exp_${experiment}
+job_id_to_rm: []
 
 patterns:
   # name, pattern to find it
-  representor: "results/exp_${experiment}/**/results_representor.csv"
-  predictor: "results/exp_${experiment}/**/results_predictor.csv"
+  representor: "${base_path}/**/results_representor.csv"
+  predictor: "${base_path}/**/results_predictor.csv"
+
 
 collect_data:
   params_to_add: {}
 
 plot_optuna_hypopt:
-  storage: sqlite:///${kwargs.base_dir}/results/exp_${experiment}/optuna.db
+  storage: sqlite:///${kwargs.base_dir}/${base_path}/optuna.db
   study_name: main
 
 kwargs:
   base_dir: ${hydra:runtime.cwd}
-  save_dir: results/exp_${experiment}/
+  save_dir: ${base_path}
   prfx: ""
   dpi: 300
   pretty_renamer: {}

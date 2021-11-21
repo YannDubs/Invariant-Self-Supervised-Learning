@@ -587,6 +587,7 @@ def get_lr_scheduler(
     if is_warmup_lr:
         # remove the warmup
         epochs = epochs - warmup_epochs
+        raw_epochs = epochs
 
     if "milestones" in kwargs:
         # allow negative milestones which are subtracted to the last epoch
@@ -613,7 +614,7 @@ def get_lr_scheduler(
     # TODO: test plateau
 
     if is_warmup_lr:
-        warmup_epochs = int_or_ratio(warmup_epochs, epochs)
+        warmup_epochs = int_or_ratio(warmup_epochs, raw_epochs)
         if scheduler_type == "CosineAnnealingLR":
             # TODO: test
             assert warmup_multiplier == 1.0
@@ -685,12 +686,15 @@ def append_optimizer_scheduler_(
         sch_kwargs.update(hparams_sch.kwargs.base)
         sch_kwargs = copy.deepcopy(sch_kwargs)
 
-        if i < len(hparams_sch.modes) - 1:
+        is_warmup_lr = sch_kwargs.get("is_warmup_lr", False)
+        if i < len(hparams_sch.modes) - 1 and is_warmup_lr:
+            # TODO: currently not correct. because if multiple schedulers the first ones will act normally but they
+            # TODO: should wait until warmup is done need to add some waiting scheduler
             # never warmup besides the last
             sch_kwargs["is_warmup_lr"] = False
 
         is_plat = mode == "ReduceLROnPlateau"
-        if sch_kwargs.get("is_warmup_lr", False) and is_plat:
+        if is_warmup_lr and is_plat:
             # pytorch lightning will not work with the current code for plateau + warmup
             # because they use `isinstance` to know whether to give a metric
             # => instead just append a linear warming up
@@ -726,6 +730,7 @@ class GradualWarmupScheduler(_LRScheduler):
         self.total_epoch = total_epoch
         self.after_scheduler = after_scheduler
         self.finished = False
+
         super(GradualWarmupScheduler, self).__init__(optimizer)
 
     def get_lr(self):
@@ -735,21 +740,28 @@ class GradualWarmupScheduler(_LRScheduler):
                     self.after_scheduler.base_lrs = [
                         base_lr * self.multiplier for base_lr in self.base_lrs
                     ]
+                    self.after_scheduler._last_lr = self.after_scheduler.base_lrs
+                    for i, group in enumerate(self.optimizer.param_groups):
+                        group["lr"] = self.after_scheduler.base_lrs[i]
                     self.finished = True
                 return self.after_scheduler.get_last_lr()
             return [base_lr * self.multiplier for base_lr in self.base_lrs]
-
-        if self.multiplier == 1.0:
-            return [
-                base_lr * (float(self.last_epoch) / self.total_epoch)
-                for base_lr in self.base_lrs
-            ]
         else:
-            return [
-                base_lr
-                * ((self.multiplier - 1.0) * self.last_epoch / self.total_epoch + 1.0)
-                for base_lr in self.base_lrs
-            ]
+            # before finished warming up do not call underlying scheduler
+            if self.multiplier == 1.0:
+                return [
+                    base_lr * (float(self.last_epoch) / self.total_epoch)
+                    for base_lr in self.base_lrs
+                ]
+            else:
+                return [
+                    base_lr
+                    * (
+                        (self.multiplier - 1.0) * self.last_epoch / self.total_epoch
+                        + 1.0
+                    )
+                    for base_lr in self.base_lrs
+                ]
 
     def step_ReduceLROnPlateau(self, metrics):
         self.last_epoch += 1

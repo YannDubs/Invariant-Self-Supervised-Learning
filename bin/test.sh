@@ -17,7 +17,7 @@ architecture@encoder=mlp
 data@data_repr=mnist
 data@data_pred=data_repr
 timeout=$time
-$add_kwargs
+
 "
 
 # every arguments that you are sweeping over

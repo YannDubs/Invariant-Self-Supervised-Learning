@@ -297,7 +297,6 @@ class ContrastiveISSL(nn.Module):
             # the ones from the same index
             pos_idx = arange
 
-
         effective_n_classes = n_classes
 
         if self.is_train_temperature:

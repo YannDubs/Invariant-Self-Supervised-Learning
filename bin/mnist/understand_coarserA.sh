@@ -25,7 +25,7 @@ data_repr.kwargs.val_size=2
 optimizer@optimizer_issl=Adam_lr1e-4_w0
 representor=cntr
 timeout=$time
-$add_kwargs
+
 "
 
 
@@ -54,7 +54,7 @@ if [ "$is_plot_only" = false ] ; then
   do
     # on mnist typically z_shape would be quite small but we say that it should be larger
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 
