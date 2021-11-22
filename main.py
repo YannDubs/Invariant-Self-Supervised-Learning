@@ -570,6 +570,7 @@ def evaluate(
         ckpt_path = cfg.evaluation[stage].ckpt_path
 
         if is_eval_train:
+            # add train so that can see in wandb
             train_stage = f"{cfg.stage}_train"
 
             # ensure that logging train and test resutls differently
@@ -588,6 +589,9 @@ def evaluate(
                 train_res = {
                     k: v for k, v in train_res.items() if f"/{train_stage}/" in k
                 }
+                train_res = replace_keys(
+                    train_res, f"/{train_stage}/", f"/{cfg.stage}/"
+                )
                 to_save["train"] = replace_keys(train_res, "test/", "")
             except:
                 logger.exception(

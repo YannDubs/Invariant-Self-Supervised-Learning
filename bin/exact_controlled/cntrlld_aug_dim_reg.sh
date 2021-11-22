@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"aug_dim_exact"
+experiment=$prfx"cntrlld_aug_dim_reg"
 notes="
 **Goal**: figure showing effect of augmentations on the necessary dimensionality.
 "
@@ -11,12 +11,12 @@ source `dirname $0`/../utils.sh
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
-+logger.wandb_kwargs.project=controlled
-trainer.max_epochs=50
++logger.wandb_kwargs.project=exact_controlled
+trainer.max_epochs=100
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
-data@data_repr=mnist
+data@data_repr=cifar10
 data_pred.all_data=[data_repr_agg16]
 predictor=sk_logistic
 data_repr.kwargs.val_size=2
@@ -28,15 +28,14 @@ timeout=$time
 "
 
 
-# every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA
-encoder.z_shape=2,4,8,16,64,250,1024,4096
+representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA
+encoder.z_shape=5,10,100,1000,10000
+regularizer=l2Mx
+representor.loss.beta=1e-3,1e-1,1e1
 seed=1
 "
 # TODO: run seed 2,3
-
-# difference for gen: linear resnet / augmentations / larger dim
 
 
 if [ "$is_plot_only" = false ] ; then
@@ -67,7 +66,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_samples" \
        +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
-       +plot_scatter_lines.logbase_x=2 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.style="beta" \
+       +plot_scatter_lines.logbase_x=10 \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
+

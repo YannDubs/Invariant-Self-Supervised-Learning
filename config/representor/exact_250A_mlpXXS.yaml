@@ -1,9 +1,9 @@
 # @package _global_
 defaults:
-  - cntr_250A
+  - exact_250A
 
 representor:
-  name: cntr_250A_mlpXXS
+  name: exact_250A_mlpXXS
 
 decodability:
   kwargs:

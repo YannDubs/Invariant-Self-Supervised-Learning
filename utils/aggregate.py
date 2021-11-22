@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 from collections.abc import Sequence
+from math import isnan
 from pathlib import Path
 from typing import Optional, Union
 
@@ -247,7 +248,12 @@ class ResultAggregator(PostPlotter):
             dicts = pd.read_csv(path, index_col=0).to_dict()
 
             # TODO remove. This is just temporary to work with previous runs.
+            dicts = {
+                k: {s_k: s_v for s_k, s_v in v.items() if not isnan(s_v)}
+                for k, v in dicts.items()
+            }
             dicts = {k: replace_keys(v, "_train", "") for k, v in dicts.items()}
+
             dicts = {
                 k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
             }

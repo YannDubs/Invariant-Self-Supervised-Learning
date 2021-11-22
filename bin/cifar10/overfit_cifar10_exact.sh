@@ -58,9 +58,3 @@ python utils/aggregate.py \
        $col_val_subset \
        agg_mode=[summarize_metrics]
 
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       +col_val_subset.datapred=["stl10_agg"] \
-       kwargs.prfx="agg_" \
-       agg_mode=[summarize_metrics]

@@ -61,6 +61,9 @@ fi
 
 wait
 
+python utils/aggregate.py \
+       experiment=$experiment  \
+       agg_mode=[summarize_metrics]
 
 python utils/aggregate.py \
        experiment=$experiment  \
@@ -74,7 +77,7 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Cntr_Coarsera="Coarser" \
        +kwargs.pretty_renamer.Cntr="Minimal ++" \
        +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+       +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_samples" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="beta" \

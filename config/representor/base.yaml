@@ -5,5 +5,5 @@ is_use_init: False # useful for using pretrained SSL
 is_switch_x_aux_trgt: False # whether to switch x and aux_trgt. Useful if want to have augmentations as inputs.
 
 loss:
-  beta: 1e-3 
+  beta: 1e-1
   beta_anneal: linear

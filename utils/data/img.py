@@ -180,7 +180,7 @@ class ISSLImgDataset(ISSLDataset):
         base_resize: str = "resize",
         curr_split: str = "train",
         is_shuffle_targets: bool = False,
-            is_shuffle_Mx: bool=False,
+        is_shuffle_Mx: bool = False,
         n_sub_label: int = 1,
         **kwargs,
     ):

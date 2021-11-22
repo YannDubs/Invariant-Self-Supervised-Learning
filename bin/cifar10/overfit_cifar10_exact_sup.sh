@@ -40,7 +40,7 @@ kwargs_multi="
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "scheduler@scheduler_issl=unifmultistep100,plateau,plateau_quick,cosine,cosine_restart" "scheduler_issl.kwargs.base.is_warmup_lr=False" "architecture@encoder=resnet50" "trainer.max_epochs=50,200,500" "optimizer_issl.kwargs.lr=1e-4,1e-3,3e-3,1e-2,3e-2,1e-1" "data_repr.kwargs.batch_size=64,128,512"   "scheduler_issl.kwargs.base.warmup_epochs=3,10,50"
+  for kwargs_dep in  "scheduler@scheduler_issl=cosine_restart" "scheduler_issl.kwargs.base.is_warmup_lr=False" "architecture@encoder=resnet50" "optimizer_issl.kwargs.lr=1e-3,3e-3,1e-2"    "scheduler_issl.kwargs.base.warmup_epochs=3,10,50"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -59,8 +59,3 @@ python utils/aggregate.py \
        agg_mode=[summarize_metrics]
 
 
-python utils/aggregate.py \
-       experiment=$experiment  \
-       +col_val_subset.datapred=["stl10_agg"] \
-       kwargs.prfx="agg_" \
-       agg_mode=[summarize_metrics]

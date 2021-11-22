@@ -70,7 +70,7 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_250A_Mlp="calF ++" \
        +kwargs.pretty_renamer.Exact_250A_Stdmlp="Standard" \
        +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="test/pred/acc_agg_min" \
+       +plot_scatter_lines.y="train/pred/acc_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_dim" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
