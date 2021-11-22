@@ -41,7 +41,7 @@ kwargs_multi="
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "scheduler@scheduler_issl=cosine"  "architecture@encoder=resnet50" "trainer.max_epochs=100,500" "optimizer_issl.kwargs.lr=1e-4,1e-3,3e-3"
+  for kwargs_dep in  "scheduler@scheduler_issl=cosine,cosine_restart"  "architecture@encoder=resnet50" "trainer.max_epochs=100,500" "optimizer_issl.kwargs.lr=1e-4,1e-3,3e-3" "scheduler_issl.kwargs.base.warmup_epochs=3"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
