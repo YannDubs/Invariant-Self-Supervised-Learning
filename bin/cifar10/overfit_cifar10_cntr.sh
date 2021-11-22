@@ -41,7 +41,7 @@ kwargs_multi="
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "scheduler_issl.kwargs.base.is_warmup_lr=False" "architecture@encoder=resnet50" "trainer.max_epochs=100,500" "optimizer_issl.kwargs.lr=3e-4,3e-3,3e-2" "data_repr.kwargs.batch_size=128,1024" "decodability.kwargs.temperature=0.7,0.1" "decodability.kwargs.is_train_temperature=True" "scheduler_issl.kwargs.base.warmup_epochs=3,10,50,100" "representor=cntr_stdA,cntr,cntr_1000A,std_cntr"
+  for kwargs_dep in  "scheduler@scheduler_issl=unifmultistep100,plateau,plateau_quick,cosine,cosine_restart" "scheduler_issl.kwargs.base.is_warmup_lr=False" "architecture@encoder=resnet50" "trainer.max_epochs=100,500" "optimizer_issl.kwargs.lr=3e-4,3e-3,3e-2" "data_repr.kwargs.batch_size=128,1024" "decodability.kwargs.temperature=0.7,0.1" "decodability.kwargs.is_train_temperature=True" "scheduler_issl.kwargs.base.warmup_epochs=3,10,50,100" "representor=cntr_stdA,cntr,cntr_1000A,std_cntr"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

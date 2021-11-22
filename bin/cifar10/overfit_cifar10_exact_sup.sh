@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"overfit_cifar10_exact"
+experiment=$prfx"overfit_cifar10_exact_sup"
 notes="
 **Goal**: understand how to get good results on cifar.
 "
@@ -22,8 +22,8 @@ predictor=sk_logistic
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
 data@data_repr=cifar10
-trainer.max_epochs=200
-representor=exact_noA
+trainer.max_epochs=100
+representor=exact
 data_repr.kwargs.batch_size=256
 scheduler_issl.kwargs.base.is_warmup_lr=True
 scheduler@scheduler_issl=unifmultistep1000
@@ -40,7 +40,7 @@ kwargs_multi="
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "scheduler@scheduler_issl=unifmultistep100,plateau,plateau_quick,cosine,cosine_restart" "scheduler_issl.kwargs.base.is_warmup_lr=False" "architecture@encoder=resnet50" "trainer.max_epochs=100,500" "optimizer_issl.kwargs.lr=1e-4,1e-3,3e-3,1e-2,3e-2,1e-1" "data_repr.kwargs.batch_size=64,128,512"   "scheduler_issl.kwargs.base.warmup_epochs=3,10,50,100" "representor=exact_stdA,exact,exact_1000A"
+  for kwargs_dep in  "scheduler@scheduler_issl=unifmultistep100,plateau,plateau_quick,cosine,cosine_restart" "scheduler_issl.kwargs.base.is_warmup_lr=False" "architecture@encoder=resnet50" "trainer.max_epochs=50,200,500" "optimizer_issl.kwargs.lr=1e-4,1e-3,3e-3,1e-2,3e-2,1e-1" "data_repr.kwargs.batch_size=64,128,512"   "scheduler_issl.kwargs.base.warmup_epochs=3,10,50"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
