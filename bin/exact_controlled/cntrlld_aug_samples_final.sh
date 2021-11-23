@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"cntrlld_aug_samples"
+experiment=$prfx"cntrlld_aug_samples_final"
 notes="
 **Goal**: figure showing effect of augmentations on the necessary # samples.
 "
@@ -28,13 +28,12 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_250A,exact_1000A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle
-seed=1
+representor=exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA
+seed=1,2,3
 "
-# TODO: run seed 2,3
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in "regularizer=l2Mx representor.loss.beta=1e-1" ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -48,9 +47,10 @@ wait
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.repr=[exact,exact_250A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+       "+col_val_subset.reg=[none]" \
+       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
+       +kwargs.pretty_renamer.Exact_100A="Minimal" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
@@ -70,9 +70,10 @@ python utils/aggregate.py \
 
   python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.repr=[exact,exact_250A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+       "+col_val_subset.reg=[none]" \
+       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
+       +kwargs.pretty_renamer.Exact_100A="Minimal" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
@@ -83,6 +84,51 @@ python utils/aggregate.py \
        +plot_scatter_lines.x="n_samples" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_samples_agg" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.logbase_x=10 \
+       +plot_scatter_lines.legend_out=False \
+       agg_mode=[plot_scatter_lines]
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       "+col_val_subset.reg=[l2Mx]" \
+       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+       patterns.representor=null \
+       +kwargs.pretty_renamer.Exact_100A="Minimal" \
+       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+       +kwargs.pretty_renamer.Exact_Noa="None" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
+       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
+       +plot_scatter_lines.x="n_samples" \
+       +plot_scatter_lines.y="test/pred/accuracy_score" \
+       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.logbase_x=10 \
+       +plot_scatter_lines.legend_out=False \
+       agg_mode=[plot_scatter_lines]
+
+
+  python utils/aggregate.py \
+       experiment=$experiment  \
+       "+col_val_subset.reg=[l2Mx]" \
+       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+       patterns.representor=null \
+       +kwargs.pretty_renamer.Exact_100A="Minimal" \
+       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+       +kwargs.pretty_renamer.Exact_Noa="None" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
+       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
+       +plot_scatter_lines.x="n_samples" \
+       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+       +plot_scatter_lines.filename="lines_acc_vs_samples_agg_reg" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \

@@ -17,7 +17,7 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=cifar10
-data_pred.all_data=[data_repr_agg16_10,data_repr_agg16_30,data_repr_agg16_100,data_repr_agg16_1000,data_repr_agg16_10000,data_repr_agg16_50000]
+data_pred.all_data=[data_repr_agg16_10,data_repr_agg16_30,data_repr_agg16_100,data_repr_agg16_1000,data_repr_agg16_10000,data_repr_agg16_45000]
 predictor=sk_logistic
 data_repr.kwargs.val_size=2
 +data_pred.kwargs.val_size=2
@@ -28,7 +28,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_250A,exact_1000A,exact_stdA,exact_noA,exact_coarserA
+representor=exact,exact_250A,exact_1000A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle
 regularizer=l2Mx
 representor.loss.beta=1e-3,1e-1,1e1
 seed=1
