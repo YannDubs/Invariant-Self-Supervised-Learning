@@ -53,9 +53,8 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
+       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Exact_1000A="Minimal--" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Minimal--" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
        +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \

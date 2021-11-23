@@ -24,12 +24,12 @@ data_repr.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
 timeout=$time
-
 "
 
 
+# every arguments that you are sweeping over
 kwargs_multi="
-representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA,cntr_noA,cntr_coarserA
+representor=exact,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA
 encoder.z_shape=5,10,100,1000,10000
 regularizer=l2Mx
 representor.loss.beta=1e-3,1e-1,1e1
@@ -55,9 +55,8 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
+       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Exact_1000A="Minimal--" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Minimal--" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
        +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
@@ -70,4 +69,3 @@ python utils/aggregate.py \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
-

@@ -23,6 +23,7 @@ import pytorch_lightning as pl
 import torch
 from hydra import compose
 from omegaconf import Container, OmegaConf
+from pytorch_lightning.trainer.configuration_validator import verify_loop_configurations
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
@@ -498,18 +499,23 @@ def placeholder_fit(
 ) -> None:
     """Necessary setup of trainer before testing if you don't fit it."""
 
+    # TODO: clean as it seems that lightning keep changing stuff here which makes it impossible for
+    # backward compatibility
+
     # links data to the trainer
-    trainer.data_connector.attach_data(module, datamodule=datamodule)
+    # TODO check carefully as it seems that lightning will start changing data connectors
+    # https://github.com/PyTorchLightning/pytorch-lightning/issues/9778
+    trainer._data_connector.attach_data(module, datamodule=datamodule)
 
     # clean hparams
     if hasattr(module, "hparams"):
         parsing.clean_namespace(module.hparams)
 
     # check that model is configured correctly
-    trainer.config_validator.verify_loop_configurations(module)
+    verify_loop_configurations(trainer, module)
 
     # attach model log function to callback
-    trainer.callback_connector.attach_model_logging_functions(module)
+    trainer._callback_connector.attach_model_logging_functions(module)
 
     trainer.model = module
 

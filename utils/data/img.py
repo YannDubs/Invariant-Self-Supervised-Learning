@@ -272,16 +272,20 @@ class ISSLImgDataset(ISSLDataset):
         with tmp_seed(self.seed):
             if isinstance(targets, torch.Tensor):
                 targets = targets.numpy()
+            elif isinstance(targets, (list, np.ndarray)):
+                pass  # np and list can be shuffled in place
+            else:
+                raise ValueError("Unknown type of targets for inplace shuffling.")
             np.random.shuffle(targets)  # inplace
 
     @property
     def Mxs(self) -> np.ndarray:
-        """Return an array like of M(X), one for each example."""
+        """Return an np.array of M(X), one for each example."""
         if hasattr(self, "_Mxs"):
             return self._Mxs
 
         if self.is_Mx_aug:
-            targets = np.array(self.get_targets())
+            targets = to_numpy(self.get_targets())
             if self.n_sub_label > 1:
                 assert len(self) % self.n_sub_label == 0
                 with tmp_seed(self.seed):
@@ -308,13 +312,14 @@ class ISSLImgDataset(ISSLDataset):
             self._Mxs = np.array(range(len(self)))
 
         if self.is_coarser_Mx:
-            targets = self.get_targets()
+            targets = to_numpy(self.get_targets())
             self._Mxs = targets % 2
+
+        # targets might not always be numpy. To simplify code let Mxs be numpy
+        self._Mxs = to_numpy(self._Mxs)
 
         if self.is_shuffle_Mx:
             with tmp_seed(self.seed):
-                if isinstance(self._Mxs, torch.Tensor):
-                    self._Mxs = self._Mxs.numpy()
                 np.random.shuffle(self._Mxs)
 
         return self._Mxs

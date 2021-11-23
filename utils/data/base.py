@@ -14,7 +14,7 @@ from typing import Any, Optional, Union
 import numpy as np
 import numpy.typing as npt
 
-from issl.helpers import tmp_seed
+from issl.helpers import tmp_seed, to_numpy
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Subset
 from utils.data.helpers import BalancedSubset, subset2dataset
@@ -331,7 +331,7 @@ class ISSLDataModule(LightningDataModule):
             if isinstance(train_dataset, Subset):
                 dataset = train_dataset.dataset
                 # only take the targets that are selected
-                stratify = dataset.targets[train_dataset.indices]
+                stratify = to_numpy(dataset.targets)[train_dataset.indices]
             else:
                 stratify = train_dataset.targets
 

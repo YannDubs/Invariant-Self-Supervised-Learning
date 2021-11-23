@@ -33,7 +33,6 @@ seed=1
 "
 # TODO: run seed 2,3
 
-
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
@@ -51,7 +50,6 @@ python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.repr=[exact,exact_250A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_250A="Minimal" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
