@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"cntrlld_V_heatmap_cntr_long"
+experiment=$prfx"cntrlld_V_heatmap_cntr_supA"
 notes="
 **Goal**: figure showing effect of predictive family depending on downstream family.
 "
@@ -12,7 +12,7 @@ source `dirname $0`/../utils.sh
 kwargs="
 experiment=$experiment
 +logger.wandb_kwargs.project=exact_controlled
-trainer.max_epochs=300
+trainer.max_epochs=100
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
@@ -38,7 +38,7 @@ seed=1
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "representor=cntr_stdA,cntr_stdA_mlpXXS,cntr_stdA_mlp" "representor=std_cntr encoder.z_shape=512"
+  for kwargs_dep in "representor=cntr,cntr_mlpXXS,cntr_mlp" "representor=std_cntr_sup encoder.z_shape=512"
   do
     # on mnist typically z_shape would be quite small but we say that it should be larger
 
@@ -55,7 +55,7 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Std_Cntr="Std." \
+       +kwargs.pretty_renamer.Std_Cntr_Sup="Std." \
        +kwargs.pretty_renamer.Cntr_Stda_Mlpxxs="MLP --" \
        +kwargs.pretty_renamer.Cntr_Stda_Mlp="MLP ++" \
        +kwargs.pretty_renamer.Cntr_Stda="Linear" \
@@ -72,7 +72,7 @@ python utils/aggregate.py \
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Std_Cntr="Std." \
+       +kwargs.pretty_renamer.Std_Cntr_Sup="Std." \
        +kwargs.pretty_renamer.Cntr_Stda_Mlpxxs="MLP --" \
        +kwargs.pretty_renamer.Cntr_Stda_Mlp="MLP ++" \
        +kwargs.pretty_renamer.Cntr_Stda="Linear" \

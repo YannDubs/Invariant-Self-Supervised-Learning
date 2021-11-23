@@ -11,8 +11,12 @@ from torchvision import transforms as transform_lib
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from issl.architectures.helpers import (closest_pow, get_Activation,
-                                        get_Normalization, is_pow2)
+from issl.architectures.helpers import (
+    closest_pow,
+    get_Activation,
+    get_Normalization,
+    is_pow2,
+)
 from issl.helpers import check_import, prod, weights_init
 
 # try:
@@ -67,7 +71,7 @@ class ResNet(nn.Module):
         base: str = "resnet18",
         is_pretrained: bool = False,
         norm_layer: str = "batchnorm",
-        bottleneck: Optional[int] = None
+        bottleneck: Optional[int] = None,
     ):
         super().__init__()
         kwargs = {}
@@ -81,6 +85,9 @@ class ResNet(nn.Module):
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
             kwargs["num_classes"] = self.tmp_out_dim
+            # TODO: one difference compared to standard implementation is that our output is linear (i.e. fc)
+            # rather than directly output of the resnet. => one additional layer
+            # should check whether that gives worst performance
 
         self.resnet = torchvision.models.__dict__[base](
             pretrained=self.is_pretrained,

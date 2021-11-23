@@ -103,6 +103,7 @@ __all__ = [
     "ImagenetDataModule",
     "TinyImagenetDataModule",
     "CocoClipDataModule",
+    "Cifar10DevDataModule",
 ]
 
 
@@ -440,8 +441,11 @@ class ISSLImgDataset(ISSLDataset):
             augmentations["PIL"]["simclr"] = get_simclr_augmentations(
                 shape[-1], dataset=self.dataset_name
             )
+            augmentations["PIL"]["std_simclr"] = get_simclr_augmentations(
+                shape[-1], dataset=self.dataset_name, mode="std"
+            )
         except ValueError:
-            pass
+            logger.exception(f"Could load dataset-specific augmentation. Error:")
 
         return augmentations
 
@@ -697,6 +701,19 @@ class Cifar10DataModule(ISSLImgDataModule):
     @property
     def Dataset(self) -> Any:
         return Cifar10Dataset
+
+
+# Cifar10 #
+class Cifar10DevDataset(Cifar10Dataset):
+    @property
+    def dataset_name(self) -> str:
+        return "CIFAR10_dev"
+
+
+class Cifar10DevDataModule(ISSLImgDataModule):
+    @property
+    def Dataset(self) -> Any:
+        return Cifar10DevDataset
 
 
 # Cifar100 #

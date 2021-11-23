@@ -1,0 +1,4 @@
+defaults:
+  - cifar10
+
+dataset: cifar10_dev

@@ -61,10 +61,10 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_250A="Linear" \
        +kwargs.pretty_renamer.Mlp_H2048_L2="MLP ++" \
        +kwargs.pretty_renamer.Mlp_H32_L1="MLP --" \
-       +plot_heatmap.x="pred" \
-       +plot_heatmap.y="repr" \
+       +plot_heatmap.x="repr" \
+       +plot_heatmap.y="pred" \
        +plot_heatmap.cols_to_agg=["seed"] \
-       +plot_heatmap.metric="train/pred/acc" \
+       +plot_heatmap.metric="train/pred/acc_mean" \
        +plot_heatmap.filename="heatmap_V" \
        agg_mode=[plot_heatmap]
 
@@ -76,10 +76,10 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_250A="Linear" \
        +kwargs.pretty_renamer.Mlp_H2048_L2="MLP ++" \
        +kwargs.pretty_renamer.Mlp_H32_L1="MLP --" \
-       +plot_heatmap.x="pred" \
-       +plot_heatmap.y="repr" \
+       +plot_heatmap.x="repr" \
+       +plot_heatmap.y="pred" \
        +plot_heatmap.cols_to_agg=["seed"] \
-       +plot_heatmap.metric="train/pred/acc_agg_min" \
+       +plot_heatmap.metric="train/pred/acc_agg_min_mean" \
        +plot_heatmap.filename="heatmap_V_min" \
        agg_mode=[plot_heatmap]
 

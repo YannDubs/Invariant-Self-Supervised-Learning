@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - exact_mlp
+
+representor:
+  name: exact_mlp_nobn
+
+decodability:
+  kwargs:
+    predictor_kwargs:
+      norm_layer: "identity"

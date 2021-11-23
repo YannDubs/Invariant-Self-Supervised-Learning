@@ -504,6 +504,7 @@ class ResultAggregator(PostPlotter):
         plot_config_kwargs={},
         xlabel="",
         ylabel="",
+        hue_order=None,
         **kwargs,
     ):
         """Plotting all combinations of scatter and line plots.
@@ -572,6 +573,9 @@ class ResultAggregator(PostPlotter):
             Template for the titles of the Facetgrid. Can use `{row_name}` and `{col_name}`
             respectively.
 
+        hue_order : list of str, optional
+            Specify the order of processing and plotting for categorical levels of the hue semantic.
+
         plot_config_kwargs : dict, optional
             General config for plotting, e.g. arguments to matplotlib.rc, sns.plotting_context,
             matplotlib.set ...
@@ -583,6 +587,10 @@ class ResultAggregator(PostPlotter):
 
         kwargs["x"] = x
         kwargs["y"] = y
+
+        if hue_order is not None:
+            # prettify hue order => can give in not prettified version
+            kwargs["hue_order"] = [self.pretty_renamer[h] for h in hue_order]
 
         if is_x_errorbar or is_y_errorbar:
             if (len(cols_to_agg) == 0) or ("sem" not in aggregates):

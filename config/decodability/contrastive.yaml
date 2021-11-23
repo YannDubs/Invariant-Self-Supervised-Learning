@@ -6,8 +6,9 @@ kwargs:
   mode: contrastive
   z_shape: ${encoder.z_shape}
   temperature: 0.07
-  is_train_temperature: True
+  is_train_temperature: False
   is_normalize_proj: True
+  is_bn_proj: False
   is_aux_already_represented: ${data.is_aux_already_represented}
   is_project:  True
   src_tgt_comparison: "all"

@@ -78,9 +78,10 @@ class ContrastiveISSL(nn.Module):
         self,
         z_shape: Sequence[int],
         temperature: float = 0.07,
-        is_train_temperature: bool = True,
+        is_train_temperature: bool = False,
         min_temperature: float = 0.01,
         is_normalize_proj: bool = True,
+        is_bn_proj: bool = False,
         is_aux_already_represented: bool = False,
         is_project: bool = True,
         src_tgt_comparison: str = "all",
@@ -101,6 +102,9 @@ class ContrastiveISSL(nn.Module):
         self.min_temperature = min_temperature
         self.src_tgt_comparison = src_tgt_comparison
         self.is_normalize_proj = is_normalize_proj
+        self.is_bn_proj = (
+            is_bn_proj  # TODO either remove or keep but use different for proj and pred
+        )
         self.is_aux_already_represented = is_aux_already_represented
         self.is_project = is_project
         self.is_pred_proj_same = is_pred_proj_same
@@ -115,6 +119,9 @@ class ContrastiveISSL(nn.Module):
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
             self.predictor = Predictor()
+
+        if self.is_bn_proj:
+            self.bn_proj = nn.BatchNorm1d(self.projector_kwargs["out_shape"])
 
         if self.is_train_temperature:
             self.init_temperature = temperature
@@ -219,6 +226,10 @@ class ContrastiveISSL(nn.Module):
         z_src = self.predictor(z_src)
         z_tgt = self.projector(z_tgt)
 
+        if self.is_bn_proj:
+            z_src = self.bn_proj(z_src)
+            z_tgt = self.bn_proj(z_tgt)
+
         if self.is_normalize_proj:
             z_src = F.normalize(z_src, dim=1, p=2)
             z_tgt = F.normalize(z_tgt, dim=1, p=2)
@@ -246,11 +257,11 @@ class ContrastiveISSL(nn.Module):
             z_src, z_a_src = z_src.chunk(2, dim=0)
 
             # shape: [batch_size, batch_size * world_size]
-            logits = z_src @ z_tgt.T
-            logits_a = z_a_src @ z_a_tgt.T
+            logits_tgt_aug = z_src @ z_a_tgt.T
+            logits_src_aug = z_a_src @ z_tgt.T
 
             # shape: [2*batch_size, batch_size * world_size,]
-            logits = torch.cat([logits, logits_a])
+            logits = torch.cat([logits_tgt_aug, logits_src_aug])
 
         elif self.src_tgt_comparison == "single":
             # shape: [batch_size, batch_size * world_size,]

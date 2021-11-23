@@ -36,6 +36,13 @@ representor.loss.beta=1e-3,1e-1,1e1
 seed=1
 "
 # TODO: run seed 2,3
+kwargs_multi="
+representor=exact_100A,exact_1000A
+encoder.z_shape=100,1000
+regularizer=l2Mx
+representor.loss.beta=1e-1,3e-1
+seed=1
+"
 
 
 if [ "$is_plot_only" = false ] ; then
@@ -55,6 +62,7 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
+       "+col_val_subset.beta=[1e-1,3e-1]" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Exact_1000A="Minimal--" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \

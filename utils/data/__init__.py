@@ -8,6 +8,8 @@ def get_Datamodule(datamodule: str) -> type:
     datamodule = datamodule.lower()
     if datamodule == "cifar10":
         return Cifar10DataModule
+    if datamodule == "cifar10_dev":
+        return Cifar10DevDataModule
     if datamodule == "cifar100":
         return Cifar100DataModule
     elif datamodule == "mnist":

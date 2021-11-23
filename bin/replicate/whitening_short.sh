@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"whitening"
+experiment=$prfx"whitening_short"
 notes="
 **Goal**: ensure that you can replicate results from the whitening paper for stl10, cifar, tinyimagenet with standard contrastive learning.
 "
@@ -22,7 +22,6 @@ predictor=sk_logistic
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
 representor=std_cntr
-scheduler@scheduler_issl=whitening
 decodability.kwargs.temperature=0.5
 data_repr.kwargs.batch_size=512
 optimizer_issl.kwargs.weight_decay=1e-6
@@ -33,24 +32,33 @@ encoder.z_shape=512
 trainer.max_epochs=1000
 data@data_repr=cifar10
 decodability.kwargs.projector_kwargs.out_shape=128
-optimizer_issl.kwargs.lr=2e-3
 timeout=$time
 "
 
 
 # every arguments that you are sweeping over
 kwargs_multi="
+optimizer_issl.kwargs.lr=3e-3
+decodability.kwargs.projector_kwargs.out_shape=64
+encoder.is_relu_Z=False
+decodability.kwargs.is_bn_proj=False
+decodability.kwargs.is_train_temperature=False
+data_repr.kwargs.dataset_kwargs.a_augmentations=['std_simclr']
+trainer.max_epochs=200
+scheduler@scheduler_issl=warm_unifmultistep1000
 "
 
 
 # difference for gen: linear resnet / augmentations / larger dim
 
 
+
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "optimizer_issl.kwargs.lr=3e-3 decodability.kwargs.projector_kwargs.out_shape=64"  "data@data_repr=stl10_unlabeled trainer.max_epochs=2000" "data@data_repr=tinyimagenet"
+  for kwargs_dep in  ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 
@@ -63,11 +71,4 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        $col_val_subset \
-       agg_mode=[summarize_metrics]
-
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       +col_val_subset.datapred=["stl10_agg"] \
-       kwargs.prfx="agg_" \
        agg_mode=[summarize_metrics]

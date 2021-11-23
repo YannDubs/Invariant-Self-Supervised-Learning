@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"whitening"
+experiment=$prfx"whitening_dev"
 notes="
 **Goal**: ensure that you can replicate results from the whitening paper for stl10, cifar, tinyimagenet with standard contrastive learning.
 "
@@ -33,24 +33,30 @@ encoder.z_shape=512
 trainer.max_epochs=1000
 data@data_repr=cifar10
 decodability.kwargs.projector_kwargs.out_shape=128
-optimizer_issl.kwargs.lr=2e-3
 timeout=$time
 "
 
 
 # every arguments that you are sweeping over
 kwargs_multi="
+optimizer_issl.kwargs.lr=3e-3
+decodability.kwargs.projector_kwargs.out_shape=64
+encoder.is_relu_Z=True
+decodability.kwargs.is_bn_proj=True
+decodability.kwargs.is_train_temperature=False
 "
 
 
 # difference for gen: linear resnet / augmentations / larger dim
 
 
+
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "optimizer_issl.kwargs.lr=3e-3 decodability.kwargs.projector_kwargs.out_shape=64"  "data@data_repr=stl10_unlabeled trainer.max_epochs=2000" "data@data_repr=tinyimagenet"
+  for kwargs_dep in  "data@data_repr=cifar10_dev" #"data_repr.kwargs.dataset_kwargs.a_augmentations=['std_simclr']" #"scheduler@scheduler_issl=warm_unifmultistep1000" "encoder.is_relu_Z=False decodability.kwargs.is_bn_proj=False" #"" "decodability.kwargs.is_train_temperature=True" "encoder.is_relu_Z=False" "decodability.kwargs.is_bn_proj=False" "decodability.kwargs.src_tgt_comparison=symmetric"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 
@@ -63,11 +69,4 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        $col_val_subset \
-       agg_mode=[summarize_metrics]
-
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       +col_val_subset.datapred=["stl10_agg"] \
-       kwargs.prfx="agg_" \
        agg_mode=[summarize_metrics]

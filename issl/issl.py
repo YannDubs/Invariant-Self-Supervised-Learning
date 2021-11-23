@@ -111,6 +111,9 @@ class ISSLModule(pl.LightningModule):
             # shape: [batch_size, *z_shape]
             z = self.Z_processor(z)
 
+        if self.hparams.encoder.is_relu_Z:
+            z = F.relu(z)
+
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
 
@@ -130,8 +133,14 @@ class ISSLModule(pl.LightningModule):
         # shape: [batch_size, *z_shape]
         z = p_Zlx.rsample()
 
+        # TODO: one difference compared to standard implementation is that our representation does not go throguh a relu
+        # should test if makes difference
+
         # shape: [batch_size, *z_shape]
         z = self.Z_processor(z)
+
+        if self.hparams.encoder.is_relu_Z:
+            z = F.relu(z)
 
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
@@ -165,7 +174,6 @@ class ISSLModule(pl.LightningModule):
     def loss(
         self, decodability: torch.Tensor, regularize: Optional[torch.Tensor]
     ) -> tuple[torch.Tensor, dict, dict]:
-
         curr_beta = self.beta_annealer(n_update_calls=self.global_step)
 
         # E_x[...]. shape: shape: []

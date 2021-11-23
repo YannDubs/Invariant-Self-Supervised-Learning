@@ -20,7 +20,7 @@ data_repr:
 
 decodability:
   kwargs:
-    is_train_temperature: True
+    is_train_temperature: False
     is_normalize_proj: True
     is_project: True
     is_pred_proj_same: False

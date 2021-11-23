@@ -291,17 +291,17 @@ def kl_divergence(p, q, z_samples=None, is_lower_var=False):
 
 MEANS = dict(
     imagenet=[0.485, 0.456, 0.406],
+    cifar10_dev=[0.4914009, 0.48215896, 0.4465308],
     cifar10=[0.4914009, 0.48215896, 0.4465308],
-    # this is galaxy 128 but shouldn't change much as resizing shouldn't impact much
-    galaxy=[0.03294565, 0.04387402, 0.04995899],
     clip=[0.48145466, 0.4578275, 0.40821073],
     stl10=[0.43, 0.42, 0.39],
     stl10_unlabeled=[0.43, 0.42, 0.39],
 )
 STDS = dict(
     imagenet=[0.229, 0.224, 0.225],
-    cifar10=[0.24703279, 0.24348423, 0.26158753],
-    galaxy=[0.07004886, 0.07964786, 0.09574898],
+    cifar10_dev=[0.24703279, 0.24348423, 0.26158753],
+    cifar10=[0.2023, 0.1994, 0.2010],
+    # whitening paper actually uses the one from pytorch
     clip=[0.26862954, 0.26130258, 0.27577711],
     stl10=[0.27, 0.26, 0.27],
     stl10_unlabeled=[0.27, 0.26, 0.27],
