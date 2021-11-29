@@ -53,7 +53,7 @@ decodability.kwargs.is_train_temperature=False
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "data@data_repr=cifar10_dev" #"data_repr.kwargs.dataset_kwargs.a_augmentations=['std_simclr']" #"scheduler@scheduler_issl=warm_unifmultistep1000" "encoder.is_relu_Z=False decodability.kwargs.is_bn_proj=False" #"" "decodability.kwargs.is_train_temperature=True" "encoder.is_relu_Z=False" "decodability.kwargs.is_bn_proj=False" "decodability.kwargs.src_tgt_comparison=symmetric"
+  for kwargs_dep in  "" #"data_repr.kwargs.dataset_kwargs.a_augmentations=['std_simclr']" #"scheduler@scheduler_issl=warm_unifmultistep1000" "encoder.is_relu_Z=False decodability.kwargs.is_bn_proj=False" #"" "decodability.kwargs.is_train_temperature=True" "encoder.is_relu_Z=False" "decodability.kwargs.is_bn_proj=False" "decodability.kwargs.src_tgt_comparison=symmetric"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

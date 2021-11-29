@@ -441,9 +441,6 @@ class ISSLImgDataset(ISSLDataset):
             augmentations["PIL"]["simclr"] = get_simclr_augmentations(
                 shape[-1], dataset=self.dataset_name
             )
-            augmentations["PIL"]["std_simclr"] = get_simclr_augmentations(
-                shape[-1], dataset=self.dataset_name, mode="std"
-            )
         except ValueError:
             logger.exception(f"Could load dataset-specific augmentation. Error:")
 

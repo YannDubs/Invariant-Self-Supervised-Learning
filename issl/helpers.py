@@ -291,7 +291,6 @@ def kl_divergence(p, q, z_samples=None, is_lower_var=False):
 
 MEANS = dict(
     imagenet=[0.485, 0.456, 0.406],
-    cifar10_dev=[0.4914009, 0.48215896, 0.4465308],
     cifar10=[0.4914009, 0.48215896, 0.4465308],
     clip=[0.48145466, 0.4578275, 0.40821073],
     stl10=[0.43, 0.42, 0.39],
@@ -299,8 +298,8 @@ MEANS = dict(
 )
 STDS = dict(
     imagenet=[0.229, 0.224, 0.225],
-    cifar10_dev=[0.24703279, 0.24348423, 0.26158753],
-    cifar10=[0.2023, 0.1994, 0.2010],
+    cifar10=[0.24703279, 0.24348423, 0.26158753],
+    # cifar10=[0.2023, 0.1994, 0.2010],
     # whitening paper actually uses the one from pytorch
     clip=[0.26862954, 0.26130258, 0.27577711],
     stl10=[0.27, 0.26, 0.27],

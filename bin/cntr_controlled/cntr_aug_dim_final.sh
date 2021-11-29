@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"cntrlld_aug_dim_final"
+experiment=$prfx"cntr_aug_dim_final"
 notes="
 **Goal**: figure showing effect of augmentations on the necessary dimensionality.
 "
@@ -11,7 +11,7 @@ source `dirname $0`/../utils.sh
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
-+logger.wandb_kwargs.project=exact_controlled
++logger.wandb_kwargs.project=cntr_controlled
 trainer.max_epochs=100
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
@@ -29,13 +29,13 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA
-encoder.z_shape=5,10,100,1000,4000
-regularizer=l2Mx
-representor.loss.beta=1e-1
-seed=1,2,3
+representor=cntr,cntr_100A,cntr_1000A_shuffle,cntr_stdA
+encoder.z_shape=5,10,100,1000
+regularizer=huber
+representor.loss.beta=1e-3,1e-1
+seed=1
 "
-
+# seeds
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
@@ -51,29 +51,42 @@ fi
 wait
 
 
+python utils/aggregate.py \
+       experiment=$experiment  \
+       patterns.representor=null \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_Stda="Standard" \
+       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
+       +kwargs.pretty_renamer.Cntr="Minimal: 10" \
+       +kwargs.pretty_renamer.Repr="Augmentation" \
+       +plot_scatter_lines.x="zdim" \
+       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.style="beta" \
+       +plot_scatter_lines.logbase_x=10 \
+       +plot_scatter_lines.legend_out=True \
+       agg_mode=[plot_scatter_lines]
+
 
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       "+col_val_subset.reg=[l2Mx]" \
-       "+col_val_subset.repr=[exact,exact_100A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
-       "+col_val_subset.zdim=[5,10,100,1000]" \
-       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
-       +kwargs.pretty_renamer.Exact="Minimal: 10" \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_Stda="Standard" \
+       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
+       +kwargs.pretty_renamer.Cntr="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
+       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+       +plot_scatter_lines.filename="lines_acc_vs_samples" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
+
+
 
 
 python utils/aggregate.py \
