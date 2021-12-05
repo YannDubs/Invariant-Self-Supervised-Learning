@@ -22,12 +22,12 @@ data_repr.kwargs.val_size=2
 +data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
+representor=cntr
 timeout=$time
 "
 
 # would be good to run all of them but most important is cntr
 kwargs_multi="
-representor=cntr,cntr_permMx,exact,exact_permMx,gen,gen_permMx,slfdstl_prior_perMx,slfdstl_prior_supA
 regularizer=huber
 representor.loss.beta=1e-3
 seed=1,2,3
@@ -37,12 +37,12 @@ seed=1,2,3
 # seed=2,3
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in ""
+  for kwargs_dep in "representor=cntr,cntr_permMx" "representor=cntr,cntr_permMx,exact,exact_permMx,gen,gen_permMx,slfdstl_prior_perMx,slfdstl_prior_supA"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
-    sleep 3
+    sleep 200
 
   done
 fi
