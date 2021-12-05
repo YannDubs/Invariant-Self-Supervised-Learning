@@ -1,5 +1,0 @@
-defaults:
-  - data_repr_agg16_10
-
-kwargs:
-  subset_train_size: 50000

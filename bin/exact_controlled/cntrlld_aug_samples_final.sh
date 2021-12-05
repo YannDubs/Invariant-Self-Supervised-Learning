@@ -67,6 +67,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
        +plot_scatter_lines.is_no_legend_title=False \
+       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 
@@ -75,13 +77,13 @@ python utils/aggregate.py \
        "+col_val_subset.reg=[none]" \
        "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Minimal" \
+       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
-       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+       +kwargs.pretty_renamer.Exact="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
@@ -91,6 +93,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 
@@ -99,13 +103,13 @@ python utils/aggregate.py \
        "+col_val_subset.reg=[none]" \
        "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Minimal" \
+       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
-       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+       +kwargs.pretty_renamer.Exact="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
@@ -115,6 +119,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \
@@ -122,13 +128,13 @@ python utils/aggregate.py \
        "+col_val_subset.reg=[l2Mx]" \
        "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Minimal" \
+       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
-       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+       +kwargs.pretty_renamer.Exact="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
@@ -138,6 +144,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 
@@ -146,13 +154,13 @@ python utils/aggregate.py \
        "+col_val_subset.reg=[l2Mx]" \
        "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Minimal" \
+       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
        +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Exact_1000A="Minimal --" \
+       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
-       +kwargs.pretty_renamer.Exact="Minimal ++" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+       +kwargs.pretty_renamer.Exact="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
@@ -162,6 +170,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 

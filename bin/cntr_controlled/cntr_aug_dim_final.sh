@@ -32,7 +32,7 @@ kwargs_multi="
 representor=cntr,cntr_100A,cntr_1000A_shuffle,cntr_stdA
 encoder.z_shape=5,10,100,1000
 regularizer=huber
-representor.loss.beta=1e-3,1e-1
+representor.loss.beta=1e-3
 seed=1
 "
 # seeds
@@ -56,6 +56,7 @@ python utils/aggregate.py \
        patterns.representor=null \
        +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
+       +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
        +kwargs.pretty_renamer.Cntr="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
@@ -66,6 +67,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="beta" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[Cntr,Cntr_1000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
+       "+plot_scatter_lines.style_order=[Cntr,Cntr_1000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 
@@ -73,6 +76,7 @@ python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
        +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
        +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
        +kwargs.pretty_renamer.Cntr="Minimal: 10" \
@@ -84,9 +88,9 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[Cntr,Cntr_1000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
+       "+plot_scatter_lines.style_order=[Cntr,Cntr_1000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
        agg_mode=[plot_scatter_lines]
-
-
 
 
 python utils/aggregate.py \

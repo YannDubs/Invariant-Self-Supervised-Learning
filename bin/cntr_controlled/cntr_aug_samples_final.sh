@@ -17,8 +17,7 @@ checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 data@data_repr=cifar10
-data_pred.all_data=[data_repr_10_test,data_repr_100_test,data_repr_1000_test,data_repr_45000_test]
-predictor=sk_logistic
+downstream_task.all_tasks=[sklogistic_datarepr10test,sklogistic_datarepr100test,sklogistic_datarepr1000test,sklogistic_datarepr45000test]
 data_repr.kwargs.val_size=2
 +data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
@@ -28,12 +27,31 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=cntr,cntr_100A,cntr_1000A_shuffle,cntr_stdA
+representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA
 regularizer=huber
-representor.loss.beta=1e-3,1e-1
-seed=1
+representor.loss.beta=1e-3
+seed=1,2,3
 "
 
+kwargs_multi="
+representor=cntr_10000A
+regularizer=huber
+representor.loss.beta=1e-3
+seed=1,2,3
+"
+
+
+kwargs_multi="
+representor=cntr_10000A
+regularizer=huber
+representor.loss.beta=1e-3
+seed=1
+experiment=dev_$experiment
+trainer.max_epochs=1
++trainer.limit_train_batches=0.05
+"
+
+# seed=2,3
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""
@@ -51,27 +69,32 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
        +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
+       +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
+       +kwargs.pretty_renamer.Cntr_10000A="Finer: 10000" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
        +kwargs.pretty_renamer.Cntr="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_final" \
+       +plot_scatter_lines.filename="lines_acc_vs_samples_final_beta" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="beta" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
 
-
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
+       "+col_val_subset.beta=[1e-3]" \
+       "+col_val_subset.repr=[cntr,cntr_1000A,cntr_10000A,cntr_1000A_shuffle,cntr_stdA]" \
        +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
+       +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
+       +kwargs.pretty_renamer.Cntr_10000A="Finer: 10000" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
        +kwargs.pretty_renamer.Cntr="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
@@ -83,6 +106,8 @@ python utils/aggregate.py \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[Cntr,Cntr_1000A,Cntr_10000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
+       "+plot_scatter_lines.style_order=[Cntr,Cntr_1000A,Cntr_10000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 

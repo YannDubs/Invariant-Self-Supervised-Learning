@@ -1,6 +1,8 @@
 defaults:
   - base_sklearn
 
+metrics: [accuracy_score,log_loss]
+
 name: sk_logistic
 model:
   _target_: sklearn.linear_model.LogisticRegression

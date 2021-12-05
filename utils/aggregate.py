@@ -247,6 +247,12 @@ class ResultAggregator(PostPlotter):
             # looks like : dict(train={metric1:..., metric2:...}, test={metric1:..., metric2:...})
             dicts = pd.read_csv(path, index_col=0).to_dict()
 
+            # # TODO remove. This is just temporary to work with previous runs.
+            # if "datapred" in params.keys() and "_test" in params["datapred"]:
+            #     corr = params["datapred"]
+            #     curr = corr.replace("test", "")
+            #     dicts = {k: replace_keys(v, curr, corr + "/") for k, v in dicts.items()}
+
             # TODO remove. This is just temporary to work with previous runs.
             dicts = {
                 k: {s_k: s_v for s_k, s_v in v.items() if not isnan(s_v)}
@@ -331,6 +337,7 @@ class ResultAggregator(PostPlotter):
                 )
 
     @data_getter
+    @folder_split
     @table_summarizer
     def summarize_metrics(
         self,
@@ -338,6 +345,7 @@ class ResultAggregator(PostPlotter):
         cols_to_agg=["seed"],
         aggregates=["mean", "sem"],
         filename="summarized_metrics_{table}",
+        folder_col=None,
     ):
         """Aggregate all the metrics and save them.
 
@@ -355,6 +363,9 @@ class ResultAggregator(PostPlotter):
 
         filename : str, optional
                 Name of the file for saving the metrics. Can interpolate {table} if from self.tables.
+
+        folder_col : str, optional
+            Name of a column that will be used to separate the tables into multiple subfolders.
         """
         return aggregate(data, cols_to_agg, aggregates)
 
@@ -505,6 +516,7 @@ class ResultAggregator(PostPlotter):
         xlabel="",
         ylabel="",
         hue_order=None,
+        style_order=None,
         **kwargs,
     ):
         """Plotting all combinations of scatter and line plots.
@@ -573,8 +585,8 @@ class ResultAggregator(PostPlotter):
             Template for the titles of the Facetgrid. Can use `{row_name}` and `{col_name}`
             respectively.
 
-        hue_order : list of str, optional
-            Specify the order of processing and plotting for categorical levels of the hue semantic.
+        hue_order, style_order : list of str, optional
+            Specify the order of processing and plotting for categorical levels of the hue / style semantic.
 
         plot_config_kwargs : dict, optional
             General config for plotting, e.g. arguments to matplotlib.rc, sns.plotting_context,
@@ -591,6 +603,10 @@ class ResultAggregator(PostPlotter):
         if hue_order is not None:
             # prettify hue order => can give in not prettified version
             kwargs["hue_order"] = [self.pretty_renamer[h] for h in hue_order]
+
+        if style_order is not None:
+            # prettify hue order => can give in not prettified version
+            kwargs["style_order"] = [self.pretty_renamer[h] for h in style_order]
 
         if is_x_errorbar or is_y_errorbar:
             if (len(cols_to_agg) == 0) or ("sem" not in aggregates):
@@ -762,6 +778,7 @@ class ResultAggregator(PostPlotter):
         kwargs :
             Additional arguments to `sns.heatmap`.
         """
+        data = data.reset_index()
         dflt_kwargs = dict(annot=True, linewidths=0.5, fmt=".2f")
 
         if is_percentage:
@@ -797,7 +814,7 @@ class ResultAggregator(PostPlotter):
 
 def draw_heatmap(x, y, values, normalize=None, **kwargs):
     data = kwargs.pop("data")
-    mat = data.reset_index().pivot(index=y, columns=x, values=values)
+    mat = data.pivot(index=y, columns=x, values=values)
 
     if normalize is None:
         pass

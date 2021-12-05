@@ -6,6 +6,8 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from einops import einops
 from torchmetrics.functional import accuracy
 
 from issl.architectures import get_Architecture
@@ -32,6 +34,9 @@ class ExactISSL(nn.Module):
         Loss with represent to which to compute R[M(X)|Z]. Should be a name of a module in torch.nn
         that takes `reduction=None` as input.
 
+    is_to_one_hot : bool, optional
+        Whether to one hot encoder the maximal invariant before giving it to the loss.
+
     predictor_kwargs : dict, optional
         Arguments to get `Predictor` from `get_Architecture`.
 
@@ -44,11 +49,13 @@ class ExactISSL(nn.Module):
         z_shape: Sequence[int],
         m_shape: Sequence[int],
         loss: str = "CrossEntropyLoss",
+        is_to_one_hot: bool = False,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
         is_classification: bool = True,
     ) -> None:
         super().__init__()
         self.z_shape = z_shape
+        self.is_to_one_hot = is_to_one_hot
         self.compute_loss = getattr(nn, loss)(reduction="none")
         self.m_shape = m_shape
         self.predictor_kwargs = predictor_kwargs
@@ -91,8 +98,13 @@ class ExactISSL(nn.Module):
         # shape: [batch_size, M_shape]
         M_pred = self.predictor(z)
 
-        # shape: [batch_size, M_shape]
-        hat_R_mlz = self.compute_loss(M_pred, m)
+        m_input = m
+        if self.is_to_one_hot:
+            m_input = F.one_hot(m_input, num_classes=self.m_shape[0])
+
+        # shape: [batch_size]
+        hat_R_mlz = self.compute_loss(M_pred, m_input)
+        hat_R_mlz = einops.reduce(hat_R_mlz, "b ... -> b", reduction="mean")
 
         logs = dict()
         if self.is_classification:

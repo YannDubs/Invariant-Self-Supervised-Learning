@@ -135,7 +135,7 @@ def main(cfg):
         finalize_kwargs,
         is_save_best=True,
     )
-    if repr_cfg.predictor.is_skip:
+    if repr_cfg.is_skip_pred:
         return finalize(**finalize_kwargs)
 
     del repr_datamodule  # not used anymore and can be large
@@ -151,10 +151,10 @@ def main(cfg):
         pre_representor = repr_trainer
 
     ############## DOWNSTREAM PREDICTOR ##############
-    for data in cfg.data_pred.all_data:
-        logger.info(f"Stage : Predict {data}")
+    for task in cfg.downstream_task.all_tasks:
+        logger.info(f"Stage : Predict {task}")
         stage = "predictor"
-        pred_cfg = set_data_pred(cfg, data)
+        pred_cfg = set_downstream_task(cfg, task)
         pred_cfg = set_cfg(pred_cfg, stage)
         pred_datamodule = instantiate_datamodule_(
             pred_cfg, pre_representor=pre_representor
@@ -171,12 +171,12 @@ def main(cfg):
                 predictor = Predictor(hparams=pred_cfg, representor=on_fly_representor)
                 pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
 
-            logger.info(f"Train predictor on {data} ...")
+            logger.info(f"Train predictor for {task} ...")
             fit_(pred_trainer, predictor, pred_datamodule, pred_cfg)
             save_pretrained(pred_cfg, pred_trainer, stage, is_sklearn=is_sklearn)
 
         else:
-            logger.info(f"Load pretrained predictor on {data} ...")
+            logger.info(f"Load pretrained predictor for {task} ...")
             ReprPred = get_representor_predictor(on_fly_representor)
             predictor = load_pretrained(pred_cfg, ReprPred, stage)
             pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
@@ -184,7 +184,7 @@ def main(cfg):
             pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
 
         if pred_cfg.evaluation.predictor.is_evaluate:
-            logger.info(f"Evaluate predictor on {data} ...")
+            logger.info(f"Evaluate predictor for {task} ...")
             is_eval_train = pred_cfg.evaluation.predictor.is_eval_train
             pred_res = evaluate(
                 pred_trainer,
@@ -232,15 +232,30 @@ def get_stage_name(stage: str) -> str:
     return stage[:4]
 
 
-def set_data_pred(cfg: Container, data: str):
+def set_downstream_task(cfg: Container, task: str):
+    """Set the downstream task."""
     cfg = copy.deepcopy(cfg)  # not inplace
     with omegaconf.open_dict(cfg):
+        cfg.downstream_task = compose(
+            config_name="main", overrides=[f"+downstream_task={task}"]
+        ).downstream_task
+        data = cfg.downstream_task.data
+        pred = cfg.downstream_task.predictor
+
         # TODO should clean that but not sure how. Currently:
         # 1/ reload hydra config with the current data as dflt config
-        cfg.dflt_data_pred = compose(
-            config_name="main", overrides=[f"+data@dflt_data_pred={data}"]
-        ).dflt_data_pred
+        dflts = compose(
+            config_name="main",
+            overrides=[
+                f"+data@dflt_data_pred={data}",
+                f"+predictor@dflt_predictor={pred}",
+            ],
+        )
+        cfg.dflt_predictor = dflts.dflt_predictor
+        cfg.dflt_data_pred = dflts.dflt_data_pred
+
         # 2/ add any overrides
+        cfg.predictor = OmegaConf.merge(cfg.dflt_predictor, cfg.predictor)
         cfg.data_pred = OmegaConf.merge(cfg.dflt_data_pred, cfg.data_pred)
 
         if cfg.data_pred.is_copy_repr:
@@ -265,8 +280,9 @@ def set_cfg(cfg: Container, stage: str) -> Container:
 
         cfg.long_name = cfg[f"long_name_{cfg.stage}"]
         if stage == "representor":
-            # long name pred not yet instantiated because doesn't know the data name yet
+            # not yet instantiated because doesn't know the data and predictor yet
             del cfg[f"long_name_pred"]
+            del cfg.evaluation[f"predictor"]
 
         cfg.data = OmegaConf.merge(cfg.data, cfg[f"data_{cfg.stage}"])
         cfg.trainer = OmegaConf.merge(cfg.trainer, cfg[f"update_trainer_{cfg.stage}"])
@@ -598,7 +614,7 @@ def evaluate(
                 train_res = replace_keys(
                     train_res, f"/{train_stage}/", f"/{cfg.stage}/"
                 )
-                to_save["train"] = replace_keys(train_res, "test/", "")
+                to_save["train"] = replace_keys(train_res, "test/", "", is_prfx=True)
             except:
                 logger.exception(
                     "Failed to evaluate training set. Skipping this error:"
@@ -617,7 +633,7 @@ def evaluate(
         # ensure that select only correct stage
         test_res = {k: v for k, v in test_res.items() if f"/{cfg.stage}/" in k}
         log_dict(trainer, test_res, is_param=False)
-        to_save["test"] = replace_keys(test_res, "test/", "")
+        to_save["test"] = replace_keys(test_res, "test/", "", is_prfx=True)
 
         # save results
         results = pd.DataFrame.from_dict(to_save)

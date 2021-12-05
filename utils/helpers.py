@@ -7,18 +7,23 @@ import shutil
 import warnings
 from contextlib import contextmanager
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
 import sklearn
 import wandb
-from joblib import dump, load
+from joblib import Parallel, dump, load
+from sklearn.metrics import make_scorer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 
 import pytorch_lightning as pl
 import torch
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.utils.fixes import delayed
+
 from issl.helpers import NamespaceMap, mean, namespace2dict
 from omegaconf import Container, OmegaConf
 from torch.utils.data import DataLoader
@@ -186,9 +191,30 @@ def getattr_from_oneof(list_of_obj: list, name: str) -> pl.callbacks.Callback:
     raise AttributeError(f"{name} was not found in {list_of_obj}.")
 
 
-def replace_keys(d: dict[str, ...], old: str, new: str) -> dict[str, ...]:
+def replace_str(s, old, new, is_prfx=False, is_sffx=False):
+    """replace optionally only at the start or end"""
+    assert not (is_prfx and is_sffx)
+
+    if is_prfx:
+        if s.startswith(old):
+            s = new + s[len(old) :]
+    elif is_sffx:
+        if s.endswith(old):
+            s = s[: -len(old)] + new
+    else:
+        s = s.replace(old, new)
+
+    return s
+
+
+def replace_keys(
+    d: dict[str, ...], old: str, new: str, is_prfx: bool = False, is_sffx: bool = False
+) -> dict[str, ...]:
     """replace keys in a dict."""
-    return {k.replace(old, new): v for k, v in d.items()}
+    return {
+        replace_str(k, old, new, is_prfx=is_prfx, is_sffx=is_sffx): v
+        for k, v in d.items()
+    }
 
 
 # credits : https://gist.github.com/simon-weber/7853144
@@ -230,6 +256,98 @@ def log_dict(trainer: pl.Trainer, to_log: dict, is_param: bool) -> None:
         pass
 
 
+class BinarizeScorer:
+    def __init__(self, scorer, is_unbinarize=False):
+        self.scorer = scorer
+        self.label_binarizer = LabelBinarizer(pos_label=1, neg_label=-1)
+        self.is_unbinarize = is_unbinarize
+
+    def __call__(self, estimator, X, y_true, *args, **kwargs):
+        Y = self.label_binarizer.fit_transform(y_true)
+        if self.is_unbinarize:
+            # dirty tricks to be able to give the unbinarizer to the loss
+            self.scorer._kwargs["unbinarize"] = self.label_binarizer.inverse_transform
+        return self.scorer(estimator, X, Y, *args, **kwargs)
+
+
+class AggScorer:
+    def __init__(self, scorer, funcs_agg=[mean, max, min]):
+        self.scorer = scorer
+        self.funcs_agg = funcs_agg
+
+    def __call__(self, estimator, X, y_true, *args, **kwargs):
+        self.scorer(list(estimator.estimators_)[0], X, y_true[:, 0], *args, **kwargs)
+        losses = Parallel(n_jobs=estimator.n_jobs)(
+            delayed(self.scorer)(e, X, y_true[:, i], *args, **kwargs)
+            for i, e in enumerate(estimator.estimators_)
+        )
+        return np.array([f(losses) for f in self.funcs_agg])
+
+
+class PositiveScorer:
+    def __init__(self, scorer):
+        self.scorer = scorer
+
+    def __call__(self, *args, **kwargs):
+        return -self.scorer(*args, **kwargs)
+
+
+def unbin_loss(y_true, pred_decision, *args, unbinarize=None, loss=None, **kwargs):
+    # dirty trick to avoid error in sklearn make scorer => pass as binzrize then unbinarize
+    y_true = unbinarize(y_true)
+    return loss(y_true, pred_decision, *args, **kwargs)
+
+
+def get_score(
+    name,
+    is_agg=False,
+    greater_is_better=False,
+    needs_proba=False,
+    needs_threshold=False,
+    funcs_agg=[mean, min, max],
+    **kwargs,
+):
+    if name == "ridge_clf_loss":
+        needs_threshold = True
+        is_unbinarize = False
+        name = "mean_squared_error"  # use mean squared error but need to ensure threshold is used
+    elif name == "hinge_loss":
+        needs_threshold = True
+        is_unbinarize = True
+    elif name == "log_loss":
+        needs_proba = True
+
+    loss = getattr(sklearn.metrics, name)
+
+    if needs_threshold and is_unbinarize:
+        loss = partial(unbin_loss, loss=loss)
+
+    if name.split("_")[-1] == "score":
+        # if score then greater is better
+        greater_is_better = True
+
+    scorer = make_scorer(
+        loss,
+        greater_is_better=greater_is_better,
+        needs_proba=needs_proba,
+        needs_threshold=needs_threshold,
+        **kwargs,
+    )
+
+    if needs_threshold:
+        # binarized labels necessary when using make_scorer with needs_threshold
+        scorer = BinarizeScorer(scorer, is_unbinarize=is_unbinarize)
+
+    if is_agg:
+        # perform all the aggregation over tasks
+        scorer = AggScorer(scorer, funcs_agg=funcs_agg)
+
+    if not greater_is_better:
+        scorer = PositiveScorer(scorer)
+
+    return scorer
+
+
 class SklearnTrainer:
     """Wrapper around sklearn that mimics pytorch lightning trainer."""
 
@@ -242,7 +360,15 @@ class SklearnTrainer:
         scores = self.hparams.predictor.metrics
         if isinstance(scores, str):
             scores = [scores]
-        self.scores = [getattr(sklearn.metrics, s) for s in scores]
+
+        self.scores = {s: get_score(s) for s in scores}
+
+        if self.is_agg_target:
+            self.agg_txt_fun = {"": mean, "_max": max, "_min": min}
+            self.agg_scores = {
+                s: get_score(s, is_agg=True, funcs_agg=list(self.agg_txt_fun.values()))
+                for s in scores
+            }
 
     def fit(self, model: Pipeline, datamodule: SklearnDataModule):
         if self.is_agg_target:
@@ -262,30 +388,29 @@ class SklearnTrainer:
         if ckpt_path is not None and ckpt_path != "best":
             self.model = load(ckpt_path)
 
-        y_hat = self.model.predict(data.X)
-
         if self.is_agg_target:
-            y_hat_agg = y_hat[:, 1:]
             y_agg = data.Y[:, 1:]
-            y_hat = y_hat[:, 0]
             y = data.Y[:, 0]
-            n_agg_tgt = y_agg.shape[1]
+
+            model_agg = deepcopy(self.model)
+            model = model_agg.estimators_.pop(0)  # first is not aggregated over
         else:
             y = data.Y
+            model = self.model
 
         results = {
-            f"test/{self.stage}/{self.hparams.data.name}/{score.__name__}": score(
-                y, y_hat
+            f"test/{self.stage}/{self.hparams.data.name}/{name}": score(
+                model, data.X, y
             )
-            for score in self.scores
+            for name, score in self.scores.items()
         }
 
         if self.is_agg_target:
-            for score in self.scores:
-                to_agg = [score(y_agg[:, i], y_hat_agg[:, i]) for i in range(n_agg_tgt)]
-                for txt, fun in [("", mean), ("_max", max), ("_min", min)]:
-                    key = f"test/{self.stage}/{self.hparams.data.name}/{score.__name__}_agg{txt}"
-                    results[key] = fun(to_agg)
+            for name, agg_score in self.agg_scores.items():
+                aggregated = agg_score(model_agg, data.X, y_agg)
+                for agg, sffx in zip(aggregated, self.agg_txt_fun.keys()):
+                    key = f"test/{self.stage}/{self.hparams.data.name}/{name}_agg{sffx}"
+                    results[key] = agg
 
         logger.info(results)
 

@@ -1,0 +1,5 @@
+defaults:
+  - base
+
+data: data_repr_45000_agg16_test
+predictor: sk_logistic

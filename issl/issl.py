@@ -111,9 +111,6 @@ class ISSLModule(pl.LightningModule):
             # shape: [batch_size, *z_shape]
             z = self.Z_processor(z)
 
-        if self.hparams.encoder.is_relu_Z:
-            z = F.relu(z)
-
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
 
@@ -133,14 +130,10 @@ class ISSLModule(pl.LightningModule):
         # shape: [batch_size, *z_shape]
         z = p_Zlx.rsample()
 
-        # TODO: one difference compared to standard implementation is that our representation does not go throguh a relu
-        # should test if makes difference
+        # one difference compared to standard implementation is that our representation does not go throguh a relu
 
         # shape: [batch_size, *z_shape]
         z = self.Z_processor(z)
-
-        if self.hparams.encoder.is_relu_Z:
-            z = F.relu(z)
 
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)

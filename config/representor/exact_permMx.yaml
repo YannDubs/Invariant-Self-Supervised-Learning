@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - exact
+
+representor:
+  name: exact_permMx
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "Mx"
+      a_augmentations: ["perm_label"]
+      train_x_augmentations: []

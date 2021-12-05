@@ -1,0 +1,3 @@
+name: ${predictor.name}_${data_pred.name}
+data: ???
+predictor: ???

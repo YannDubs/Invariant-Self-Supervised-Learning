@@ -51,7 +51,7 @@ fi
 wait
 
 
-
+# test -> tesst and train -> test is quick way to remove "train" in plot
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
@@ -66,13 +66,17 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
        +kwargs.pretty_renamer.Exact="Minimal: 10" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
+       +kwargs.pretty_renamer.Test="Tesst" \
+       +kwargs.pretty_renamer.Train="Test" \
        +plot_scatter_lines.x="zdim" \
        +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
+       +plot_scatter_lines.filename="lines_acc_vs_dim_reg" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
+       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines]
 
 

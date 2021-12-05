@@ -23,11 +23,10 @@ defaults:
   - finetune: none # change if using pretrained representor.
   - representor: base
 
-  # PREDICTOR #
+  # downstream task #
   - checkpoint@checkpoint_pred: bestTrainLoss # by default no validation set for predictors
   - optimizer@optimizer_pred: Adam_lr3e-4_w0
   - scheduler@scheduler_pred: unifmultistep100
-  - predictor: pytorch
 
   # OVERRIDES #
   - override hydra/job_logging: colorlog
@@ -46,6 +45,7 @@ is_return: false # will return everything (the data, the models, ...)
 monitor_return: [] # normal return of the function. This is especially useful for hyperparameter tuning
 monitor_direction: [] # whether the monitor should be maximized or minimized. useful for hyperparameter tuning
 is_no_save: ${is_return} # if you are sure you don't want to save anything
+is_skip_pred: false # run predictor?
 
 paths: #! the best practice is not to modify those paths but to symlink them to the places you want
   base_dir: ${hydra:runtime.cwd}
@@ -140,7 +140,6 @@ encoder:
   name: ???
   z_shape: 1024
   is_normalize_Z: False
-  is_relu_Z: False
   kwargs:
     in_shape: ${data.shape}
     out_shape: ${encoder.z_shape} # do not change that
@@ -186,11 +185,14 @@ checkpoint_repr: {}
 # dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
 update_trainer_repr: {}
 
-########## PREDICTOR ##########
+########## DOWNSTREAM TASK ##########
+downstream_task:
+  all_tasks: [pytorch_datarepr]
+
+
 ### DATA ###
 # everything you want to override would go here
-data_pred:
-  all_data: [data_repr]
+data_pred: {}
 
 # all the defaults arguments go here.
 dflt_data_pred:
@@ -199,12 +201,11 @@ dflt_data_pred:
     dataset_kwargs:
       aux_target: null
 
-### MODEL ###
-predictor:
-  name: ???
-  is_skip: false # run predictor?
+### PREDICTOR ###
+predictor: {}
+
+dflt_predictor:
   is_train: True
-  is_force_train: False
 
 ### OPTIMIZER ###
 optimizer_pred:

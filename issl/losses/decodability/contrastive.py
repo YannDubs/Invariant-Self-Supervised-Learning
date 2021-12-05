@@ -81,7 +81,6 @@ class ContrastiveISSL(nn.Module):
         is_train_temperature: bool = False,
         min_temperature: float = 0.01,
         is_normalize_proj: bool = True,
-        is_bn_proj: bool = False,
         is_aux_already_represented: bool = False,
         is_project: bool = True,
         src_tgt_comparison: str = "all",
@@ -102,9 +101,6 @@ class ContrastiveISSL(nn.Module):
         self.min_temperature = min_temperature
         self.src_tgt_comparison = src_tgt_comparison
         self.is_normalize_proj = is_normalize_proj
-        self.is_bn_proj = (
-            is_bn_proj  # TODO either remove or keep but use different for proj and pred
-        )
         self.is_aux_already_represented = is_aux_already_represented
         self.is_project = is_project
         self.is_pred_proj_same = is_pred_proj_same
@@ -119,9 +115,6 @@ class ContrastiveISSL(nn.Module):
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
             self.predictor = Predictor()
-
-        if self.is_bn_proj:
-            self.bn_proj = nn.BatchNorm1d(self.projector_kwargs["out_shape"])
 
         if self.is_train_temperature:
             self.init_temperature = temperature
@@ -225,10 +218,6 @@ class ContrastiveISSL(nn.Module):
         # shape: [(2*)batch_size, out_shape]
         z_src = self.predictor(z_src)
         z_tgt = self.projector(z_tgt)
-
-        if self.is_bn_proj:
-            z_src = self.bn_proj(z_src)
-            z_tgt = self.bn_proj(z_tgt)
 
         if self.is_normalize_proj:
             z_src = F.normalize(z_src, dim=1, p=2)

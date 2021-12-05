@@ -1,0 +1,12 @@
+defaults:
+  - base_sklearn
+
+metrics: [accuracy_score,ridge_clf_loss]
+
+name: sk_clf_linear
+model:
+  _target_: sklearn.linear_model.RidgeClassifier
+  alpha: 1 #larger regularizes more
+  class_weight: null # might want to use "balanced"
+  random_state: ${seed}
+  solver: "auto"

@@ -22,7 +22,6 @@ predictor=sk_logistic
 +trainer.num_sanity_val_steps=0
 +trainer.limit_val_batches=0
 representor=std_cntr
-scheduler@scheduler_issl=whitening
 decodability.kwargs.temperature=0.5
 data_repr.kwargs.batch_size=512
 optimizer_issl.kwargs.weight_decay=1e-6
@@ -40,6 +39,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
+scheduler@scheduler_issl=warm_unifmultistep1000,whitening,warm_unifmultistep100
 "
 
 
@@ -50,7 +50,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  "optimizer_issl.kwargs.lr=3e-3 decodability.kwargs.projector_kwargs.out_shape=64"  "data@data_repr=stl10_unlabeled trainer.max_epochs=2000" "data@data_repr=tinyimagenet"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 

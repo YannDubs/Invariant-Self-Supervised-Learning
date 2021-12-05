@@ -1,6 +1,8 @@
 defaults:
   - base_sklearn
 
+metrics: [accuracy_score,hinge_loss]
+
 name: sk_svm
 model:
   _target_: sklearn.svm.LinearSVC

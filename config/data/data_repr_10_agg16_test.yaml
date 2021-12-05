@@ -1,0 +1,10 @@
+defaults:
+  - base_subset
+
+name: "{name}_${.kwargs.subset_train_size}_agg16_test" # when using is_copy_repr name will be formatted
+
+kwargs:
+  subset_train_size: 10
+  is_test_nonsubset_train: False # test on actual test
+  dataset_kwargs:
+    n_agg_tasks: 16

@@ -29,17 +29,16 @@ representor=cntr
 timeout=$time
 "
 
-
 # every arguments that you are sweeping over
 kwargs_multi="
 encoder.z_shape=2,5,10,20
 regularizer=huber
-representor.loss.beta=1e-3,1e-1
-seed=1
+representor.loss.beta=1e-3
+seed=1,2,3
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in   "representor=cntr_mlpnano architecture@predictor=mlp_h10_l1" "representor=cntr architecture@predictor=linear" "representor=cntr_mlp architecture@predictor=mlp_h2048_l2"  
+  for kwargs_dep in   "representor=cntr_mlpS architecture@predictor=mlp_h1024_l1" "representor=cntr architecture@predictor=linear"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -49,25 +48,8 @@ if [ "$is_plot_only" = false ] ; then
   done
 fi
 
-wait
 
-# NB accuracy_score_agg_min replaced by `acc_agg_min` because pytorch predictor instead of sklearn
-python utils/aggregate.py \
-       experiment=$experiment  \
-       $col_val_subset \
-       patterns.representor=null \
-       +kwargs.pretty_renamer.Cntr="calF --" \
-       +kwargs.pretty_renamer.Cntr_MlpXXS="calF -" \
-       +kwargs.pretty_renamer.Cntr_MlpXS="calF" \
-       +kwargs.pretty_renamer.Cntr_Mlp="calF ++" \
-       +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="train/pred/acc_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_dim_reg" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=True \
-       agg_mode=[plot_scatter_lines]
+wait
 
 
 python utils/aggregate.py \
@@ -75,17 +57,18 @@ python utils/aggregate.py \
        $col_val_subset \
        "+col_val_subset.beta=[1e-3]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Cntr="calF --" \
-       +kwargs.pretty_renamer.Cntr_MlpXXS="calF -" \
-       +kwargs.pretty_renamer.Cntr_MlpXS="calF" \
-       +kwargs.pretty_renamer.Cntr_Mlp="calF ++" \
+       +kwargs.pretty_renamer.Cntr="Linear" \
+       +kwargs.pretty_renamer.Cntr_Mlps="MLP" \
        +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="train/pred/acc_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_dim" \
+       +plot_scatter_lines.y="test/pred/acc_agg_min" \
+       +plot_scatter_lines.filename="lines_acc_vs_dim_gs" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
+       +plot_scatter_lines.set_kwargs.xticks=[0,5,10,15,20] \
        +plot_scatter_lines.logbase_x=1 \
        +plot_scatter_lines.legend_out=False \
+       "+plot_scatter_lines.hue_order=[Cntr,Cntr_Mlps]" \
+       "+plot_scatter_lines.style_order=[Cntr,Cntr_Mlps]" \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \

@@ -22,10 +22,11 @@ PRETTY_RENAMER = StrFormatter(
         "Pred": "Downstream Pred.",
         "Repr": "ISSL",
         # Project specific
-        "Accuracy Score": "Acc",
+        "Acc ": "Acc. ",
+        "Accuracy Score": "Acc.",
         "Std Gen Smallz": "Std. Gen. ISSL",
         "Cntr Stda": "Our Cont. ISSL",
-        "Acc Agg Min": "Worst Acc.",
+        "Acc. Agg Min": "Worst Acc.",
         # "Acc": "Accuracy",
         "K Labels": "Max. # Labels",
         "N Tasks": "# Tasks",
