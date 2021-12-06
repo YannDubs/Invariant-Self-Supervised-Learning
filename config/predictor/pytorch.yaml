@@ -1,5 +1,5 @@
 defaults:
-  - /architecture@_here_: mlp_h2048_l2
+  - /architecture@_here_: linear
 
 is_sklearn: False
 kwargs:

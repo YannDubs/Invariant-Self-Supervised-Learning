@@ -33,8 +33,8 @@ kwargs_multi="
 representor=exact,exact_mlpnano,exact_mlp
 regularizer=l2Mx
 representor.loss.beta=1e-1
-seed=1
-encoder.z_shape=10,128
+seed=1,2,3
+encoder.z_shape=10
 "
 
 
@@ -65,7 +65,6 @@ python utils/aggregate.py \
        +plot_heatmap.cols_to_agg=["seed"] \
        +plot_heatmap.metric="train/pred/acc_mean" \
        +plot_heatmap.filename="heatmap_V" \
-       +plot_heatmap.col="zdim" \
        agg_mode=[plot_heatmap]
 
 python utils/aggregate.py \
@@ -81,7 +80,6 @@ python utils/aggregate.py \
        +plot_heatmap.cols_to_agg=["seed"] \
        +plot_heatmap.metric="train/pred/acc_agg_min_mean" \
        +plot_heatmap.filename="heatmap_V_min" \
-       +plot_heatmap.col="zdim" \
        agg_mode=[plot_heatmap]
 
 
