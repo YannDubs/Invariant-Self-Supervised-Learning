@@ -33,7 +33,7 @@ representor=cntr,cntr_100A,cntr_1000A_shuffle,cntr_stdA
 encoder.z_shape=5,10,100,1000
 regularizer=huber
 representor.loss.beta=1e-3
-seed=1
+seed=1,2,3
 "
 # seeds
 
@@ -49,28 +49,6 @@ if [ "$is_plot_only" = false ] ; then
 fi
 
 wait
-
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       patterns.representor=null \
-       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
-       +kwargs.pretty_renamer.Cntr_Stda="Standard" \
-       +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Cntr="Minimal: 10" \
-       +kwargs.pretty_renamer.Repr="Augmentation" \
-       +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=True \
-       "+plot_scatter_lines.hue_order=[Cntr,Cntr_1000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
-       "+plot_scatter_lines.style_order=[Cntr,Cntr_1000A,Cntr_Stda,Cntr_1000A_Shuffle]" \
-       agg_mode=[plot_scatter_lines]
-
 
 python utils/aggregate.py \
        experiment=$experiment  \

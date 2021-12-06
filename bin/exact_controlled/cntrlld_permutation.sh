@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"cntr_permutation"
+experiment=$prfx"cntrlld_permutation"
 notes="
-**Goal**: table showing that permuting M(X) has very little effect when doing contrastive learning correctly.
+**Goal**: table showing that permuting M(X) has very little effect when doing exact ISSL.
 "
 
 # parses special mode for running the script
@@ -28,10 +28,10 @@ timeout=$time
 
 # would be good to run all of them but most important is cntr
 kwargs_multi="
-regularizer=huber
-representor.loss.beta=1e-3
+regularizer=l2Mx
+representor.loss.beta=1e-1
 seed=1,2,3
-representor=cntr,cntr_permMx
+representor=exact,exact_permMx
 "
 
 if [ "$is_plot_only" = false ] ; then

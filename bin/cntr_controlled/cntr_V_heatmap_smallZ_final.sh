@@ -52,13 +52,12 @@ fi
 wait
 
 
-
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
        "+col_val_subset.beta=[1e-3]" \
-       +kwargs.pretty_renamer.Cntr_Mlps="MLP" \
-       +kwargs.pretty_renamer.Cntr="Linear" \
+       +kwargs.pretty_renamer.Cntr_Stds_Mlpxs="MLP" \
+       +kwargs.pretty_renamer.Cntr_Stda="Linear" \
        +kwargs.pretty_renamer.Mlp_H1024_L1="MLP" \
        +plot_heatmap.x="repr" \
        +plot_heatmap.y="pred" \
@@ -71,8 +70,8 @@ python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
        "+col_val_subset.beta=[1e-3]" \
-       +kwargs.pretty_renamer.Cntr_Mlps="MLP" \
-       +kwargs.pretty_renamer.Cntr="Linear" \
+       +kwargs.pretty_renamer.Cntr_Stda_Mlpxs="MLP" \
+       +kwargs.pretty_renamer.Cntr_Stda="Linear" \
        +kwargs.pretty_renamer.Mlp_H1024_L1="MLP" \
        +plot_heatmap.x="repr" \
        +plot_heatmap.y="pred" \
@@ -80,7 +79,6 @@ python utils/aggregate.py \
        +plot_heatmap.metric="test/pred/acc_agg_min_mean" \
        +plot_heatmap.filename="heatmap_V_min" \
        agg_mode=[plot_heatmap]
-
 
 python utils/aggregate.py \
        experiment=$experiment  \

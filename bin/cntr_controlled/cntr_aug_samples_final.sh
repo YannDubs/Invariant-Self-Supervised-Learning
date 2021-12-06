@@ -41,16 +41,6 @@ seed=1,2,3
 "
 
 
-kwargs_multi="
-representor=cntr_10000A
-regularizer=huber
-representor.loss.beta=1e-3
-seed=1
-experiment=dev_$experiment
-trainer.max_epochs=1
-+trainer.limit_train_batches=0.05
-"
-
 # seed=2,3
 
 if [ "$is_plot_only" = false ] ; then

@@ -12,7 +12,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from issl.architectures import get_Architecture
-from issl.helpers import gather_from_gpus, prod, weights_init
+from issl.helpers import gather_from_gpus, prod, weights_init, GrammRBF
 
 __all__ = ["ContrastiveISSL"]
 
@@ -68,6 +68,15 @@ class ContrastiveISSL(nn.Module):
         Arguments to get `Predictor` from `get_Architecture`. Note that is `out_shape` is <= 1
         it will be a percentage of z_dim. To use no predictor set `mode=Flatten`.
 
+    is_hinge : bool, optional
+        Whether to use the hinge loss instead of the log loss.
+
+    is_kernel : bool, optional
+        Whether to replace all dot products with a gram matrix given by a kernel.
+
+    kernel_kwargs : dict, optional
+        Additional kwargs to `GrammRBF`.
+
     References
     ----------
     [1] Song, Jiaming, and Stefano Ermon. "Multi-label contrastive predictive coding." Advances in
@@ -93,6 +102,9 @@ class ContrastiveISSL(nn.Module):
             "out_shape": 128,
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
+        is_hinge: bool = False,  # TODO: rm if do not use
+        is_kernel: bool = False,  # TODO: rm if do not use
+        kernel_kwargs: dict = {"is_normalize": False},  # TODO: rm if not use
     ) -> None:
         super().__init__()
         self.z_shape = z_shape
@@ -106,6 +118,15 @@ class ContrastiveISSL(nn.Module):
         self.is_pred_proj_same = is_pred_proj_same
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
+
+        self.is_hinge = is_hinge
+        self.is_kernel = is_kernel
+        self.kernel_kwargs = kernel_kwargs
+        if self.is_kernel:
+            self.kernel = GrammRBF(**self.kernel_kwargs)
+        if self.is_hinge:
+            self.is_train_temperature = False
+            self.temperature = 1.0
 
         Projector = get_Architecture(**self.projector_kwargs)
         self.projector = Projector()
@@ -231,9 +252,12 @@ class ContrastiveISSL(nn.Module):
             other_z_t = torch.cat(list_z_t[:curr_gpu] + list_z_t[curr_gpu + 1 :], dim=0)
             z_tgt = torch.cat([z_tgt, other_z_t], dim=0)
 
-        if self.src_tgt_comparison == "all":
-            # shape: [2*batch_size, 2*batch_size * world_size]
-            logits = z_src @ z_tgt.T
+        if self.src_tgt_comparison in ["all", "single"]:
+            # shape: [(2*)batch_size, (2*)batch_size * world_size]
+            if self.is_kernel:
+                logits = self.kernel(z_src, z_tgt)
+            else:
+                logits = z_src @ z_tgt.T
 
         elif self.src_tgt_comparison == "symmetric":
             list_z_tgt = z_tgt.split(batch_size, dim=0)
@@ -246,15 +270,15 @@ class ContrastiveISSL(nn.Module):
             z_src, z_a_src = z_src.chunk(2, dim=0)
 
             # shape: [batch_size, batch_size * world_size]
-            logits_tgt_aug = z_src @ z_a_tgt.T
-            logits_src_aug = z_a_src @ z_tgt.T
+            if self.is_kernel:
+                logits_tgt_aug = self.kernel(z_src, z_a_tgt)
+                logits_src_aug = self.kernel(z_a_src, z_tgt)
+            else:
+                logits_tgt_aug = z_src @ z_a_tgt.T
+                logits_src_aug = z_a_src @ z_tgt.T
 
             # shape: [2*batch_size, batch_size * world_size,]
             logits = torch.cat([logits_tgt_aug, logits_src_aug])
-
-        elif self.src_tgt_comparison == "single":
-            # shape: [batch_size, batch_size * world_size,]
-            logits = z_src @ z_tgt.T
 
         return logits
 
@@ -309,17 +333,27 @@ class ContrastiveISSL(nn.Module):
         # make sure 32 bits
         logits = logits.float() / temperature
 
-        # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-        # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-        # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-        # = log(N-1) + E[ log softmax(z^Tz_p) ]
-        # = log(N-1) - E[ crossentropy(z^Tz, p) ]
-        # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
-        hat_H_m = math.log(effective_n_classes)
-        hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
+        if self.is_hinge:
 
-        logs = dict(
-            I_q_zm=(hat_H_m - hat_H_mlz.mean()), hat_H_m=hat_H_m, n_negatives=n_classes,
-        )
+            # hat_H_mlz is now generalized entropy w.r.t. to hinge loss
+            hat_H_mlz = F.multi_margin_loss(logits, pos_idx, reduction="none")
+
+            logs = dict(n_negatives=n_classes)
+
+        else:
+            # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+            # = log(N-1) + E[ log softmax(z^Tz_p) ]
+            # = log(N-1) - E[ crossentropy(z^Tz, p) ]
+            # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
+            hat_H_m = math.log(effective_n_classes)
+            hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
+
+            logs = dict(
+                I_q_zm=(hat_H_m - hat_H_mlz.mean()),
+                hat_H_m=hat_H_m,
+                n_negatives=n_classes,
+            )
 
         return hat_H_mlz, logs

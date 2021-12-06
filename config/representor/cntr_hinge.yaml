@@ -1,0 +1,20 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: none
+  - override /decodability: contrastive_hinge
+
+representor:
+  name: cntr_hinge
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: ["label"] 
+      train_x_augmentations: []
+
+encoder:
+  z_shape: 1024
+  is_normalize_Z: False
+

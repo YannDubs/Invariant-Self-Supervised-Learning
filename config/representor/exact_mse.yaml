@@ -6,7 +6,7 @@ representor:
   name: exact_mse
 
 decodability:
-  factor_beta: 1 # to tune
+  factor_beta: 0.01 # to tune
   kwargs:
     loss: MSELoss
     is_to_one_hot: True

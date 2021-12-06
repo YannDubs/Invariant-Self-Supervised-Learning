@@ -30,7 +30,7 @@ kwargs_multi="
 representor=cntr,cntr_1000A,cntr_1000A_shuffle,cntr_stdA
 regularizer=huber
 representor.loss.beta=1e-3
-seed=1
+seed=1,2,3
 "
 # seed=2,3
 

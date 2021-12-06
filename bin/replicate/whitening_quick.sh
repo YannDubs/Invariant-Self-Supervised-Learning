@@ -40,6 +40,12 @@ timeout=$time
 kwargs_multi="
 scheduler@scheduler_issl=warm_unifmultistep125,whitening_quick,warm_unifmultistep100,warm_unifmultistep25
 "
+# best is warm_unifmultistep25
+# followed by warm_unifmultistep125
+
+kwargs_multi="
+scheduler@scheduler_issl=slowwarm_unifmultistep25,warm_unifmultistep27,warm_unifmultistep9
+"
 
 
 # difference for gen: linear resnet / augmentations / larger dim

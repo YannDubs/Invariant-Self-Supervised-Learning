@@ -1,0 +1,5 @@
+defaults:
+  - base
+
+data: data_repr_1000_agg2
+predictor: sk_logistic

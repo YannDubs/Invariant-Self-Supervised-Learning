@@ -109,6 +109,7 @@ def main(cfg):
     aggregator.replace(**cfg.replace)
     aggregator.sort(cfg.sort)
     aggregator.subset(**cfg.col_val_subset)
+    aggregator.merge_columns(cfg.merge_cols)
 
     for f in cfg.agg_mode:
 
@@ -335,6 +336,25 @@ class ResultAggregator(PostPlotter):
                 self.tables[k] = (
                     df.reset_index().sort_values(by=col).set_index(df.index.names)
                 )
+
+    def merge_columns(self, merge_cols: dict[str, str]):
+        """Merge multiple columns into a single one."""
+        is_merged = False
+        for k, df in self.tables.items():
+            for name, cols in merge_cols.items():
+                if cols[0] not in df.columns:
+                    continue
+                to_merge = df[cols]
+                n_not_nan = (~to_merge.isna()).sum(1)
+                assert (n_not_nan <= 1).all()
+                df[name] = to_merge.iloc[:, 0]
+                for _, to_combine in to_merge.iloc[:, 1:].iteritems():
+                    df[name] = df[name].combine_first(to_combine)
+                self.tables[k][name] = df[name]
+                is_merged = True
+
+        if len(merge_cols) > 0:
+            assert is_merged
 
     @data_getter
     @folder_split

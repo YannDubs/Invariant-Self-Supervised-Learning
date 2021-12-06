@@ -7,9 +7,6 @@ defaults:
 representor:
   name: cntr_stdA_stoch
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
 
 data_repr:
   kwargs:

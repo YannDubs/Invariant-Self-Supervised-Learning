@@ -7,9 +7,6 @@ defaults:
 representor:
   name: exact
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
 
 data_repr:
   kwargs:

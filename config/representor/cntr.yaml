@@ -7,10 +7,6 @@ defaults:
 representor:
   name: cntr
 
-kwargs:
-  decoder_kwargs:
-    architecture: linear
-
 data_repr:
   kwargs:
     dataset_kwargs:

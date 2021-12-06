@@ -3,7 +3,7 @@ defaults:
   - slfdstl_prior_supA
 
 representor:
-  name: slfdstl_prior_perMx
+  name: slfdstl_prior_permMx
 
 data_repr:
   kwargs:

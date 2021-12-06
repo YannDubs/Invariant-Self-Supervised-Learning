@@ -95,12 +95,13 @@ class ExactISSL(nn.Module):
         other : dict
             Additional values to return.
         """
+
         # shape: [batch_size, M_shape]
         M_pred = self.predictor(z)
 
         m_input = m
         if self.is_to_one_hot:
-            m_input = F.one_hot(m_input, num_classes=self.m_shape[0])
+            m_input = F.one_hot(m_input, num_classes=self.m_shape[0]).float() * 2 - 1
 
         # shape: [batch_size]
         hat_R_mlz = self.compute_loss(M_pred, m_input)

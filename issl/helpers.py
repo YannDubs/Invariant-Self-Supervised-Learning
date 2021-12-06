@@ -268,6 +268,62 @@ def aggregate_dicts(dicts, operation=mean):
     return {k: operation([dic.get(k, None) for dic in dicts]) for k in all_keys}
 
 
+class GrammRBF(nn.Module):
+    """Compute a gramm matrix using gaussian RBF.
+
+    Parameters
+    ----------
+    is_normalize : bool, optional
+        Whether to row normalize the output gram matrix.
+
+    pre_gamma_init : float, optional
+        Initialization of the gamma parameter.
+
+    p : int, optional
+        Which norm to use.
+
+    is_linear : bool, optional
+        Whether to pointwise tranform each element of the gram matrix.
+    """
+
+    def __init__(
+        self, is_normalize=False, pre_gamma_init=0.0, p=2, is_linear=True, **kwargs
+    ):
+        super().__init__()
+        self.is_normalize = is_normalize
+        self.pre_gamma_init = pre_gamma_init
+        self.p = p
+        self.is_linear = is_linear
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.pre_gamma = nn.Parameter(torch.tensor([self.pre_gamma_init]).float())
+
+        if self.is_linear:
+            self.scale = nn.Parameter(torch.tensor([1.0]))
+            self.bias = nn.Parameter(torch.tensor([0.0]))
+
+    def forward(self, x1, x2):
+
+        # shape : [x1_dim, x2_dim]
+        dist = torch.cdist(x1, x2, p=self.p) ** self.p
+
+        gamma = 1e-5 + F.softplus(self.pre_gamma)
+        inp = -gamma * dist
+
+        if self.is_normalize:
+            # numerically stable normalization of the weights by density
+            out = inp.softmax(-1)
+        else:
+            out = inp.exp()
+
+        if self.is_linear:
+            out = self.scale * out + self.bias
+
+        return out
+
+
 def kl_divergence(p, q, z_samples=None, is_lower_var=False):
     """Computes KL[p||q], analytically if possible but with MC if not."""
     try:
