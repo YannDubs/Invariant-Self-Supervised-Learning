@@ -7,4 +7,6 @@ kwargs:
   subset_train_size: 10
   is_test_nonsubset_train: False # test on actual test
   dataset_kwargs:
+    aux_target: agg_target
     n_agg_tasks: 16
+    max_k_ary_agg: 2

@@ -32,7 +32,6 @@ regularizer=huber
 representor.loss.beta=1e-3
 seed=1,2,3
 "
-# seed=2,3
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""
