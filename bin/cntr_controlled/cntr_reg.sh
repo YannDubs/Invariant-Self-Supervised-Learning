@@ -28,7 +28,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=1
+seed=2,3
 trainer.max_epochs=50,100,200,500,1000
 "
 # seed 2,3 once you found favorite beta
@@ -36,7 +36,7 @@ trainer.max_epochs=50,100,200,500,1000
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "regularizer=huber representor.loss.beta=1e-5,1e-3,1e-1" "regularizer=none representor.loss.beta=0"
+  for kwargs_dep in  "regularizer=huber representor.loss.beta=1e-3" "regularizer=none representor.loss.beta=0"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -48,13 +48,12 @@ fi
 
 wait
 
-exit
-
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_tr" \
@@ -66,9 +65,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min" \
@@ -80,9 +80,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="train/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_tr" \
@@ -94,9 +95,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc" \
@@ -108,9 +110,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_1000_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_mini_tr" \
@@ -122,9 +125,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_1000_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_mini_tr" \
@@ -136,9 +140,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16_test]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_1000_agg16_test]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_mini" \
@@ -150,9 +155,10 @@ python utils/aggregate.py \
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16_test]" \
-       patterns.representor=null \
+       "+col_val_subset.datapred=[cifar10_1000_agg16_test]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       patterns.representor=null \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_mini" \

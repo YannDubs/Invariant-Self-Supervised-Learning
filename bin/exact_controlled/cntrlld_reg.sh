@@ -27,8 +27,9 @@ timeout=$time
 
 
 # every arguments that you are sweeping over
+
 kwargs_multi="
-seed=1
+seed=1,2,3
 trainer.max_epochs=50,100,200,500,1000
 "
 
@@ -45,116 +46,52 @@ fi
 
 wait
 
-
+# changing ttrain to test is a formatting trick to remove "train"
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
+       "+col_val_subset.datapred=[cifar10_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +kwargs.pretty_renamer.Train="Test" \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_tr" \
        +plot_scatter_lines.hue="beta" \
        +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
+       +plot_scatter_lines.logbase_x=null \
        +plot_scatter_lines.legend_out=False \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
+       "+col_val_subset.datapred=[cifar10_1000_agg16]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
-       +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
-       +plot_scatter_lines.filename="lines_epochs_vs_acc_min" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines]
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
-       patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
-       +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="train/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_epochs_vs_acc_tr" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines]
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_agg16]" \
-       patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
-       +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_epochs_vs_acc" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines]
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16]" \
-       patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
-       +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_epochs_vs_acc_mini_tr" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines]
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16]" \
-       patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +kwargs.pretty_renamer.Train="Test" \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_mini_tr" \
        +plot_scatter_lines.hue="beta" \
        +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
+       +plot_scatter_lines.logbase_x=null \
        +plot_scatter_lines.legend_out=False \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16_test]" \
+       "+col_val_subset.datapred=[cifar10_1000_agg16_test]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
-       +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_epochs_vs_acc_mini" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines]
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.data_pred=[data_repr_1000_agg16_test]" \
-       patterns.representor=null \
-       +collect_data.params_to_add.Epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +kwargs.pretty_renamer.Train="Test" \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_mini" \
        +plot_scatter_lines.hue="beta" \
        +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
+       +plot_scatter_lines.logbase_x=null \
        +plot_scatter_lines.legend_out=False \
        agg_mode=[plot_scatter_lines]
 

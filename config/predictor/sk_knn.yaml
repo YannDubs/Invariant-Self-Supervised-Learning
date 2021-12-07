@@ -1,0 +1,15 @@
+defaults:
+  - base_sklearn
+
+metrics: [accuracy_score]
+is_scale: True
+
+name: sk_knn
+model:
+  _target_: sklearn.neighbors.KNeighborsClassifier
+  n_neighbors: 5
+  weights: uniform
+  C: 1 #smaller regularizes more
+  class_weight: null # might want to use "balanced"
+  random_state: ${seed}
+  n_jobs: -1

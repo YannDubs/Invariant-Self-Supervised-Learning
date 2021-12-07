@@ -15,7 +15,7 @@ experiment=$experiment
 checkpoint@checkpoint_repr=bestTrainLoss
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
-downstream_task.all_tasks=[sklogistic_datarepragg16]
+downstream_task.all_tasks=[sklogistic_datarepr,skknn_datarepr,skknnweighted_datarepr,skrbfsvm_datarepr,skapproxrbfsvm_datarepr]
 ++data_repr.kwargs.val_size=2
 ++data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
@@ -36,11 +36,20 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi=""
 
+
+kwargs_multi="
+trainer.max_epochs=1
++trainer.limit_train_batches=0.05
++trainer.limit_test_batches=0.05
++data_pred.kwargs.subset_train_size=100
+experiment=dev_$experiment
+"
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "encoder.z_shape=2,10,32,128,512,1024" "decodability.kwargs.is_normalize_proj=False"  "decodability.kwargs.is_project=True" "decodability.kwargs.is_hinge=False" "decodability.kwargs.is_kernel=False" "decodability.kwargs.kernel_kwargs.is_normalize=True" "decodability.kwargs.kernel_kwargs.pre_gamma_init=-10,-1,0,1,10" "decodability.kwargs.kernel_kwargs.is_linear=False"
+  for kwargs_dep in "" # "encoder.z_shape=2,10,32,128,512,1024" "decodability.kwargs.is_normalize_proj=False"  "decodability.kwargs.is_project=True" "decodability.kwargs.is_hinge=False" "decodability.kwargs.is_kernel=False" "decodability.kwargs.kernel_kwargs.is_normalize=True" "decodability.kwargs.kernel_kwargs.pre_gamma_init=-10,-1,0,1,10" "decodability.kwargs.kernel_kwargs.is_linear=False"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m &
 
     sleep 10
 

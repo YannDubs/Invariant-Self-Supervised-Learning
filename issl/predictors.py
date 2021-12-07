@@ -272,6 +272,9 @@ class SklearnPredictor(Pipeline):
         if self.cfgp.is_scale:
             steps += [("scaler", instantiate(dict_cfgp["scaler"]))]
 
+        if self.cfgp.is_preprocess:
+            steps += [("preprocesser", instantiate(dict_cfgp["preprocesser"]))]
+
         steps += [("model", instantiate(dict_cfgp["model"]))]
 
         super().__init__(steps)

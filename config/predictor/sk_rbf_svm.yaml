@@ -1,0 +1,16 @@
+defaults:
+  - base_sklearn
+
+metrics: [accuracy_score,hinge_loss]
+is_scale: True
+
+name: sk_rbf_svm
+model:
+  _target_: sklearn.svm.SVC
+  dual: False
+  kernel: rbf
+  C: 1 #smaller regularizes more
+  gamma: scale
+  cache_size: 1900 # seems to bug after 2k https://github.com/scikit-learn/scikit-learn/issues/8012
+  class_weight: null # might want to use "balanced"
+  random_state: ${seed}

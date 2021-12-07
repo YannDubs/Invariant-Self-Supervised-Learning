@@ -58,10 +58,12 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_Mlpnano="MLP --" \
        +kwargs.pretty_renamer.Exact_Mlp="MLP ++" \
        +kwargs.pretty_renamer.Exact="Linear" \
-       +kwargs.pretty_renamer.Mlp_H2048_L2="MLP ++" \
        +kwargs.pretty_renamer.Mlp_H10_L1="MLP --" \
+       +kwargs.pretty_renamer.Mlp_H2048_L2="MLP ++" \
        +plot_heatmap.x="repr" \
        +plot_heatmap.y="pred" \
+       +plot_heatmap.order_rows=["mlp_h2048_l2","mlp_h10_l1","linear"] \
+       +plot_heatmap.order_cols=["exact_mlp","exact_mlpnano","exact"] \
        +plot_heatmap.cols_to_agg=["seed"] \
        +plot_heatmap.metric="train/pred/acc_mean" \
        +plot_heatmap.filename="heatmap_V" \
@@ -73,10 +75,12 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_Mlpnano="MLP --" \
        +kwargs.pretty_renamer.Exact_Mlp="MLP ++" \
        +kwargs.pretty_renamer.Exact="Linear" \
-       +kwargs.pretty_renamer.Mlp_H2048_L2="MLP ++" \
        +kwargs.pretty_renamer.Mlp_H10_L1="MLP --" \
+       +kwargs.pretty_renamer.Mlp_H2048_L2="MLP ++" \
        +plot_heatmap.x="repr" \
        +plot_heatmap.y="pred" \
+       +plot_heatmap.order_rows=["mlp_h2048_l2","mlp_h10_l1","linear"] \
+       +plot_heatmap.order_cols=["exact","exact_mlpnano","exact_mlp"] \
        +plot_heatmap.cols_to_agg=["seed"] \
        +plot_heatmap.metric="train/pred/acc_agg_min_mean" \
        +plot_heatmap.filename="heatmap_V_min" \

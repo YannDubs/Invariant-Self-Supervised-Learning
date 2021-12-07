@@ -38,12 +38,17 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-scheduler@scheduler_issl=warm_unifmultistep125,whitening_quick,warm_unifmultistep100,warm_unifmultistep25
+scheduler@scheduler_issl=warm_unifmultistep125,whitening_quick,warm_unifmultistep100,warm_unifmultistep25,cosine
 data@data_repr=tinyimagenet trainer.max_epochs=500,1000
 "
 
+kwargs_multi="
+scheduler@scheduler_issl=cosine
+data@data_repr=tinyimagenet trainer.max_epochs=500,1000
+"
+# use warm_unifmultistep25 with 500 and warm_unifmultistep100 with 1000
 
-# difference for gen: linear resnet / augmentations / larger dim
+
 
 
 if [ "$is_plot_only" = false ] ; then

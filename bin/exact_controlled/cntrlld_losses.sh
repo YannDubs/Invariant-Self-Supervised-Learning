@@ -54,7 +54,23 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        +summarize_metrics.folder_col="beta" \
-       "+merge_cols.losses=['train/pred/log_loss_agg','train/pred/hinge_loss_agg','train/pred/ridge_clf_loss_agg']" \
+       "+merge_cols.losses=['train/pred/log_loss','train/pred/hinge_loss','train/pred/ridge_clf_loss']" \
        "+merge_cols.min_losses=['train/pred/log_loss_agg_min','train/pred/hinge_loss_agg_min','train/pred/ridge_clf_loss_agg_min']" \
-       "+merge_cols.test_losses=['test/pred/log_loss_agg','test/pred/hinge_loss_agg','test/pred/ridge_clf_loss_agg']" \
+       "+merge_cols.test_losses=['test/pred/log_loss','test/pred/hinge_loss','test/pred/ridge_clf_loss']" \
+       "+merge_cols.test_min_losses=['test/pred/log_loss_agg_min','test/pred/hinge_loss_agg_min','test/pred/ridge_clf_loss_agg_min']" \
        agg_mode=[summarize_metrics]
+
+# for plotting use:
+#import pandas as pd
+#
+#df = pd.read_csv("summarized_metrics_predictor.csv").round(decimals=3)
+#
+#from IPython.display import display
+#
+#display(df.pivot_table(values="test_min_losses_mean",index="repr",columns="pred"))
+#print()
+#display(df.pivot_table(values="test_min_losses_sem",index="repr",columns="pred"))
+#
+#print()
+#display(1-df[["repr","pred",'test/pred/accuracy_score_agg_min_mean']].set_index(["repr","pred"]))
+#display(df[["repr","pred",'test/pred/accuracy_score_agg_min_sem']].set_index(["repr","pred"]))

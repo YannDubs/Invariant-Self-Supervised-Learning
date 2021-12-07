@@ -36,15 +36,14 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 optimizer_issl.kwargs.lr=3e-3
-scheduler@scheduler_issl=whitening_quick
+scheduler@scheduler_issl=warm_unifmultistep25
 "
 
-
-# difference for gen: linear resnet / augmentations / larger dim
+# weight decay can probably be decreased
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "+encoder.kwargs.arch_kwargs.bottleneck=128 encoder.z_shape=2048,4096,8192" "encoder.z_shape=256,2048,4096" # "" "optimizer_issl.kwargs.weight_decay=0,1e-7,1e-5,1e-4" "data_repr.kwargs.batch_size=128,256,1024" "decodability.kwargs.is_pred_proj_same=True" "decodability.kwargs.projector_kwargs.hid_dim=4096" "decodability.kwargs.projector_kwargs.n_hid_layers=3" "regularizer=huber representor.loss.beta=1e-6,1e-5,1e-4" "scheduler@scheduler_issl=cosine,warm_unifmultistep100,warm_unifmultistep125,warm_unifmultistep25" "decodability.kwargs.temperature=0.1,0.3,0.7"
+  for kwargs_dep in  "encoder.z_shape=2048"  "" "optimizer_issl.kwargs.weight_decay=0,1e-8,1e-7" "data_repr.kwargs.batch_size=1024" "decodability.kwargs.is_pred_proj_same=True"   "regularizer=huber representor.loss.beta=1e-6" "scheduler@scheduler_issl=cosine" "decodability.kwargs.temperature=0.3"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

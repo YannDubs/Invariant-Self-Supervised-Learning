@@ -764,6 +764,8 @@ class ResultAggregator(PostPlotter):
         plot_config_kwargs: dict = {},
         xlabel: str = "",
         ylabel: str = "",
+        order_rows: Optional[list] = None,
+        order_cols: Optional[list] = None,
         **kwargs,
     ):
         """Plot a heatmap.
@@ -795,6 +797,9 @@ class ResultAggregator(PostPlotter):
         is_percentage : bool, optional
             Whether to use percentage for the annotation of the heatmap.
 
+        order_rows, order_cols : list of str, optional
+            Order of rows and columns.
+
         kwargs :
             Additional arguments to `sns.heatmap`.
         """
@@ -807,6 +812,12 @@ class ResultAggregator(PostPlotter):
 
         if cbar_label is not None:
             dflt_kwargs["cbar_kws"] = {"label": self.pretty_renamer[cbar_label]}
+
+        if order_rows is not None:
+            order_rows = [self.pretty_renamer[r] for r in order_rows]
+
+        if order_cols is not None:
+            order_cols = [self.pretty_renamer[c] for c in order_cols]
 
         dflt_kwargs.update(kwargs)
 
@@ -822,7 +833,14 @@ class ResultAggregator(PostPlotter):
         )
 
         sns_plot.map_dataframe(
-            draw_heatmap, x, y, metric, normalize=normalize, **dflt_kwargs,
+            draw_heatmap,
+            x,
+            y,
+            metric,
+            normalize=normalize,
+            order_rows=order_rows,
+            order_cols=order_cols,
+            **dflt_kwargs,
         )
         sns_plot.fig.tight_layout()
 
@@ -832,7 +850,9 @@ class ResultAggregator(PostPlotter):
 # HELPERS
 
 
-def draw_heatmap(x, y, values, normalize=None, **kwargs):
+def draw_heatmap(
+    x, y, values, normalize=None, order_rows=None, order_cols=None, **kwargs
+):
     data = kwargs.pop("data")
     mat = data.pivot(index=y, columns=x, values=values)
 
@@ -848,6 +868,14 @@ def draw_heatmap(x, y, values, normalize=None, **kwargs):
         )
     else:
         raise ValueError(f"Unknown normalize={normalize}")
+
+    if order_rows:
+        mat.index = pd.CategoricalIndex(mat.index, categories=order_rows)
+        mat.sort_index(axis=0, inplace=True)
+
+    if order_cols:
+        mat.columns = pd.CategoricalIndex(mat.columns, categories=order_cols)
+        mat.sort_index(axis=1, inplace=True)
 
     ax = sns.heatmap(mat, **kwargs)
     ax.invert_yaxis()

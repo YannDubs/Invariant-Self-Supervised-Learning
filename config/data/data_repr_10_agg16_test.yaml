@@ -1,7 +1,7 @@
 defaults:
   - base_subset
 
-name: "{name}_${.kwargs.subset_train_size}_agg16_test" # when using is_copy_repr name will be formatted
+name: "{name}_${.kwargs.subset_train_size}_agg${.kwargs.dataset_kwargs.max_k_ary_agg}_test" # when using `is_copy_repr` name will be formatted
 
 kwargs:
   subset_train_size: 10

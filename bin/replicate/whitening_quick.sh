@@ -38,17 +38,22 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-scheduler@scheduler_issl=warm_unifmultistep125,whitening_quick,warm_unifmultistep100,warm_unifmultistep25
+scheduler@scheduler_issl=warm_unifmultistep25,warm_unifmultistep125,warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep27,warm_unifmultistep9
 "
-# best is warm_unifmultistep25
-# followed by warm_unifmultistep125
+# TINYIMAGENET:
+# good: slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
+# slight advantange to warm_unifmultistep9 + slowness doesn't change much
 
+# STL:
+# good: warm_unifmultistep25,warm_unifmultistep27
+
+# CIFAR:
+# good: slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
+
+# => unless cosine is good you should use *warm_unifmultistep25* whenever epochs <= 500 and *warm_unifmultistep100* whevenver epochs >=1000
 kwargs_multi="
-scheduler@scheduler_issl=slowwarm_unifmultistep25,warm_unifmultistep27,warm_unifmultistep9
+scheduler@scheduler_issl=cosine
 "
-
-
-# difference for gen: linear resnet / augmentations / larger dim
 
 
 if [ "$is_plot_only" = false ] ; then
