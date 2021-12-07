@@ -51,7 +51,7 @@ python utils/aggregate.py \
        patterns.representor=null \
        "+col_val_subset.beta=[1e-3]" \
        +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Different" \
        +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Cntr_10000A="Finer: 10000" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
@@ -75,7 +75,7 @@ python utils/aggregate.py \
        patterns.representor=null \
        "+col_val_subset.beta=[1e-3]" \
        +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Different" \
        +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Cntr_10000A="Finer: 10000" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \

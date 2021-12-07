@@ -2,4 +2,4 @@ defaults:
   - base
 
 data: data_repr
-predictor: sk_approx_rbf_svm
+predictor: sk_approxrbf_svm

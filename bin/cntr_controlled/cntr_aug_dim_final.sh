@@ -53,7 +53,7 @@ wait
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_1000A_Shuffle="Different" \
        +kwargs.pretty_renamer.Cntr_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
        +kwargs.pretty_renamer.Cntr_100A="Finer: 100" \

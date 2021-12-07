@@ -3,6 +3,5 @@ is_scale: False
 is_preprocess: False
 scaler:
   _target_: sklearn.preprocessing.StandardScaler
-preprocesser:
-  _target_: sklearn.preprocessing.kernel_approximation.RBFSampler
+preprocesser: {}
 metrics: [accuracy_score] # balanced_accuracy_score

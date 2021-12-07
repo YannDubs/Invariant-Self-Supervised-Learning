@@ -60,7 +60,7 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Exact_1000A="Minimal--" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Not Sufficient" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Different" \
        +kwargs.pretty_renamer.Exact="Minimal++" \
        +plot_scatter_lines.x="zdim" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \

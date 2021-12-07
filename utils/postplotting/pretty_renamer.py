@@ -9,6 +9,10 @@ PRETTY_RENAMER = StrFormatter(
     substring_replace={
         # Math stuff
         "beta": r"$\beta$",
+        "calFissl": r"$\mathcal{F}_{issl}$",
+        "calFpred": r"$\mathcal{F}_{pred}$",
+        "calF --": r"$\mathcal{F}^{-}$",
+        "calF ++": r"$\mathcal{F}^{+}$",
         "calF": r"$\mathcal{F}$",
         " --": r"⁻",
         " ++": r"⁺",

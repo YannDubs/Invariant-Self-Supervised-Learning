@@ -2,4 +2,4 @@ defaults:
   - base_subset
 
 kwargs:
-  subset_train_size: 20
+  subset_train_size: 64

@@ -371,8 +371,6 @@ class SklearnTrainer:
             }
 
     def fit(self, model: Pipeline, datamodule: SklearnDataModule):
-        breakpoint()
-
         if self.is_agg_target:
             model = MultiOutputClassifier(model)
 

@@ -58,7 +58,7 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Cntr_250A="Minimal--" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
        +kwargs.pretty_renamer.Cntr_Noa="None" \
-       +kwargs.pretty_renamer.Cntr_Coarsera="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_Coarsera="Different" \
        +kwargs.pretty_renamer.Cntr="Minimal++" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \

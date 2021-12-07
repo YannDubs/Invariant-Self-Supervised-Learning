@@ -1,6 +1,9 @@
 defaults:
   - base_sklearn
 
+# if too slow could significantly improve by using FAISS: https://github.com/scikit-learn-contrib/DESlib/blob/master/deslib/util/faiss_knn_wrapper.py#L19-L203
+# or even quicker on GPU: https://machinelearningapplied.com/fast-gpu-based-nearest-neighbors-with-faiss/
+
 metrics: [accuracy_score]
 is_scale: True
 
@@ -9,7 +12,4 @@ model:
   _target_: sklearn.neighbors.KNeighborsClassifier
   n_neighbors: 5
   weights: uniform
-  C: 1 #smaller regularizes more
-  class_weight: null # might want to use "balanced"
-  random_state: ${seed}
   n_jobs: -1

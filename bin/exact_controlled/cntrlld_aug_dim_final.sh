@@ -59,7 +59,7 @@ python utils/aggregate.py \
        "+col_val_subset.repr=[exact,exact_100A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        "+col_val_subset.zdim=[5,10,100,1000]" \
        +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Not Sufficient" \
+       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
        +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
        +kwargs.pretty_renamer.Exact_Stda="Standard" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
@@ -77,9 +77,11 @@ python utils/aggregate.py \
        +plot_scatter_lines.legend_out=True \
        "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       agg_mode=[plot_scatter_lines]
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
 
 
 python utils/aggregate.py \
        experiment=$experiment  \
-       agg_mode=[summarize_metrics]
+       agg_mode=[summarize_metrics] \
+       $add_kwargs

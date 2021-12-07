@@ -66,7 +66,7 @@ python utils/aggregate.py \
        +kwargs.pretty_renamer.Cntr_1000A="Minimal--" \
        +kwargs.pretty_renamer.Cntr_Stda="Standard" \
        +kwargs.pretty_renamer.Cntr_Noa="None" \
-       +kwargs.pretty_renamer.Cntr_Coarsera="Not Sufficient" \
+       +kwargs.pretty_renamer.Cntr_Coarsera="Different" \
        +kwargs.pretty_renamer.Cntr="Minimal++" \
        +plot_scatter_lines.x="zdim" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \

@@ -7,7 +7,6 @@ is_scale: True
 name: sk_rbf_svm
 model:
   _target_: sklearn.svm.SVC
-  dual: False
   kernel: rbf
   C: 1 #smaller regularizes more
   gamma: scale
