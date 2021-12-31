@@ -42,11 +42,8 @@ scheduler@scheduler_issl=warm_unifmultistep125,whitening_quick,warm_unifmultiste
 data@data_repr=tinyimagenet trainer.max_epochs=500,1000
 "
 
-kwargs_multi="
-scheduler@scheduler_issl=cosine
-data@data_repr=tinyimagenet trainer.max_epochs=500,1000
-"
 # use warm_unifmultistep25 with 500 and warm_unifmultistep100 with 1000
+# cosine is actually better for both !
 
 
 

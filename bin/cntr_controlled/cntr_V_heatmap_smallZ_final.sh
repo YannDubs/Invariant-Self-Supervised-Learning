@@ -51,6 +51,24 @@ fi
 
 wait
 
+python utils/aggregate.py \
+       experiment=$experiment  \
+       patterns.representor=null \
+       +kwargs.pretty_renamer.Cntr_Stda_Mlpxs="MLP" \
+       +kwargs.pretty_renamer.Cntr_Stda="Linear" \
+       +kwargs.pretty_renamer.Mlp_H32_L1="MLP" \
+       +kwargs.pretty_renamer.Pred="Predictor" \
+       +kwargs.pretty_renamer.Repr="ISSL" \
+       +plot_heatmap.x="repr" \
+       +plot_heatmap.y="pred" \
+       +plot_heatmap.cols_to_agg=["seed"] \
+       +plot_heatmap.metric="train/pred/acc_agg_min_mean" \
+       +plot_heatmap.filename="heatmap_V_min_square" \
+       +plot_heatmap.square=True \
+       +plot_heatmap.cbar=False \
+       +plot_heatmap.plot_config_kwargs.font_scale=2 \
+       agg_mode=[plot_heatmap] \
+       $add_kwargs
 
 python utils/aggregate.py \
        experiment=$experiment  \

@@ -48,125 +48,167 @@ fi
 
 wait
 
+
+
+
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_agg16]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.Test="Tesst" \
+       +kwargs.pretty_renamer.Train="Test" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_tr" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_agg16]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
+
 
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_agg16]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.Test="Tesst" \
+       +kwargs.pretty_renamer.Train="Test" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="train/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_tr" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_agg16]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
+
+
+
 
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_1000_agg16]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.Test="Tesst" \
+       +kwargs.pretty_renamer.Train="Test" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
+       +plot_scatter_lines.y="train/pred/accuracy_score" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_mini_tr" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
 
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_1000_agg16]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_mini_tr" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
+
+
+
 
 python utils/aggregate.py \
        experiment=$experiment  \
        "+col_val_subset.datapred=[cifar10_1000_agg16_test]" \
        "+col_val_subset.epochs=[50,100,200,500,1000]" \
-       +collect_data.params_to_add.epochs="trainer.max_epochs" \
        patterns.representor=null \
-       +plot_scatter_lines.x="Epochs" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_epochs_vs_acc_mini" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines]
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.datapred=[cifar10_1000_agg16_test]" \
-       "+col_val_subset.epochs=[50,100,200,500,1000]" \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
-       patterns.representor=null \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +plot_scatter_lines.x="Epochs" \
        +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_epochs_vs_acc_min_mini" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
-       +plot_scatter_lines.logbase_x=1 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
        agg_mode=[plot_scatter_lines]
+
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       "+col_val_subset.datapred=[cifar10_1000_agg16_test]" \
+       "+col_val_subset.epochs=[50,100,200,500,1000]" \
+       patterns.representor=null \
+       +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
+       +plot_scatter_lines.x="Epochs" \
+       +plot_scatter_lines.y="test/pred/accuracy_score" \
+       +plot_scatter_lines.filename="lines_epochs_vs_acc_mini" \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="regularize" \
+       +plot_scatter_lines.logbase_x=null \
+       +plot_scatter_lines.legend_out=True \
+       agg_mode=[plot_scatter_lines]
+
 
 python utils/aggregate.py \
        experiment=$experiment  \

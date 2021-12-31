@@ -50,10 +50,8 @@ scheduler@scheduler_issl=warm_unifmultistep25,warm_unifmultistep125,warm_unifmul
 # CIFAR:
 # good: slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
 
-# => unless cosine is good you should use *warm_unifmultistep25* whenever epochs <= 500 and *warm_unifmultistep100* whevenver epochs >=1000
-kwargs_multi="
-scheduler@scheduler_issl=cosine
-"
+# => you should use *warm_unifmultistep25* whenever epochs <= 500 and *warm_unifmultistep100* whevenver epochs >=1000
+
 
 
 if [ "$is_plot_only" = false ] ; then

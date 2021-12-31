@@ -800,6 +800,9 @@ class ResultAggregator(PostPlotter):
         order_rows, order_cols : list of str, optional
             Order of rows and columns.
 
+        row_title, col_title : str, optional
+            Name of the columns and row. Can use {col_var} and {col_name}.
+
         kwargs :
             Additional arguments to `sns.heatmap`.
         """

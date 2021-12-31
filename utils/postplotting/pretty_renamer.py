@@ -18,6 +18,8 @@ PRETTY_RENAMER = StrFormatter(
         " ++": r"⁺",
         # General
         "_": " ",
+        "true": "True",
+        "false": "False",
         "Resnet": "ResNet",
         "Lr": "Learning Rate",
         "Test/Pred/": "",

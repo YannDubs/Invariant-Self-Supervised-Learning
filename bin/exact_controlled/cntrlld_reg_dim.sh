@@ -30,12 +30,14 @@ timeout=$time
 
 kwargs_multi="
 seed=1,2,3
-trainer.max_epochs=50,100
-encoder.z_shape=10,16,32,64
+encoder.z_shape=10,16,32,64,128,256
 "
 
+
+
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "regularizer=l2Mx representor.loss.beta=1e-1" "regularizer=none representor.loss.beta=0"
+  for kwargs_dep in  "regularizer=none representor.loss.beta=0 trainer.max_epochs=50,100" "regularizer=l2Mx representor.loss.beta=1e-1 trainer.max_epochs=50,100,200"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -47,20 +49,23 @@ fi
 
 wait
 
+
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
        +kwargs.pretty_renamer.Test="Tesst" \
        +kwargs.pretty_renamer.Train="Test" \
+       +kwargs.pretty_renamer.L2Mx='str(True)' \
+       +kwargs.pretty_renamer.None='str(False)' \
        +collect_data.params_to_add.epochs="trainer.max_epochs" \
+       +collect_data.params_to_add.regularize="regularizer.name" \
        +plot_scatter_lines.x="zdim" \
        +plot_scatter_lines.y="train/pred/accuracy_score_agg_min" \
        +plot_scatter_lines.filename="lines_acc_vs_dim_reg" \
-       +plot_scatter_lines.hue="beta" \
-       +plot_scatter_lines.style="beta" \
+       +plot_scatter_lines.hue="regularize" \
+       +plot_scatter_lines.style="epochs" \
        +plot_scatter_lines.logbase_x=2 \
        +plot_scatter_lines.legend_out=True \
-       +plot_scatter_lines.folder_col="epochs" \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
 
