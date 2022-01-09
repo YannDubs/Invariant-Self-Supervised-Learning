@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+from issl.distributions import LearnedSoftmax
+
 __all__ = ["GenerativeISSL"]
 
 from issl.architectures import get_Architecture
@@ -59,6 +61,7 @@ class GenerativeISSL(nn.Module):
         predecode_n_Mx: Optional[int] = None,
         normalized=None,
         pred_loss_kwargs: dict = {},
+        softmax_kwargs: dict = {},
     ) -> None:
         super().__init__()
 
@@ -71,7 +74,8 @@ class GenerativeISSL(nn.Module):
             Predecoder = get_Architecture(**predecoder_kwargs)
             self.f_MlZ = Predecoder(z_shape, predecode_n_Mx)
             self.f_ZhatlM = get_Architecture(architecture="linear")(predecode_n_Mx, z_shape)
-            self.f_ZhatlZ = nn.Sequential(self.f_MlZ, nn.Softmax(-1), self.f_ZhatlM)
+            self.softmax =  LearnedSoftmax(**softmax_kwargs)
+            self.f_ZhatlZ = nn.Sequential(self.f_MlZ, self.softmax, self.f_ZhatlM)
         else:
             self.f_ZhatlZ = nn.Identity()
 
@@ -111,7 +115,6 @@ class GenerativeISSL(nn.Module):
         other : dict
             Additional values to return.
         """
-
         # shape: [batch_size, *a_shape]
         a_hat = self.suff_stat_AlZ(z)
 
@@ -147,6 +150,9 @@ class GenerativeISSL(nn.Module):
 
         # T for auxiliary task to distinguish from task Y
         logs = dict(H_q_AlZ=neg_log_q_alz.mean())
+
+        if hasattr(self,"softmax"):
+            logs["temperature"] = self.softmax.temperature
 
         other = dict()
         # for plotting (note that they are already unormalized)

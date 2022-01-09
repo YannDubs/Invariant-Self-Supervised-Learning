@@ -24,6 +24,8 @@ data_repr.kwargs.val_size=2
 +trainer.limit_val_batches=0
 representor=std_gen
 timeout=$time
+encoder.z_shape=128
++decodability.kwargs.softmax_kwargs.temperature=0.5,1,3
 "
 
 
@@ -35,12 +37,10 @@ seed=1
 
 if [ "$is_plot_only" = false ] ; then
   #noA stdA_no_switch stdA_and_optA softmax
-  for kwargs_dep in  "representor=std_gen_resnet,std_gen_resnetlin,std_gen_linear" "representor=gen_stdA_resnetlin,gen_stdA_clfresnet representor.is_switch_x_aux_trgt=False" "representor=gen_stdA_resnet,gen_stdA_resnetlin,gen_stdA_linear,gen_optA_resnet,gen_optA_resnetlin,gen_optA_linear" "representor=gen_optA_clfresnet,gen_stdA_clfresnet,std_gen_clfresnet decodability.kwargs.predecode_n_Mx=10,100,1000"
+  for kwargs_dep in  "representor=gen_optA_clfresnet decodability.kwargs.predecode_n_Mx=10 +decodability.kwargs.softmax_kwargs.is_gumbel=True,False" "representor=gen_optA_clfresnet decodability.kwargs.predecode_n_Mx=10 +decodability.kwargs.softmax_kwargs.is_gumbel=True +decodability.kwargs.softmax_kwargs.is_hard=True" # "representor=gen_stdA_resnet,gen_stdA_resnetlin,gen_stdA_linear,gen_optA_resnet,gen_optA_resnetlin,gen_optA_linear,std_gen_resnet,std_gen_resnetlin,std_gen_linear" "representor=gen_optA_clfresnet,gen_stdA_clfresnet,std_gen_clfresnet decodability.kwargs.predecode_n_Mx=10,100,1000" "representor=gen_stdA_resnetlin,gen_stdA_clfresnet representor.is_switch_x_aux_trgt=False"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
-
-    wait
 
     sleep 3
 

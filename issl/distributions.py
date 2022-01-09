@@ -361,3 +361,48 @@ class GumbelCategorical(RelaxedOneHotCategorical):
             samples = hard - soft.detach() + soft
 
         return samples
+
+class LearnedSoftmax(nn.Module):
+    def __init__(self, temperature=3, is_train_temperature=True, min_temperature=0.05, is_gumbel=False, is_hard=False):
+        super().__init__()
+
+        self.softmax = nn.Softmax(dim=-1)
+        self.is_gumbel = is_gumbel
+        self.is_hard = is_hard
+
+        self.init_temperature = temperature
+        self.is_train_temperature = is_train_temperature
+        self.min_temperature = min_temperature
+
+        if self.is_train_temperature:
+            self.log_temperature = nn.Parameter(
+                torch.log(torch.tensor(self.init_temperature))
+            )
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        weights_init(self)
+
+        if self.is_train_temperature:
+            self.log_temperature = nn.Parameter(
+                torch.log(torch.tensor(self.init_temperature))
+            )
+
+    @property
+    def temperature(self):
+        if self.is_train_temperature:
+            temperature = torch.clamp(
+                self.log_temperature.exp(), min=self.min_temperature, max=10
+            )
+        else:
+            temperature = self.init_temperature
+        return temperature
+
+    def forward(self, logits):
+        if self.is_gumbel:
+            y_hat = GumbelCategorical(self.temperature, logits=logits, is_hard=self.is_hard).rsample()
+        else:
+            y_hat = self.softmax(logits / self.temperature)
+
+        return y_hat

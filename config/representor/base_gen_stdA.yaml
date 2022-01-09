@@ -4,6 +4,7 @@ defaults:
 
 representor:
   name: base_gen_stdA
+  is_switch_x_aux_trgt: True # augmentations will be inputs so R[X|\tilde{Z}]
 
 data_repr:
   kwargs:
