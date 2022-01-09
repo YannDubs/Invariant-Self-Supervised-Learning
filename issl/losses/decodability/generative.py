@@ -68,9 +68,10 @@ class GenerativeISSL(nn.Module):
         self.normalized = normalized
         self.is_img_out = is_img_shape(a_shape)
         self.pred_loss_kwargs = pred_loss_kwargs
+        self.predecode_n_Mx = predecode_n_Mx
 
         # map Z -> \hat{M}(X)
-        if predecode_n_Mx is not None:
+        if self.predecode_n_Mx is not None:
             Predecoder = get_Architecture(**predecoder_kwargs)
             self.f_MlZ = Predecoder(z_shape, predecode_n_Mx)
             self.f_ZhatlM = get_Architecture(architecture="linear")(predecode_n_Mx, z_shape)
@@ -81,7 +82,8 @@ class GenerativeISSL(nn.Module):
 
         # map Z -> sufficient statistics for q(A|Z)
         Decoder = get_Architecture(**decoder_kwargs)
-        self.suff_stat_AlZ = nn.Sequential(self.f_ZhatlZ, Decoder(z_shape, a_shape))
+        self.suff_stat_AlZhat = Decoder(z_shape, a_shape)
+        self.suff_stat_AlZ = nn.Sequential(self.f_ZhatlZ, self.suff_stat_AlZhat)
 
         if self.normalized is not None:
             self.unnormalizer = UnNormalizer(self.normalized)
@@ -152,7 +154,7 @@ class GenerativeISSL(nn.Module):
         logs = dict(H_q_AlZ=neg_log_q_alz.mean())
 
         if hasattr(self,"softmax"):
-            logs["temperature"] = self.softmax.temperature
+            logs["temperature"] = self.softmax.get_temperature()
 
         other = dict()
         # for plotting (note that they are already unormalized)

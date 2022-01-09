@@ -25,7 +25,6 @@ data_repr.kwargs.val_size=2
 representor=std_gen
 timeout=$time
 encoder.z_shape=128
-+decodability.kwargs.softmax_kwargs.temperature=0.5,1,3
 "
 
 
@@ -34,6 +33,15 @@ kwargs_multi="
 seed=1
 "
 #run seed 2,3
+
+kwargs_multi="
+seed=1
++decodability.kwargs.softmax_kwargs.temperature=3
++decodability.kwargs.softmax_kwargs.is_train_temp=False
++decodability.kwargs.softmax_kwargs.is_anneal_temp=True
+data_repr.kwargs.dataset_kwargs.aux_target='representative'
+trainer.max_epochs=25
+"
 
 if [ "$is_plot_only" = false ] ; then
   #noA stdA_no_switch stdA_and_optA softmax

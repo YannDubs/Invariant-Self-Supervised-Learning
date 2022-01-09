@@ -33,7 +33,7 @@ import issl
 from issl import ISSLModule, Predictor
 from issl.callbacks import (
     LatentDimInterpolator,
-    ReconstructImages,
+    ReconstructImages, ReconstructMx,
 )
 from issl.helpers import MAWeightUpdate, check_import, prod
 from issl.predictors import SklearnPredictor, get_representor_predictor
@@ -405,6 +405,10 @@ def get_callbacks(
             if cfg.trainer.gpus <= 1:
                 # TODO does not work (D)DP because of self.store
                 callbacks += [ReconstructImages()]
+
+            if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
+                callbacks += [ReconstructMx()]
+
 
     if hasattr(cfg.decodability.kwargs, "is_ema") and cfg.decodability.kwargs.is_ema:
         callbacks += [MAWeightUpdate()]

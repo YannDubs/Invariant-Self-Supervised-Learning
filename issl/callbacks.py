@@ -114,6 +114,32 @@ class ReconstructImages(PlottingCallback):
 
         yield x, dict(name="input_img")
 
+class ReconstructMx(PlottingCallback):
+    """Reconstruct the estimated M(X).
+
+    Notes
+    -----
+    - The model should have attribute `f_ZhatlM` and `suff_stat_AlZhat`.
+    """
+    def __init__(self, plot_interval: int = 5, **kwargs) -> None: #DEV: keeping only due to plot interval, should rm
+        super().__init__(plot_interval = plot_interval, **kwargs)
+
+    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        n_Mx = pl_module.loss_decodability.predecode_n_Mx
+
+        with torch.no_grad():
+            pl_module.eval()
+            with plot_config(**self.plot_config_kwargs, font_scale=2):
+                Ms = torch.eye(n_Mx, device=pl_module.device)
+                Zhat = pl_module.loss_decodability.f_ZhatlM(Ms)
+                img = pl_module.loss_decodability.suff_stat_AlZhat(Zhat)
+                img = torch.sigmoid(img) # put back on [0,1]
+
+                fig = tensors_to_fig(img,n_cols=10)
+
+        pl_module.train()
+
+        yield fig, dict(name="rec_Mx")
 
 class LatentDimInterpolator(PlottingCallback):
     """Logs interpolated images.
