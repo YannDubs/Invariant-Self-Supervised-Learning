@@ -1,9 +1,9 @@
 # @package _global_
 defaults:
-  - base_gen_stdA
+  - base_gen_optA
 
 representor:
-  name: gen_stdA_resnet
+  name: gen_optA_resnet
 
 decodability:
   kwargs:

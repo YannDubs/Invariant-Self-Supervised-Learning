@@ -3,9 +3,9 @@ defaults:
   - std_gen_resnet
 
 representor:
-  name: std_gen_resnetlin
+  name: std_gen_clfresnet
 
 decodability:
   kwargs:
     decoder_kwargs:
-      activation: Identity
+      predecode_n_Mx: 100

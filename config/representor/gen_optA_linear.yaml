@@ -1,11 +1,11 @@
 # @package _global_
 defaults:
-  - std_gen_resnet
+  - base_gen_optA
 
 representor:
-  name: std_gen_resnetlin
+  name: gen_optA_linear
 
 decodability:
   kwargs:
     decoder_kwargs:
-      activation: Identity
+      architecture: linear

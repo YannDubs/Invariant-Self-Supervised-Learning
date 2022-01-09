@@ -1,27 +1,6 @@
 # @package _global_
 defaults:
-  - base@representor
-  - override /regularizer: none
-  - override /decodability: generative
+  - gen_optA_resnetlin
 
 representor:
   name: gen
-
-decodability:
-  kwargs:
-    decoder_kwargs:
-      architecture: resnet_transpose
-      base: resnet18
-      activation: Identity
-
-data_repr:
-  kwargs:
-    dataset_kwargs:
-      aux_target:  "augmentation"
-      a_augmentations: ["label"] 
-      train_x_augmentations: []
-
-encoder:
-  z_shape: 1024
-  is_normalize_Z: False
-

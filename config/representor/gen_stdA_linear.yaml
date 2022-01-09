@@ -3,11 +3,10 @@ defaults:
   - base_gen_stdA
 
 representor:
-  name: gen_stdA_resnet
+  name: gen_stdA_linear
 
 decodability:
   kwargs:
     decoder_kwargs:
-      architecture: resnet_transpose
-      base: resnet18
-      activation: ReLU
+      architecture: linear
+

@@ -9,6 +9,9 @@ kwargs:
   a_shape: ${data.aux_shape}
   decoder_kwargs:
     architecture: linear
+  predecode_n_Mx: null
+  predecoder_kwargs:
+    architecture: linear
   normalized: ${data.normalized}
   pred_loss_kwargs:
     is_classification: ${data.aux_is_clf}

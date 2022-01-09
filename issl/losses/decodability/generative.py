@@ -1,5 +1,6 @@
 """Generative proxies to minimize R[A|Z] and thus ensure decodability."""
 from __future__ import annotations
+from typing import Optional
 
 from collections import Sequence
 
@@ -34,6 +35,12 @@ class GenerativeISSL(nn.Module):
     decoder_kwargs : dict, optional
         Arguments to get `Decoder` from `get_Architecture`.
 
+    predecoder_kwargs : dict, optional
+        Arguments to get `Predecoder` from `get_Architecture`.
+
+    predecode_n_Mx : int, optional
+        Output of the predecoder, optimal would be number of maximal invariant. If `None` does not use a predecoder.
+
     normalized : str, optional
         Name of the normalization to undo. If `None` then nothing.  This is important to know whether needs to be
         unnormalized when comparing in case you are reconstructing the input. Currently only works for colored
@@ -48,18 +55,29 @@ class GenerativeISSL(nn.Module):
         z_shape: Sequence[int],
         a_shape: Sequence[int],
         decoder_kwargs: dict = {"architecture": "linear"},
+        predecoder_kwargs: dict = {"architecture": "linear"},
+        predecode_n_Mx: Optional[int] = None,
         normalized=None,
         pred_loss_kwargs: dict = {},
     ) -> None:
         super().__init__()
 
-        Decoder = get_Architecture(**decoder_kwargs)
-
-        # this will return the sufficient statistics for q(Y|Z)
-        self.suff_stat_AlZ = Decoder(z_shape, a_shape)
         self.normalized = normalized
         self.is_img_out = is_img_shape(a_shape)
         self.pred_loss_kwargs = pred_loss_kwargs
+
+        # map Z -> \hat{M}(X)
+        if predecode_n_Mx is not None:
+            Predecoder = get_Architecture(**predecoder_kwargs)
+            self.f_MlZ = Predecoder(z_shape, predecode_n_Mx)
+            self.f_ZhatlM = get_Architecture(architecture="linear")(predecode_n_Mx, z_shape)
+            self.f_ZhatlZ = nn.Sequential(self.f_MlZ, nn.Softmax(-1), self.f_ZhatlM)
+        else:
+            self.f_ZhatlZ = nn.Identity()
+
+        # map Z -> sufficient statistics for q(A|Z)
+        Decoder = get_Architecture(**decoder_kwargs)
+        self.suff_stat_AlZ = nn.Sequential(self.f_ZhatlZ, Decoder(z_shape, a_shape))
 
         if self.normalized is not None:
             self.unnormalizer = UnNormalizer(self.normalized)

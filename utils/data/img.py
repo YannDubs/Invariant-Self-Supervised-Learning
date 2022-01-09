@@ -442,7 +442,7 @@ class ISSLImgDataset(ISSLDataset):
                 shape[-1], dataset=self.dataset_name
             )
         except ValueError:
-            logger.exception(f"Could load dataset-specific augmentation. Error:")
+            logger.debug(f"Could load dataset-specific augmentation for {self.dataset_name}.")
 
         return augmentations
 

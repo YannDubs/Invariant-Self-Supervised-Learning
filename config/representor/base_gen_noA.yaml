@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - base_gen_optA
+
+representor:
+  name: base_gen_noA
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "input"
+      a_augmentations: []
+      train_x_augmentations: []

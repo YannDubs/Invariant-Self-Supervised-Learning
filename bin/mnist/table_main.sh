@@ -30,12 +30,12 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=exact,exact_stdA,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,std_cntr,cntr,cntr_stdA,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_stoch,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_stoch,gen_stdA_V,exact_stdA_mlp,cntr_stdA_mlplin,slfdstl_prior_mlplin
+representor=exact,exact_stdA,std_gen_smallZ,gen,gen_stdA,gen_stdA_resnet,gen_stdA_reg,std_cntr,cntr,cntr_stdA,cntr_stdA_mlp,cntr_stdA_reg,cntr_stdA_stoch,slfdstl_cluster,slfdstl_prior,slfdstl_prior_Mx,slfdstl_prior_mlp,slfdstl_prior_reg,slfdstl_prior_stoch,gen_stdA_linear,exact_stdA_mlp,cntr_stdA_mlplin,slfdstl_prior_mlplin
 seed=1,2,3
 "
 
 kwargs_multi="
-representor=gen_stdA_V,gen
+representor=gen_stdA_linear,gen
 seed=1,2,3
 "
 

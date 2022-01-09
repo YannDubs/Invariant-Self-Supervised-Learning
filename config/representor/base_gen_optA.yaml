@@ -5,7 +5,7 @@ defaults:
   - override /decodability: generative
 
 representor:
-  name: gen_stdA_V
+  name: base_gen_optA
 
 decodability:
   kwargs:
@@ -16,7 +16,7 @@ data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "augmentation"
-      a_augmentations: ["data-standard"]
+      a_augmentations: ["label"] 
       train_x_augmentations: []
 
 encoder:

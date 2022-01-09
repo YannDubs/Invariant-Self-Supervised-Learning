@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - gen_stdA_resnet
+
+representor:
+  name: gen_stdA_clfresnet
+
+decodability:
+  kwargs:
+    predecode_n_Mx: 100
