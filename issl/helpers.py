@@ -1312,7 +1312,36 @@ gather_from_gpus = GatherFromGpus.apply
 
 
 class LearnedSoftmax(nn.Module):
-    def __init__(self, dim=-1, temperature=3, is_train_temp=True, is_anneal_temp=False, n_steps=None, min_temperature=0.05, is_gumbel=False, is_hard=False):
+    """Softmax with learned temperature.
+
+    Parameters
+    ----------
+    dim : int, optional
+        Dimension over which to softmax.
+
+    temperature : float, optional
+        Temperature for the softmax. Initialization if training, and actual if fixed.
+
+    temperature_mode : {"train", "anneal", "constant"}, optional
+        Whether to train the temperature, anneal it, or fix ti to a constant.
+
+    is_gumbel : bool, optional
+        Whether to use gumbel softmax.
+
+    is_hard : bool, optional
+        Whether to use a one hot encoding for the forward pass (straight through estimation). Only if gumbel.
+
+    n_steps : int, optional
+        Number of training steps, only used if temperature_mode="anneal".
+
+    min_temperature : float, optional
+        Minimal temperature. Used for lower clipping if training temperature and as final temperature when annealing.
+
+    max_temperature : float, optional
+        Maximal temperature. Used for upper clipping if training temperature and as init temperature when annealing.
+    """
+    def __init__(self, dim: int=-1, temperature: float=1, temperature_mode: str="train",  is_gumbel: bool=False,
+                 is_hard: bool=False, n_steps : Optional[int]=None, min_temperature: float=0.1, max_temperature=10):
         super().__init__()
 
         self.dim = dim
@@ -1320,22 +1349,25 @@ class LearnedSoftmax(nn.Module):
         self.is_hard = is_hard
 
         self.init_temperature = temperature
-        self.is_train_temp = is_train_temp
-        self.is_anneal_temp = is_anneal_temp
+        self.temperature_mode = temperature_mode.lower()
         self.min_temperature = min_temperature
+        self.max_temperature = max_temperature
 
-        if self.is_train_temp:
-            assert not is_anneal_temp
+        if self.temperature_mode == "train":
             self.log_temperature = nn.Parameter(
                 torch.log(torch.tensor(self.init_temperature))
             )
-        elif self.is_anneal_temp:
+        elif self.temperature_mode == "anneal":
             self.annealer = Annealer(
-                self.init_temperature,
+                self.max_temperature,
                 self.min_temperature,
                 n_steps_anneal=n_steps,
-                mode="geometric",
+                mode="linear",
             )
+        elif self.temperature_mode == "constant":
+            pass
+        else:
+            raise ValueError(f"Unknown temperature_mode={self.temperature_mode}.")
 
         self.reset_parameters()
 
@@ -1348,13 +1380,13 @@ class LearnedSoftmax(nn.Module):
             )
 
     def get_temperature(self, is_update=False):
-        if self.is_train_temp:
+        if self.temperature_mode == "train":
             temperature = torch.clamp(
-                self.log_temperature.exp(), min=self.min_temperature, max=5
+                self.log_temperature.exp(), min=self.min_temperature, max=self.max_temperature
             )
-        elif self.is_anneal_temp:
+        elif self.temperature_mode == "anneal":
             temperature = self.annealer(is_update=is_update)
-        else:
+        elif self.temperature_mode == "constant":
             temperature = self.init_temperature
         return temperature
 
@@ -1362,7 +1394,7 @@ class LearnedSoftmax(nn.Module):
         temperature = self.get_temperature(is_update=True)
 
         if self.is_gumbel:
-            y_hat = F.gumbel_softmax(logits, tau=temperature, is_hard=self.is_hard)
+            y_hat = F.gumbel_softmax(logits, tau=temperature, hard=self.is_hard)
         else:
             y_hat = self.softmax(logits / temperature)
 

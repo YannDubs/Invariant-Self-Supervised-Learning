@@ -16,5 +16,8 @@ kwargs:
   softmax_kwargs:
     n_steps: ${data.max_steps}
     is_gumbel: True
+    is_train_temp: True
+    is_anneal_temp: False
+    temperature: 3
   pred_loss_kwargs:
     is_classification: ${data.aux_is_clf}
