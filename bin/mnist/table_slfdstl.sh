@@ -44,7 +44,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  "" "encoder.z_shape=10,1024" "decodability.kwargs.n_Mx=10,1000" "decodability.kwargs.beta_pM_unif=0.01,0.1,10" "decodability.kwargs.ema_weight_prior=null,0.1,0.5" "decodability.kwargs.is_pred_proj_same=True" "decodability.kwargs.projector_kwargs.architecture=mlp"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 3
 

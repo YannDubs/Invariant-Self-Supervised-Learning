@@ -91,7 +91,7 @@ class SelfDistillationISSL(nn.Module):
         },
     ) -> None:
         super().__init__()
-        self.z_shape = z_shape
+        self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         if loss is not None:
             # Allows None such that module that inherit can redefine compute loss
             self.compute_loss = loss

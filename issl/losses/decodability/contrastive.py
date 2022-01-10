@@ -107,7 +107,7 @@ class ContrastiveISSL(nn.Module):
         kernel_kwargs: dict = {"is_normalize": False},  # TODO: rm if not use
     ) -> None:
         super().__init__()
-        self.z_shape = z_shape
+        self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.temperature = temperature
         self.is_train_temperature = is_train_temperature
         self.min_temperature = min_temperature
