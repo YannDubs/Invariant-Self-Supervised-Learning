@@ -15,5 +15,6 @@ kwargs:
   normalized: ${data.normalized}
   softmax_kwargs:
     n_steps: ${data.max_steps}
+    is_gumbel: True
   pred_loss_kwargs:
     is_classification: ${data.aux_is_clf}

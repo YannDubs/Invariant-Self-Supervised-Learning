@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from issl.distributions import LearnedSoftmax
+from issl.helpers import LearnedSoftmax
 
 __all__ = ["GenerativeISSL"]
 
@@ -61,7 +61,7 @@ class GenerativeISSL(nn.Module):
         predecode_n_Mx: Optional[int] = None,
         normalized=None,
         pred_loss_kwargs: dict = {},
-        softmax_kwargs: dict = {},
+        softmax_kwargs: dict = {"is_gumbel": True},
     ) -> None:
         super().__init__()
 

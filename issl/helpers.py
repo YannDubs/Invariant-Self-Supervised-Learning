@@ -1311,3 +1311,59 @@ gather_from_gpus = GatherFromGpus.apply
 
 
 
+class LearnedSoftmax(nn.Module):
+    def __init__(self, dim=-1, temperature=3, is_train_temp=True, is_anneal_temp=False, n_steps=None, min_temperature=0.05, is_gumbel=False, is_hard=False):
+        super().__init__()
+
+        self.dim = dim
+        self.is_gumbel = is_gumbel
+        self.is_hard = is_hard
+
+        self.init_temperature = temperature
+        self.is_train_temp = is_train_temp
+        self.is_anneal_temp = is_anneal_temp
+        self.min_temperature = min_temperature
+
+        if self.is_train_temp:
+            assert not is_anneal_temp
+            self.log_temperature = nn.Parameter(
+                torch.log(torch.tensor(self.init_temperature))
+            )
+        elif self.is_anneal_temp:
+            self.annealer = Annealer(
+                self.init_temperature,
+                self.min_temperature,
+                n_steps_anneal=n_steps,
+                mode="geometric",
+            )
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        weights_init(self)
+
+        if self.is_train_temp:
+            self.log_temperature = nn.Parameter(
+                torch.log(torch.tensor(self.init_temperature))
+            )
+
+    def get_temperature(self, is_update=False):
+        if self.is_train_temp:
+            temperature = torch.clamp(
+                self.log_temperature.exp(), min=self.min_temperature, max=5
+            )
+        elif self.is_anneal_temp:
+            temperature = self.annealer(is_update=is_update)
+        else:
+            temperature = self.init_temperature
+        return temperature
+
+    def forward(self, logits):
+        temperature = self.get_temperature(is_update=True)
+
+        if self.is_gumbel:
+            y_hat = F.gumbel_softmax(logits, tau=temperature, is_hard=self.is_hard)
+        else:
+            y_hat = self.softmax(logits / temperature)
+
+        return y_hat
