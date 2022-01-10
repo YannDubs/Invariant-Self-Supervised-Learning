@@ -11,7 +11,6 @@ import torch.distributed as dist
 import torch.nn as nn
 from issl import GumbelCategorical
 from issl.architectures import get_Architecture
-from issl.distributions import CondDist, DiagGaussian
 from issl.helpers import kl_divergence, prod, queue_push_, sinkhorn_knopp, weights_init
 from torch.distributions import Categorical
 from torch.nn import functional as F
@@ -59,15 +58,17 @@ class SelfDistillationISSL(nn.Module):
         for clip, where the positive examples are text sentences that are already represented.
 
     is_pred_proj_same : bool, optional
-        Whether to use the same projector as the predictor.
+        Whether to use the same projector as the predictor. Note that is opposite than
+        in `ContrastiveISSL` to easily allow linear.
+
+    n_Mx : float, optional
+        Number of maximal invariant to predict. Note that if  <= 1 it will be a percentage of z_dim.
 
     predictor_kwargs : dict, optional
-        Arguments to get `Predictor` from `get_Architecture`. Note that is `out_shape` is <= 1
-        it will be a percentage of z_dim. To use no predictor set `architecture=flatten`.
+        Arguments to get `Predictor` from `get_Architecture`. To use no predictor set `architecture=flatten`.
 
     projector_kwargs : dict, optional
-        Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
-        it will be a percentage of z_dim. To use no predictor set `architecture=flatten`.
+        Arguments to get `Projector` from `get_Architecture`. To use no predictor set `architecture=flatten`.
     """
 
     def __init__(
@@ -80,13 +81,13 @@ class SelfDistillationISSL(nn.Module):
         is_aux_already_represented: bool = False,
         is_normalize_proj: bool = False,
         is_pred_proj_same: bool = False,
-        predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
+        n_Mx: float = 128,
+        predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
             "n_hid_layers": 2,
             "norm_layer": "batch",
-            "out_shape": 128,
         },
     ) -> None:
         super().__init__()
@@ -100,17 +101,18 @@ class SelfDistillationISSL(nn.Module):
         self.is_aux_already_represented = is_aux_already_represented
         self.is_normalize_proj = is_normalize_proj
         self.is_pred_proj_same = is_pred_proj_same
+        self.n_Mx = max(10, int(prod(self.z_shape) * n_Mx))
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
 
-        Projector = get_Architecture(**self.projector_kwargs)
-        self.projector = Projector()
+        Predictor = get_Architecture(**self.predictor_kwargs)
+        self.predictor = Predictor()
 
         if self.is_pred_proj_same:
-            self.predictor = self.projector
+            self.projector = self.predictor
         else:
-            Predictor = get_Architecture(**self.predictor_kwargs)
-            self.predictor = Predictor()
+            Projector = get_Architecture(**self.projector_kwargs)
+            self.projector = Projector()
 
         self.reset_parameters()
 
@@ -120,8 +122,7 @@ class SelfDistillationISSL(nn.Module):
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
         kwargs["in_shape"] = self.z_shape
-        if kwargs["out_shape"] <= 1:
-            kwargs["out_shape"] = max(10, int(prod(self.z_shape) * kwargs["out_shape"]))
+        kwargs["out_shape"] = self.n_Mx
         return kwargs
 
     def forward(
@@ -254,6 +255,8 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         fit_pM_Unif = kl_divergence(ema_p_M, uniform)
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
+        # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a determinsitic
+        # p(M|Z) you want to min H[M|Z]. So min KL + H[M|Z] = - E_{p(M|Z)}[log q(M|Z)]
         fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
 
         # shape: [batch_size]

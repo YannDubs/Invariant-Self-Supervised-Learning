@@ -121,9 +121,6 @@ class ReconstructMx(PlottingCallback):
     -----
     - The model should have attribute `f_ZhatlM` and `suff_stat_AlZhat`.
     """
-    def __init__(self, plot_interval: int = 5, **kwargs) -> None: #DEV: keeping only due to plot interval, should rm
-        super().__init__(plot_interval = plot_interval, **kwargs)
-
     def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         n_Mx = pl_module.loss_decodability.predecode_n_Mx
 
