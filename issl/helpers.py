@@ -1374,7 +1374,7 @@ class LearnedSoftmax(nn.Module):
     def reset_parameters(self) -> None:
         weights_init(self)
 
-        if self.is_train_temp:
+        if self.temperature_mode == "train":
             self.log_temperature = nn.Parameter(
                 torch.log(torch.tensor(self.init_temperature))
             )

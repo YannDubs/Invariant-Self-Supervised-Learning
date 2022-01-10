@@ -39,11 +39,12 @@ seed=1
 trainer.max_epochs=25
 representor=gen_optA_clfresnet
 decodability.kwargs.predecode_n_Mx=10
+decodability.kwargs.softmax_kwargs.temperature_mode='train','anneal'
 "
 
 if [ "$is_plot_only" = false ] ; then
   #noA stdA_no_switch stdA_and_optA softmax
-  for kwargs_dep in  "decodability.kwargs.softmax_kwargs.is_train_temp=True" "decodability.kwargs.softmax_kwargs.is_train_temp=False decodability.kwargs.softmax_kwargs.is_anneal_temp=True" # "representor=gen_stdA_resnet,gen_stdA_resnetlin,gen_stdA_linear,gen_optA_resnet,gen_optA_resnetlin,gen_optA_linear,std_gen_resnet,std_gen_resnetlin,std_gen_linear" "representor=gen_optA_clfresnet,gen_stdA_clfresnet,std_gen_clfresnet decodability.kwargs.predecode_n_Mx=10,100,1000" "representor=gen_stdA_resnetlin,gen_stdA_clfresnet representor.is_switch_x_aux_trgt=False"
+  for kwargs_dep in  ""  # "representor=gen_stdA_resnet,gen_stdA_resnetlin,gen_stdA_linear,gen_optA_resnet,gen_optA_resnetlin,gen_optA_linear,std_gen_resnet,std_gen_resnetlin,std_gen_linear" "representor=gen_optA_clfresnet,gen_stdA_clfresnet,std_gen_clfresnet decodability.kwargs.predecode_n_Mx=10,100,1000" "representor=gen_stdA_resnetlin,gen_stdA_clfresnet representor.is_switch_x_aux_trgt=False"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
