@@ -38,10 +38,11 @@ seed=1
 decodability.kwargs.n_Mx=100
 decodability.kwargs.ema_weight_prior=null
 representor=slfdstl_prior
+decodability.kwargs.projector_kwargs.architecture=linear
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "" "encoder.z_shape=10,128" "decodability.kwargs.n_Mx=10,50,1000" "decodability.kwargs.beta_pM_unif=0.01,0.1,3,10" "decodability.kwargs.ema_weight_prior=0.1,0.5,0.9" "decodability.kwargs.is_pred_proj_same=True" "decodability.kwargs.projector_kwargs.architecture=linear"
+  for kwargs_dep in  "decodability.kwargs.n_Mx=500" "decodability.kwargs.beta_pM_unif=3" #"" "decodability.kwargs.n_Mx=10,50,1000" "decodability.kwargs.beta_pM_unif=3,10" "decodability.kwargs.is_pred_proj_same=True"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
