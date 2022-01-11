@@ -101,7 +101,7 @@ class SelfDistillationISSL(nn.Module):
         self.is_aux_already_represented = is_aux_already_represented
         self.is_normalize_proj = is_normalize_proj
         self.is_pred_proj_same = is_pred_proj_same
-        self.n_Mx = max(10, int(prod(self.z_shape) * n_Mx))
+        self.n_Mx = n_Mx if n_Mx > 1 else max(10, int(prod(self.z_shape) * n_Mx))
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
 
