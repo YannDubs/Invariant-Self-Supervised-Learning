@@ -12,7 +12,7 @@ kwargs:
   is_aux_already_represented: ${data.is_aux_already_represented}
   is_normalize_proj: False
   is_pred_proj_same: False
-  n_Mx: 128
+  n_Mx: 1000
   predictor_kwargs:
     architecture: "linear"
   projector_kwargs:

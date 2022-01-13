@@ -205,7 +205,7 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         self,
         *args,
         beta_pM_unif: float = None,
-        ema_weight_prior: Optional[float] = 0.5,
+        ema_weight_prior: Optional[float] = None,
         is_normalize_proj: bool = False,
         **kwargs,
     ) -> None:

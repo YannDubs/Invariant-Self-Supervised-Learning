@@ -4,5 +4,9 @@ defaults:
 kwargs:
   mode: prior_self_distillation
   beta_pM_unif: 1.0
-  ema_weight_prior: 0.9
+  ema_weight_prior: null
   is_normalize_proj: False
+  predictor_kwargs:
+    architecture: "linear"
+    projector_kwargs:
+      architecture: "linear"

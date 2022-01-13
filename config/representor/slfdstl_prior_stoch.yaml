@@ -22,7 +22,7 @@ decodability:
     is_stop_grad:  False
     is_pred_proj_same:  False
     beta_pM_unif: 1.0 # TODO: tune
-    ema_weight_prior: 0.9
+    ema_weight_prior: null
     
 encoder:
   z_shape: 1024

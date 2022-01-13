@@ -42,7 +42,7 @@ decodability.kwargs.projector_kwargs.architecture=linear
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "" "decodability.kwargs.n_Mx=10,100,10000,100000" "decodability.kwargs.beta_pM_unif=0.1,0.3,3,10" "decodability.kwargs.is_pred_proj_same=True" "decodability.kwargs.projector_kwargs.architecture=mlp"
+  for kwargs_dep in  ""  "decodability.kwargs.n_Mx=10000,100000" "decodability.kwargs.beta_pM_unif=3"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
