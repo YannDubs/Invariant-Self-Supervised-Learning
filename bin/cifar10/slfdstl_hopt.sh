@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"whitening_cifar"
+experiment=$prfx"slfdst_hopt"
 notes="
-**Goal**: ensure that you can replicate the whitening paper for cifar with standard contrastive learning.
+**Goal**: hyperparameter tuning for selfdistillation on cifar10.
 "
 
 # parses special mode for running the script
@@ -17,19 +17,12 @@ architecture@online_evaluator=linear
 downstream_task.all_tasks=[sklogistic_datarepr]
 ++data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
-representor=std_cntr
-decodability.kwargs.temperature=0.5
-data_repr.kwargs.batch_size=512
-optimizer_issl.kwargs.weight_decay=1e-6
+representor=slfdstl_prior
 scheduler_issl.kwargs.base.is_warmup_lr=True
-decodability.kwargs.projector_kwargs.hid_dim=1024
-decodability.kwargs.projector_kwargs.n_hid_layers=1
-encoder.z_shape=512
 data@data_repr=cifar10
 timeout=$time
 "
 
-# the only differences with whitening are optimization stuff: scheduler, decay, lr, optimizer,
 
 # every arguments that you are sweeping over
 kwargs_multi="
@@ -38,19 +31,23 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/cifar10/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
+hydra.sweeper.n_trials=25
+hydra.sweeper.n_jobs=25
 trainer.max_epochs=100,200,300,500,1000
 optimizer@optimizer_issl=Adam,AdamW
-decodability.kwargs.projector_kwargs.out_shape=64
 optimizer_issl.kwargs.lr=tag(log,interval(3e-4,1e-2))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-8,1e-5))
 scheduler@scheduler_issl=warm_unifmultistep125,whitening,warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
 seed=1,2,3,4,5,6,7,8,9
+encoder.z_shape=512,1024,2048
+regularizer=huber,none
+representor.loss.beta=tag(log,interval(1e-8,1e-4))
+decodability.kwargs.ema_weight_prior=null,0.1,0.9
+decodability.kwargs.n_Mx=100,1000,10000,100000
+decodability.kwargs.beta_pM_unif=tag(log,interval(1e-1,1e1))
+decodability.kwargs.projector_kwargs.architecture=linear,mlp
+data_repr.kwargs.batch_size=128,256,512
 "
-
-
-# difference for gen: linear resnet / augmentations / larger dim
 
 
 if [ "$is_plot_only" = false ] ; then
@@ -63,3 +60,11 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
+
+wait
+
+# for representor
+python utils/aggregate.py \
+       experiment=$experiment  \
+       $col_val_subset \
+       agg_mode=[summarize_metrics]

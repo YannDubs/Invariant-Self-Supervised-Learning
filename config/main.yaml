@@ -97,7 +97,7 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
   RichProgressBar:
     is_use : true
     kwargs:
-      refresh_rate_per_second: 0.1
+      refresh_rate_per_second: 0.01
 
   RichModelSummary:
     is_use: true

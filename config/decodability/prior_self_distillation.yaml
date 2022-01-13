@@ -8,5 +8,5 @@ kwargs:
   is_normalize_proj: False
   predictor_kwargs:
     architecture: "linear"
-    projector_kwargs:
-      architecture: "linear"
+  projector_kwargs:
+    architecture: "linear"
