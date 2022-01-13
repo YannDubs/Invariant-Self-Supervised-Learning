@@ -12,7 +12,7 @@ data_repr:
     dataset_kwargs:
       aux_target:  "augmentation"
       a_augmentations: ["data-standard"]
-      train_x_augmentations: []
+      train_x_augmentations: "a_augmentations"
 
 decodability:
   kwargs:
