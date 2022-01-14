@@ -14,7 +14,7 @@ experiment=$experiment
 +logger.wandb_kwargs.project=cifar10
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
-downstream_task.all_tasks=[sklogistic_datarepr]
+downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_datarepr001test]
 ++data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
 representor=slfdstl_prior
@@ -39,15 +39,19 @@ optimizer_issl.kwargs.lr=tag(log,interval(3e-4,1e-2))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-8,1e-5))
 scheduler@scheduler_issl=warm_unifmultistep125,whitening,warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
 seed=1,2,3,4,5,6,7,8,9
-encoder.z_shape=512,1024,2048
+encoder.z_shape=1024,2048,4096,8192
 regularizer=huber,none
 representor.loss.beta=tag(log,interval(1e-8,1e-4))
-decodability.kwargs.ema_weight_prior=null,0.1,0.9
+decodability.kwargs.ema_weight_prior=null,0.9
 decodability.kwargs.n_Mx=100,1000,10000,100000
-decodability.kwargs.beta_pM_unif=tag(log,interval(1e-1,1e1))
+decodability.kwargs.beta_pM_unif=tag(log,interval(1e0,3e1))
 decodability.kwargs.projector_kwargs.architecture=linear,mlp
+decodability.kwargs.is_symmetrized=True,False
+decodability.kwargs.is_ema=True,False
+decodability.kwargs.is_stop_grad=True,False
 data_repr.kwargs.batch_size=128,256,512
 "
+# is_ema and is_stop_grad are just to test that actually worst in practice
 
 
 if [ "$is_plot_only" = false ] ; then

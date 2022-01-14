@@ -6,6 +6,7 @@ kwargs:
   beta_pM_unif: 1.0
   ema_weight_prior: null
   is_normalize_proj: False
+  is_symmetrized: False
   predictor_kwargs:
     architecture: "linear"
   projector_kwargs:

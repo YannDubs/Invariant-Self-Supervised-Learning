@@ -33,12 +33,11 @@ import issl
 from issl import ISSLModule, Predictor
 from issl.callbacks import (
     LatentDimInterpolator,
-    ReconstructImages, ReconstructMx,
+    ReconstructImages, ReconstructMx,RepresentationUMAP
 )
 from issl.helpers import MAWeightUpdate, check_import, prod
 from issl.predictors import SklearnPredictor, get_representor_predictor
 from utils.data import get_Datamodule
-from utils.data.base import ISSLDataModule
 from utils.helpers import (
     ModelCheckpoint,
     NamespaceMap,
@@ -99,7 +98,7 @@ def main(cfg):
 
     if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
         representor = ISSLModule(hparams=repr_cfg)
-        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+        repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
         initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
 
         logger.info("Train representor ...")
@@ -112,7 +111,7 @@ def main(cfg):
             representor = ISSLModule(hparams=repr_cfg)
         else:
             representor = load_pretrained(repr_cfg, ISSLModule, stage)
-        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+        repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
         placeholder_fit(repr_trainer, representor, repr_datamodule)
         repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
 
@@ -381,7 +380,7 @@ def initialize_representor_(
 
 
 def get_callbacks(
-    cfg: NamespaceMap, is_representor: bool
+    cfg: NamespaceMap, is_representor: bool, dm: pl.LightningDataModule=None
 ) -> list[pl.callbacks.Callback]:
     """Return list of callbacks."""
     callbacks = []
@@ -393,8 +392,11 @@ def get_callbacks(
         is_img_aux_target &= aux_target in ["representative", "input", "augmentation"]
         is_img_aux_target &= not cfg.data.is_aux_already_represented
 
-        is_reconstruct = cfg.decodability.is_reconstruct
+        if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval:
+            # can only plot if you have labels
+            callbacks += [RepresentationUMAP(dm)]
 
+        is_reconstruct = cfg.decodability.is_reconstruct
         if cfg.logger.is_can_plot_img and is_img_aux_target and is_reconstruct:
             # TODO will not currently work with latent images
             z_dim = cfg.encoder.z_shape
@@ -457,6 +459,12 @@ def get_logger(
             cfg.logger.kwargs.offline = True
             pl_logger = WandbLogger(**kwargs)
 
+        try:
+            # try to save all the current code
+            pl_logger.experiment.log_code(cfg.paths.base_dir)
+        except Exception:
+            pass
+
     elif cfg.logger.name is None:
         pl_logger = False
 
@@ -467,7 +475,7 @@ def get_logger(
 
 
 def get_trainer(
-    cfg: NamespaceMap, module: pl.LightningModule, is_representor: bool
+    cfg: NamespaceMap, module: pl.LightningModule, is_representor: bool, dm: pl.LightningDataModule=None,
 ) -> pl.Trainer:
     """Instantiate trainer."""
 
@@ -485,7 +493,7 @@ def get_trainer(
     # TRAINER
     trainer = pl.Trainer(
         logger=get_logger(cfg, module, is_representor),
-        callbacks=get_callbacks(cfg, is_representor),
+        callbacks=get_callbacks(cfg, is_representor, dm=dm),
         **kwargs,
     )
 

@@ -125,6 +125,15 @@ class ISSLDataset(abc.ABC):
         ...
 
     @property
+    def idx_to_class(self):
+        """Dictionary mapping index to class name."""
+        if hasattr(self, "class_to_idx"):
+            return {v: k for k, v in self.class_to_idx.items()}
+        else:
+            # if no class name just return the index in string
+            return {i: str(i) for i in range(self.shapes["target"])}
+
+    @property
     @abc.abstractmethod
     def is_clfs(self) -> dict[Optional[str], Any]:
         """Return a dictionary saying whether `input`, `target`, should be classified."""

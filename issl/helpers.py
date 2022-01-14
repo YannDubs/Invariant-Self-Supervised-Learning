@@ -106,6 +106,15 @@ def replicate_shape(shape: Sequence[int], n_rep: int) -> Sequence[int]:
     return T(out_tuple)
 
 
+def cont_tuple_to_tuple_cont(container):
+    """Converts a container (list, tuple, dict) of tuple to a tuple of container."""
+    if isinstance(container, dict):
+        return tuple(dict(zip(container, val)) for val in zip(*container.values()))
+    elif isinstance(container, list) or isinstance(container, tuple):
+        return tuple(zip(*container))
+    else:
+        raise ValueError("Unknown container type: {}.".format(type(container)))
+
 def check_import(module: str, to_use: Optional[str] = None):
     """Check whether the given module is imported."""
     if module not in sys.modules:

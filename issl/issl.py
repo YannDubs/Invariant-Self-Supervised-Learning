@@ -25,6 +25,7 @@ class ISSLModule(pl.LightningModule):
         self.save_hyperparameters(hparams)
 
         self.p_ZlX = CondDist(**self.hparams.encoder.kwargs)
+        #! TODO should remove provessor if not ever using it
         self.Z_processor = get_Architecture(**self.hparams.Z_processor.kwargs)()
         self.loss_decodability = get_loss_decodability(
             **self.hparams.decodability.kwargs
@@ -130,7 +131,7 @@ class ISSLModule(pl.LightningModule):
         # shape: [batch_size, *z_shape]
         z = p_Zlx.rsample()
 
-        # one difference compared to standard implementation is that our representation does not go throguh a relu
+        # one difference compared to standard implementation is that our representation does not go through a relu
 
         # shape: [batch_size, *z_shape]
         z = self.Z_processor(z)

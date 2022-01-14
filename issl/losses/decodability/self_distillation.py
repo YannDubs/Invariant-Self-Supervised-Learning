@@ -64,6 +64,9 @@ class SelfDistillationISSL(nn.Module):
     n_Mx : float, optional
         Number of maximal invariant to predict. Note that if  <= 1 it will be a percentage of z_dim.
 
+    is_symmetrized : bool, optional
+        Whether to use the the two augmentations A,A' for both branches and symmetrize loss.
+
     predictor_kwargs : dict, optional
         Arguments to get `Predictor` from `get_Architecture`. To use no predictor set `architecture=flatten`.
 
@@ -82,6 +85,7 @@ class SelfDistillationISSL(nn.Module):
         is_normalize_proj: bool = False,
         is_pred_proj_same: bool = False,
         n_Mx: float = 128,
+        is_symmetrized=False,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
@@ -102,6 +106,7 @@ class SelfDistillationISSL(nn.Module):
         self.is_normalize_proj = is_normalize_proj
         self.is_pred_proj_same = is_pred_proj_same
         self.n_Mx = n_Mx if n_Mx > 1 else max(10, int(prod(self.z_shape) * n_Mx))
+        self.is_symmetrized = is_symmetrized
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
 
@@ -169,6 +174,15 @@ class SelfDistillationISSL(nn.Module):
         else:
             z_a = parent(a, is_sample=False, is_process_Z=self.is_process_Mx)
 
+        loss, logs, other = self.loss(z, z_a)
+
+        if self.is_symmetrized:
+            loss2, _, __ = self.loss(z, z_a)
+            loss = (loss + loss2) / 2
+
+        return loss, logs, other
+
+    def loss(self, z, z_a):
         if self.is_stop_grad:
             z_a = z_a.detach()
 
@@ -181,10 +195,9 @@ class SelfDistillationISSL(nn.Module):
             M_a = F.normalize(M_a, dim=1, p=2)
 
         # shape: [batch_size, M_shape]
-        hat_R_mla, logs, other = self.compute_loss(M_pred, M_a, z)
+        loss, logs, other = self.compute_loss(M_pred, M_a)
 
-        return hat_R_mla, logs, other
-
+        return loss, logs, other
 
 # performs SSL by having one part of the model implementing the M(X)
 add_doc = """                
@@ -207,10 +220,11 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
         is_normalize_proj: bool = False,
+        is_stop_grad: bool = False,
         **kwargs,
     ) -> None:
 
-        super().__init__(*args, is_normalize_proj=is_normalize_proj, **kwargs)
+        super().__init__(*args, is_normalize_proj=is_normalize_proj, is_stop_grad = is_stop_grad, **kwargs)
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
 
@@ -218,7 +232,7 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         super().reset_parameters()
 
     def compute_loss(
-        self, M_pred: torch.Tensor, M_a: torch.Tensor, z: torch.Tensor
+        self, M_pred: torch.Tensor, M_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
         # p(M|Z). batch shape: [batch_size] ; event shape: []
@@ -255,7 +269,7 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         fit_pM_Unif = kl_divergence(ema_p_M, uniform)
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
-        # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a determinsitic
+        # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
         # p(M|Z) you want to min H[M|Z]. So min KL + H[M|Z] = - E_{p(M|Z)}[log q(M|Z)]
         fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
 
@@ -275,7 +289,113 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         return loss, logs, other
 
 
-# do SSL by performing online clustering => learn a bank of M(X)
+# performs SSL by using only the SG trick (same as SimSiam)
+add_doc = """                
+    """
+
+#
+# class StopGradSelfDistillationISSL(SelfDistillationISSL):
+#     __doc__ = SelfDistillationISSL.__doc__ + add_doc
+#
+#     def __init__(
+#             self,
+#             *args,
+#             loss= lambda m1,m2 = - F.cosine_similarity(z1, z2, dim=-1),
+#             is_stop_grad: bool = True,
+#             is_normalize_proj: bool = False,
+#             is_pred_proj_same: bool = True,
+#             n_Mx: int=2048,
+#             predictor_kwargs: dict[str, Any] = {
+# #                 "architecture": "mlp",
+# #                 "hid_dim": 2048,
+# #                 "n_hid_layers": 2,
+# #                 "norm_layer": "batch",
+# #             },
+#
+#             is_symmetrized: bool = True,
+#             ema_weight_prior: Optional[float] = None,
+#             is_normalize_proj: bool = False,
+#             is_symmetric_branches: bool = False,
+#             **kwargs,
+#     ) -> None:
+#
+#         super().__init__(*args, is_normalize_proj=is_normalize_proj, is_symmetrized=is_symmetrized, **kwargs)
+#         self.beta_pM_unif = beta_pM_unif
+#         self.ema_weight_prior = ema_weight_prior
+#         self.is_symmetric_branches = is_symmetric_branches
+#
+#     def reset_parameters(self) -> None:
+#         super().reset_parameters()
+#
+#     def compute_loss(
+#             self, M_pred: torch.Tensor, M_a: torch.Tensor, z: torch.Tensor
+#     ) -> tuple[torch.Tensor, dict, dict]:
+#
+#         # p(M|Z). batch shape: [batch_size] ; event shape: []
+#         p_Mlz = Categorical(logits=M_a)
+#
+#         # current p(M). batch shape: [] ; event shape: []
+#         hat_p_M = Categorical(probs=p_Mlz.probs.mean(0))
+#
+#         # Unif(calM). batch shape: [] ; event shape: []
+#         uniform = Categorical(logits=torch.ones_like(hat_p_M.probs))
+#
+#         mean_p_M = hat_p_M.probs.float()
+#
+#         if self.ema_weight_prior is not None:
+#             if not hasattr(self, "ema_mean_p_M"):
+#                 # initialize with uniform
+#                 # TODO: should be initialized in reset_parameters as non trainable param
+#                 self.ema_mean_p_M = uniform.probs.float()
+#
+#             alpha = self.ema_weight_prior
+#             assert 0.0 <= alpha <= 1.0
+#             ema_mean_p_M = alpha * mean_p_M + (1 - alpha) * self.ema_mean_p_M
+#             # don't keep all the computational graph to avoid memory++
+#             self.ema_mean_p_M = ema_mean_p_M.detach().float()
+#         else:
+#             ema_mean_p_M = mean_p_M
+#
+#         # p(M) moving avg. batch shape: [] ; event shape: []
+#         ema_p_M = Categorical(probs=ema_mean_p_M)
+#
+#         # D[\hat{p}(M) || Unif(\calM)]. shape: []
+#         # this is equivalent to maximizing entropy `fit_pM_Unif = -ema_p_M.entropy()`
+#         # keeping the general code here in case you have a different prior on p(M)
+#         fit_pM_Unif = kl_divergence(ema_p_M, uniform)
+#
+#         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
+#         # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
+#         # p(M|Z) you want to min H[M|Z]. So min KL + H[M|Z] = - E_{p(M|Z)}[log q(M|Z)]
+#         fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
+#
+#         if self.is_symmetric_branches:
+#             p_M2lz = Categorical(logits=M_pred)
+#             # skips ema and only use current mean
+#             hat_p_M2 = Categorical(probs=p_M2lz.probs.float().mean(0))
+#             fit_pM_Unif = (fit_pM_Unif + kl_divergence(hat_p_M2, uniform)) / 2
+#             fit_pMlz_qMlz = (fit_pMlz_qMlz - (p_M2lz.probs * M_a.log_softmax(-1)).sum(-1)) / 2
+#
+#         # shape: [batch_size]
+#         loss = fit_pMlz_qMlz + self.beta_pM_unif * fit_pM_Unif
+#
+#         # H[M|Z]. shape: [batch_size]
+#         H_Mlz = p_Mlz.entropy()
+#
+#         if self.is_symmetric_branches:
+#             H_Mlz = (H_Mlz + p_M2lz.entropy()) / 2
+#
+#         logs = dict(
+#             fit_pM_Unif=fit_pM_Unif,
+#             fit_pMlz_qMlz=fit_pMlz_qMlz.mean(),
+#             H_Mlz=H_Mlz.mean(),
+#         )
+#         other = dict()
+#
+#         return loss, logs, other
+
+
+# do SSL by performing online clustering with hard constraint of equiprobability => learn a bank of M(X)
 add_doc_cluster = """
     n_Mx : float, optional
         Number of clusters (i.e. \calM) to use.
@@ -351,7 +471,7 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         return super().forward(*args, **kwargs)
 
     def compute_loss(
-        self, z_src: torch.Tensor, z_tgt: torch.Tensor, z: torch.Tensor
+        self, z_src: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
         # compute logits. shape: [batch_size, n_Mx]
