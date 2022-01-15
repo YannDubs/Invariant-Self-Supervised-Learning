@@ -229,13 +229,11 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         # shape: [batch_size]
         loss = fit_pMlz_qMlz + self.beta_pM_unif * fit_pM_Unif
 
-        # H[M|Z]. shape: [batch_size]
-        H_Mlz = p_Mlz.entropy()
-
         logs = dict(
             fit_pM_Unif=fit_pM_Unif,
             fit_pMlz_qMlz=fit_pMlz_qMlz.mean(),
-            H_Mlz=H_Mlz.mean(),
+            H_Mlz=p_Mlz.entropy().mean(),
+            H_M=p_M.entropy(),
         )
         other = dict()
 

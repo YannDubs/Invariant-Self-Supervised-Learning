@@ -6,9 +6,9 @@ from typing import Any, Optional
 
 import pytorch_lightning as pl
 import torch
-from issl.architectures import get_Architecture
+import torch.nn as nn
 from issl.distributions import CondDist
-from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_
+from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod
 from issl.losses import get_loss_decodability, get_regularizer
 from issl.losses.decodability import ClusterSelfDistillationISSL
 from issl.predictors import OnlineEvaluator
@@ -41,6 +41,9 @@ class ISSLModule(pl.LightningModule):
 
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
+
+        if self.hparams.encoder.is_batchnorm_z:
+            self.batchnorm_z = nn.BatchNorm1d(self.out_dim, prod(self.hparams.encoder.z_shape))
 
     @property
     def final_beta(self):
@@ -77,8 +80,8 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False
-    ) -> torch.Tensor:
+        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False
+    ):
         """Represents the data `x`.
 
         Parameters
@@ -103,8 +106,18 @@ class ISSLModule(pl.LightningModule):
         else:
             z = p_Zlx.mean
 
+        # one difference compared to standard implementation is that our representation does not go through a relu
+        if self.hparams.encoder.is_relu_Z:
+            z = F.relu(z)
+
+        if self.hparams.encoder.is_batchnorm_z:
+            z = self.batchnorm_z(z)
+
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
+
+        if is_return_p_ZlX:
+            return z, p_Zlx
 
         return z
 
@@ -116,16 +129,9 @@ class ISSLModule(pl.LightningModule):
             # switch x and aux_target. Useful if want augmentations as inputs. Only turing representations.
             x, aux_target = aux_target, x
 
-        # batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        p_Zlx = self.p_ZlX(x)
-
-        # shape: [batch_size, *z_shape]
-        z = p_Zlx.rsample()
-
-        # one difference compared to standard implementation is that our representation does not go through a relu
-
-        if self.hparams.encoder.is_normalize_Z:
-            z = F.normalize(z, dim=1, p=2)
+        # z shape: [batch_size, *z_shape]
+        # p_Zlx batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
+        z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
 
         if self.loss_regularizer is not None:
             # `sample_eff` is proxy to ensure supp(p(Z|M(X))) = supp(p(Z|X)). shape: [batch_size]

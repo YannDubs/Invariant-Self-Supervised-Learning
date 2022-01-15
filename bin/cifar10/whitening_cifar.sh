@@ -37,16 +37,18 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/cifar10/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
-trainer.max_epochs=200,300,500,1000
+hydra.sweeper.n_trials=5
+hydra.sweeper.n_jobs=5
+hydra.sweeper.study_name=v2
 optimizer@optimizer_issl=Adam,AdamW
 decodability.kwargs.projector_kwargs.out_shape=64
 optimizer_issl.kwargs.lr=tag(log,interval(3e-4,1e-2))
-optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-8,1e-5))
-scheduler@scheduler_issl=warm_unifmultistep125,warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
+optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-7,1e-5))
+scheduler@scheduler_issl=warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
 seed=1,2,3,4,5,6,7,8,9
+trainer.max_epochs=200
 "
+# to replicate should add 1000 epochs and warm_unifmultistep125
 
 
 # difference for gen: linear resnet / augmentations / larger dim

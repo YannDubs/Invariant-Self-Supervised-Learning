@@ -10,5 +10,4 @@ kwargs:
   queue_size:  30
   sinkhorn_kwargs:
     eps: 0.05
-  is_normalize_proj:  True
   is_pred_proj_same:  True # use no predictor by default
