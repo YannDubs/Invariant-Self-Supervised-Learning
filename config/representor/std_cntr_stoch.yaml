@@ -18,7 +18,6 @@ decodability:
   kwargs:
     is_train_temperature: False
     is_normalize_proj: True
-    is_project: True
     is_pred_proj_same: True
     predictor_kwargs:
       architecture: "linear"

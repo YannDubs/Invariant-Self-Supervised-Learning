@@ -148,12 +148,6 @@ encoder:
     fam_kwargs: {}
     family: deterministic
 
-Z_processor:
-  kwargs:
-    in_shape: ${encoder.z_shape}
-    out_shape: ${Z_processor.kwargs.in_shape} # should not change that. COde assumes that in and out processor are same
-    architecture: identity
-
 online_evaluator:
   name: ???
   kwargs:

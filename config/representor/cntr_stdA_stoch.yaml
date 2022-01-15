@@ -19,11 +19,10 @@ decodability:
   kwargs:
     is_train_temperature: False
     is_normalize_proj: True
-    is_project: True
     is_pred_proj_same: False
     predictor_kwargs: # will be replaced by proojector when `is_pred_proj_same`
-      architecture: "linear"
-      out_shape: 128
+      architecture: "flatten"
+      out_shape: ${encoder.z_shape}
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 2048

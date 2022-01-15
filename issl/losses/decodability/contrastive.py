@@ -57,7 +57,7 @@ class ContrastiveISSL(nn.Module):
         X to A, This makes the most sense if A is not equivalent to X.
 
     is_pred_proj_same : bool, optional
-        Whether to use the projector for the predictor. Typically True in SSL, but our theory says that it should be
+        Whether to use the projector for the predictor. Typically, True in SSL, but our theory says that it should be
         False.
 
     projector_kwargs : dict, optional
@@ -67,15 +67,6 @@ class ContrastiveISSL(nn.Module):
     predictor_kwargs : dict, optional
         Arguments to get `Predictor` from `get_Architecture`. Note that is `out_shape` is <= 1
         it will be a percentage of z_dim. To use no predictor set `mode=Flatten`.
-
-    is_hinge : bool, optional
-        Whether to use the hinge loss instead of the log loss.
-
-    is_kernel : bool, optional
-        Whether to replace all dot products with a gram matrix given by a kernel.
-
-    kernel_kwargs : dict, optional
-        Additional kwargs to `GrammRBF`.
 
     References
     ----------
@@ -91,7 +82,6 @@ class ContrastiveISSL(nn.Module):
         min_temperature: float = 0.01,
         is_normalize_proj: bool = True,
         is_aux_already_represented: bool = False,
-        is_project: bool = True,
         src_tgt_comparison: str = "all",
         is_pred_proj_same: bool = True,
         projector_kwargs: dict[str, Any] = {
@@ -99,12 +89,8 @@ class ContrastiveISSL(nn.Module):
             "hid_dim": 2048,
             "n_hid_layers": 2,
             "norm_layer": "batch",
-            "out_shape": 128,
         },
-        predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
-        is_hinge: bool = False,  # TODO: rm if do not use
-        is_kernel: bool = False,  # TODO: rm if do not use
-        kernel_kwargs: dict = {"is_normalize": False},  # TODO: rm if not use
+        predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
@@ -114,19 +100,9 @@ class ContrastiveISSL(nn.Module):
         self.src_tgt_comparison = src_tgt_comparison
         self.is_normalize_proj = is_normalize_proj
         self.is_aux_already_represented = is_aux_already_represented
-        self.is_project = is_project
         self.is_pred_proj_same = is_pred_proj_same
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
-
-        self.is_hinge = is_hinge
-        self.is_kernel = is_kernel
-        self.kernel_kwargs = kernel_kwargs
-        if self.is_kernel:
-            self.kernel = GrammRBF(**self.kernel_kwargs)
-        if self.is_hinge:
-            self.is_train_temperature = False
-            self.temperature = 1.0
 
         Projector = get_Architecture(**self.projector_kwargs)
         self.projector = Projector()
@@ -156,8 +132,12 @@ class ContrastiveISSL(nn.Module):
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
         kwargs["in_shape"] = self.z_shape
-        if kwargs["out_shape"] <= 1:
+
+        if "out_shape" not in kwargs:
+            kwargs["out_shape"] = prod(self.z_shape)
+        elif kwargs["out_shape"] <= 1:
             kwargs["out_shape"] = max(10, int(prod(self.z_shape) * kwargs["out_shape"]))
+
         return kwargs
 
     def forward(
@@ -223,7 +203,7 @@ class ContrastiveISSL(nn.Module):
             # this should actually be different for the source (sample) and the target (no sampling)
             # to be exact. i.e. should depend on `src_tgt_comparison`. But that complicated the code
             # and usually deterministic in any case
-            z_a = parent(a, is_sample=False, is_process_Z=True)
+            z_a = parent(a, is_sample=False)
 
         if self.src_tgt_comparison in ["all", "symmetric"]:
             # shape: [2*batch_size, z_dim]
@@ -254,10 +234,7 @@ class ContrastiveISSL(nn.Module):
 
         if self.src_tgt_comparison in ["all", "single"]:
             # shape: [(2*)batch_size, (2*)batch_size * world_size]
-            if self.is_kernel:
-                logits = self.kernel(z_src, z_tgt)
-            else:
-                logits = z_src @ z_tgt.T
+            logits = z_src @ z_tgt.T
 
         elif self.src_tgt_comparison == "symmetric":
             list_z_tgt = z_tgt.split(batch_size, dim=0)
@@ -270,12 +247,8 @@ class ContrastiveISSL(nn.Module):
             z_src, z_a_src = z_src.chunk(2, dim=0)
 
             # shape: [batch_size, batch_size * world_size]
-            if self.is_kernel:
-                logits_tgt_aug = self.kernel(z_src, z_a_tgt)
-                logits_src_aug = self.kernel(z_a_src, z_tgt)
-            else:
-                logits_tgt_aug = z_src @ z_a_tgt.T
-                logits_src_aug = z_a_src @ z_tgt.T
+            logits_tgt_aug = z_src @ z_a_tgt.T
+            logits_src_aug = z_a_src @ z_tgt.T
 
             # shape: [2*batch_size, batch_size * world_size,]
             logits = torch.cat([logits_tgt_aug, logits_src_aug])
@@ -333,27 +306,19 @@ class ContrastiveISSL(nn.Module):
         # make sure 32 bits
         logits = logits.float() / temperature
 
-        if self.is_hinge:
+        # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+        # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+        # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+        # = log(N-1) + E[ log softmax(z^Tz_p) ]
+        # = log(N-1) - E[ crossentropy(z^Tz, p) ]
+        # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
+        hat_H_m = math.log(effective_n_classes)
+        hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
 
-            # hat_H_mlz is now generalized entropy w.r.t. to hinge loss
-            hat_H_mlz = F.multi_margin_loss(logits, pos_idx, reduction="none")
-
-            logs = dict(n_negatives=n_classes)
-
-        else:
-            # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-            # = log(N-1) + E[ log softmax(z^Tz_p) ]
-            # = log(N-1) - E[ crossentropy(z^Tz, p) ]
-            # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
-            hat_H_m = math.log(effective_n_classes)
-            hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
-
-            logs = dict(
-                I_q_zm=(hat_H_m - hat_H_mlz.mean()),
-                hat_H_m=hat_H_m,
-                n_negatives=n_classes,
-            )
+        logs = dict(
+            I_q_zm=(hat_H_m - hat_H_mlz.mean()),
+            hat_H_m=hat_H_m,
+            n_negatives=n_classes,
+        )
 
         return hat_H_mlz, logs

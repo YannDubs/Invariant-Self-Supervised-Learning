@@ -22,7 +22,6 @@ decodability:
   kwargs:
     is_train_temperature: False
     is_normalize_proj: True
-    is_project: True
     is_proj_pred_same: True
     predictor_kwargs:
       architecture: "mlp"

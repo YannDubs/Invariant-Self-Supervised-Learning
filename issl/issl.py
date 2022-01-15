@@ -25,8 +25,6 @@ class ISSLModule(pl.LightningModule):
         self.save_hyperparameters(hparams)
 
         self.p_ZlX = CondDist(**self.hparams.encoder.kwargs)
-        #! TODO should remove provessor if not ever using it
-        self.Z_processor = get_Architecture(**self.hparams.Z_processor.kwargs)()
         self.loss_decodability = get_loss_decodability(
             **self.hparams.decodability.kwargs
         )
@@ -79,7 +77,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False, is_process_Z: bool = True
+        self, x: torch.Tensor, is_sample: bool = False
     ) -> torch.Tensor:
         """Represents the data `x`.
 
@@ -90,9 +88,6 @@ class ISSLModule(pl.LightningModule):
 
         is_sample : bool, optional
             Whether to sample the representation rather than return expected representation.
-
-        is_process_Z : bool, optional
-            Whether to use post processing of the representation.
 
         Returns
         -------
@@ -107,10 +102,6 @@ class ISSLModule(pl.LightningModule):
             z = p_Zlx.rsample()
         else:
             z = p_Zlx.mean
-
-        if is_process_Z:
-            # shape: [batch_size, *z_shape]
-            z = self.Z_processor(z)
 
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
@@ -132,9 +123,6 @@ class ISSLModule(pl.LightningModule):
         z = p_Zlx.rsample()
 
         # one difference compared to standard implementation is that our representation does not go through a relu
-
-        # shape: [batch_size, *z_shape]
-        z = self.Z_processor(z)
 
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)

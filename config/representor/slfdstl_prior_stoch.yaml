@@ -18,7 +18,6 @@ data_repr:
 decodability:
   kwargs:
     is_ema: False
-    is_process_Mx: False
     is_stop_grad:  False
     is_pred_proj_same:  False
     beta_pM_unif: 1.0 # TODO: tune

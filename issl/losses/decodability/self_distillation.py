@@ -5,119 +5,62 @@ import copy
 import queue
 from collections import Callable, Sequence
 from typing import Any, Optional
+import abc
 
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from issl import GumbelCategorical
 from issl.architectures import get_Architecture
-from issl.helpers import kl_divergence, prod, queue_push_, sinkhorn_knopp, weights_init
+from issl.helpers import RunningMean, kl_divergence, prod, queue_push_, sinkhorn_knopp, weights_init
 from torch.distributions import Categorical
 from torch.nn import functional as F
 
 __all__ = [
-    "SelfDistillationISSL",
     "PriorSelfDistillationISSL",
     "ClusterSelfDistillationISSL",
+    "SimSiamSelfDistillationISSL",
 ]
 
-
-class SelfDistillationISSL(nn.Module):
+class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
     """Compute the ISSL loss using self distillation (i.e. approximates M(X) using current representation).
-
-    Notes
-    -----
-    - The key is to ensure that the M(X) you are approximating is approximately maximal (i.e. does not collapse).
-    There are multiple ways of doing so: EMA, stop gradients, prior, ...
 
     Parameters
     ----------
     z_shape : sequence of int
         Shape of the representation.
 
-    loss : callable, optional
-        Loss with represent to which to compute R[M(X)|Z]
-
-    is_ema : bool, optional
-        Whether to use an EMA encoder that is derived using exponential moving averaged of the predictor.
-
-    is_process_Mx : bool, optional
-        Whether to process the projector. If not then this ensures the projector and processor have
-        different architectures.
-
-    is_stop_grad : bool, optional
-        Whether to stop the gradients of the part of the projector that shares parameters with the encoder.
-        This will not stop gradients for self.projector.
-
-    is_normalize_proj : bool, optional
-        Whether to normalize the predictions after the predictor / projector.
+    out_dim : float, optional
+        Size of the output of the projector. Note that if  <= 1 it will be a percentage of z_dim.
 
     is_aux_already_represented : bool, optional
         Whether the positive examples are already represented => no need to use p_ZlX again.
         In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
         for clip, where the positive examples are text sentences that are already represented.
 
-    is_pred_proj_same : bool, optional
-        Whether to use the same projector as the predictor. Note that is opposite than
-        in `ContrastiveISSL` to easily allow linear.
-
-    n_Mx : float, optional
-        Number of maximal invariant to predict. Note that if  <= 1 it will be a percentage of z_dim.
-
-    is_symmetrized : bool, optional
-        Whether to use the the two augmentations A,A' for both branches and symmetrize loss.
-
-    predictor_kwargs : dict, optional
-        Arguments to get `Predictor` from `get_Architecture`. To use no predictor set `architecture=flatten`.
+    is_symmetric_loss : bool, optional
+        Whether to use the two augmentations A,A' for both branches and symmetrize loss.
 
     projector_kwargs : dict, optional
-        Arguments to get `Projector` from `get_Architecture`. To use no predictor set `architecture=flatten`.
+        Arguments to get `Projector` from `get_Architecture`.
     """
 
     def __init__(
-        self,
-        z_shape: Sequence[int],
-        loss: Optional[Callable],
-        is_ema: bool = False,
-        is_process_Mx: bool = False,
-        is_stop_grad: bool = True,
-        is_aux_already_represented: bool = False,
-        is_normalize_proj: bool = False,
-        is_pred_proj_same: bool = False,
-        n_Mx: float = 128,
-        is_symmetrized=False,
-        predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
-        projector_kwargs: dict[str, Any] = {
-            "architecture": "mlp",
-            "hid_dim": 2048,
-            "n_hid_layers": 2,
-            "norm_layer": "batch",
-        },
+            self,
+            z_shape: Sequence[int],
+            out_dim: float = 1000,
+            is_aux_already_represented: bool = False,
+            is_symmetric_loss: bool=True,
+            projector_kwargs: dict[str, Any] = {"architecture": "linear"},
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
-        if loss is not None:
-            # Allows None such that module that inherit can redefine compute loss
-            self.compute_loss = loss
-        self.is_ema = is_ema
-        self.is_process_Mx = is_process_Mx
-        self.is_stop_grad = is_stop_grad
+        self.out_dim = out_dim if out_dim > 1 else max(10, int(prod(self.z_shape) * out_dim))
         self.is_aux_already_represented = is_aux_already_represented
-        self.is_normalize_proj = is_normalize_proj
-        self.is_pred_proj_same = is_pred_proj_same
-        self.n_Mx = n_Mx if n_Mx > 1 else max(10, int(prod(self.z_shape) * n_Mx))
-        self.is_symmetrized = is_symmetrized
-        self.predictor_kwargs = self.process_shapes(predictor_kwargs)
+        self.is_symmetric_loss = is_symmetric_loss
+
         self.projector_kwargs = self.process_shapes(projector_kwargs)
-
-        Predictor = get_Architecture(**self.predictor_kwargs)
-        self.predictor = Predictor()
-
-        if self.is_pred_proj_same:
-            self.projector = self.predictor
-        else:
-            Projector = get_Architecture(**self.projector_kwargs)
-            self.projector = Projector()
+        Projector = get_Architecture(**self.projector_kwargs)
+        self.projector = Projector()
 
         self.reset_parameters()
 
@@ -126,12 +69,12 @@ class SelfDistillationISSL(nn.Module):
 
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
-        kwargs["in_shape"] = self.z_shape
-        kwargs["out_shape"] = self.n_Mx
+        kwargs["in_shape"] = kwargs.get("in_shape", self.z_shape)
+        kwargs["out_shape"] = kwargs.get("out_shape", self.out_dim)
         return kwargs
 
     def forward(
-        self, z: torch.Tensor, a: torch.Tensor, parent: Any
+            self, z: torch.Tensor, a: torch.Tensor, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 
@@ -162,45 +105,31 @@ class SelfDistillationISSL(nn.Module):
                 f"When using contrastive loss the representation needs to be flattened."
             )
 
-        # TODO test if EMA + callback working
-        if self.is_ema and not hasattr(parent, "ema_p_ZlX"):
-            # make sure that encoder is part of the parent for EMA
-            parent.ema_p_ZlX = parent.p_ZlX
-
         # shape: [batch_size, z_dim]
         if self.is_aux_already_represented:
             # sometimes already represented, e.g., for CLIP the sentences are pre represented.
             z_a = a
         else:
-            z_a = parent(a, is_sample=False, is_process_Z=self.is_process_Mx)
+            z_a = parent(a, is_sample=False)
 
         loss, logs, other = self.loss(z, z_a)
 
         if self.is_symmetrized:
-            loss2, _, __ = self.loss(z, z_a)
+            loss2, _, __ = self.loss(z_a, z)
             loss = (loss + loss2) / 2
 
         return loss, logs, other
 
-    def loss(self, z, z_a):
-        if self.is_stop_grad:
-            z_a = z_a.detach()
-
-        # shape: [batch_size, M_shape]
-        M_pred = self.predictor(z)
-        M_a = self.projector(z_a)
-
-        if self.is_normalize_proj:
-            M_pred = F.normalize(M_pred, dim=1, p=2)
-            M_a = F.normalize(M_a, dim=1, p=2)
-
-        # shape: [batch_size, M_shape]
-        loss, logs, other = self.compute_loss(M_pred, M_a)
-
-        return loss, logs, other
+    @abc.abstractmethod
+    def loss(self, z : torch.Tensor, z_a: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
+        pass
 
 # performs SSL by having one part of the model implementing the M(X)
-add_doc = """                
+add_doc_prior = """              
+    n_Mx : float, optional
+        Number of maximal invariant to predict. Replaces `out_dim`.
+        Note that if  <= 1 it will be a percentage of z_dim.
+          
     beta_pM_unif : float, optional
         Parameter that weights the divergence D[p_hat(M) || Unif]
         
@@ -208,32 +137,66 @@ add_doc = """
         Weight of the exponential moving average for estimating the marginal distribution p(M). Larger means more weight 
         to the current estimate. Note that previous estimate will only be used to compute a better estimate but will not 
         be backpropagation through to avoid large memory usage for the backprop. If `None` does not use ema. 
+        
+    is_symmetric_KL_H : bool, optional
+        Whether to treat both the projector and predictor with the same loss.
+        
+    predictor_kwargs: dict, optional
+        Arguments to get `Predictor` from `get_Architecture`. 
     """
 
-
-class PriorSelfDistillationISSL(SelfDistillationISSL):
-    __doc__ = SelfDistillationISSL.__doc__ + add_doc
+class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
+    __doc__ = BaseSelfDistillationISSL.__doc__ + add_doc_prior
 
     def __init__(
         self,
         *args,
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
-        is_normalize_proj: bool = False,
-        is_stop_grad: bool = False,
+        n_Mx: int=1000,
+        is_symmetric_KL_H: bool=True,
+        predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
         **kwargs,
     ) -> None:
 
-        super().__init__(*args, is_normalize_proj=is_normalize_proj, is_stop_grad = is_stop_grad, **kwargs)
+        super().__init__(*args, out_dim=n_Mx, **kwargs)
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
+        self.is_symmetric_KL_H = is_symmetric_KL_H
+
+        self.predictor_kwargs = self.process_shapes(predictor_kwargs)
+        Predictor = get_Architecture(**self.predictor_kwargs)
+        self.predictor = Predictor()
+
+        if self.ema_weight_prior is not None:
+            self.ema_marginal = RunningMean(torch.ones(n_Mx) / n_Mx, alpha=self.ema_weight_prior)
+
+            if self.is_symmetric_KL_H:
+                self.ema_marginal_a = RunningMean(torch.ones(n_Mx) / n_Mx, alpha=self.ema_weight_prior)
+
+        self.reset_parameters()
 
     def reset_parameters(self) -> None:
         super().reset_parameters()
 
-    def compute_loss(
-        self, M_pred: torch.Tensor, M_a: torch.Tensor,
+    def loss(
+        self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
+
+        # shape: [batch_size, M_shape]
+        M = self.predictor(z)
+        M_a = self.projector(z_a)
+
+        # shape: [batch_size, M_shape]
+        loss, logs, other = self.asymmetric_loss(M, M_a)
+
+        if self.is_symmetric_KL_H:
+            loss2, _, __ = self.asymmetric_loss(M_a, M, is_a=True)
+            loss = (loss + loss2) / 2
+
+        return loss, logs, other
+
+    def asymmetric_loss(self, M, M_a, is_a: bool=False):
 
         # p(M|Z). batch shape: [batch_size] ; event shape: []
         p_Mlz = Categorical(logits=M_a)
@@ -241,37 +204,26 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         # current p(M). batch shape: [] ; event shape: []
         hat_p_M = Categorical(probs=p_Mlz.probs.mean(0))
 
-        # Unif(calM). batch shape: [] ; event shape: []
-        uniform = Categorical(logits=torch.ones_like(hat_p_M.probs))
-
         mean_p_M = hat_p_M.probs.float()
-
         if self.ema_weight_prior is not None:
-            if not hasattr(self, "ema_mean_p_M"):
-                # initialize with uniform
-                # TODO: should be initialized in reset_parameters as non trainable param
-                self.ema_mean_p_M = uniform.probs.float()
-
-            alpha = self.ema_weight_prior
-            assert 0.0 <= alpha <= 1.0
-            ema_mean_p_M = alpha * mean_p_M + (1 - alpha) * self.ema_mean_p_M
-            # don't keep all the computational graph to avoid memory++
-            self.ema_mean_p_M = ema_mean_p_M.detach().float()
-        else:
-            ema_mean_p_M = mean_p_M
+            # moving average should depend on predictor or projector => do not share
+            run_marginal = self.ema_marginal_a if is_a else self.ema_marginal
+            mean_p_M = run_marginal(mean_p_M)
 
         # p(M) moving avg. batch shape: [] ; event shape: []
-        ema_p_M = Categorical(probs=ema_mean_p_M)
+        p_M = Categorical(probs=mean_p_M)
+
+        # Unif(calM). batch shape: [] ; event shape: []
+        prior = Categorical(logits=torch.ones_like(hat_p_M.probs))
 
         # D[\hat{p}(M) || Unif(\calM)]. shape: []
-        # this is equivalent to maximizing entropy `fit_pM_Unif = -ema_p_M.entropy()`
-        # keeping the general code here in case you have a different prior on p(M)
-        fit_pM_Unif = kl_divergence(ema_p_M, uniform)
+        # for unif prior same as maximizing entropy
+        fit_pM_Unif = kl_divergence(p_M, prior)
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
         # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
         # p(M|Z) you want to min H[M|Z]. So min KL + H[M|Z] = - E_{p(M|Z)}[log q(M|Z)]
-        fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
+        fit_pMlz_qMlz = -(p_Mlz.probs * M.log_softmax(-1)).sum(-1)
 
         # shape: [batch_size]
         loss = fit_pMlz_qMlz + self.beta_pM_unif * fit_pM_Unif
@@ -289,123 +241,26 @@ class PriorSelfDistillationISSL(SelfDistillationISSL):
         return loss, logs, other
 
 
-# performs SSL by using only the SG trick (same as SimSiam)
-add_doc = """                
-    """
-
-#
-# class StopGradSelfDistillationISSL(SelfDistillationISSL):
-#     __doc__ = SelfDistillationISSL.__doc__ + add_doc
-#
-#     def __init__(
-#             self,
-#             *args,
-#             loss= lambda m1,m2 = - F.cosine_similarity(z1, z2, dim=-1),
-#             is_stop_grad: bool = True,
-#             is_normalize_proj: bool = False,
-#             is_pred_proj_same: bool = True,
-#             n_Mx: int=2048,
-#             predictor_kwargs: dict[str, Any] = {
-# #                 "architecture": "mlp",
-# #                 "hid_dim": 2048,
-# #                 "n_hid_layers": 2,
-# #                 "norm_layer": "batch",
-# #             },
-#
-#             is_symmetrized: bool = True,
-#             ema_weight_prior: Optional[float] = None,
-#             is_normalize_proj: bool = False,
-#             is_symmetric_branches: bool = False,
-#             **kwargs,
-#     ) -> None:
-#
-#         super().__init__(*args, is_normalize_proj=is_normalize_proj, is_symmetrized=is_symmetrized, **kwargs)
-#         self.beta_pM_unif = beta_pM_unif
-#         self.ema_weight_prior = ema_weight_prior
-#         self.is_symmetric_branches = is_symmetric_branches
-#
-#     def reset_parameters(self) -> None:
-#         super().reset_parameters()
-#
-#     def compute_loss(
-#             self, M_pred: torch.Tensor, M_a: torch.Tensor, z: torch.Tensor
-#     ) -> tuple[torch.Tensor, dict, dict]:
-#
-#         # p(M|Z). batch shape: [batch_size] ; event shape: []
-#         p_Mlz = Categorical(logits=M_a)
-#
-#         # current p(M). batch shape: [] ; event shape: []
-#         hat_p_M = Categorical(probs=p_Mlz.probs.mean(0))
-#
-#         # Unif(calM). batch shape: [] ; event shape: []
-#         uniform = Categorical(logits=torch.ones_like(hat_p_M.probs))
-#
-#         mean_p_M = hat_p_M.probs.float()
-#
-#         if self.ema_weight_prior is not None:
-#             if not hasattr(self, "ema_mean_p_M"):
-#                 # initialize with uniform
-#                 # TODO: should be initialized in reset_parameters as non trainable param
-#                 self.ema_mean_p_M = uniform.probs.float()
-#
-#             alpha = self.ema_weight_prior
-#             assert 0.0 <= alpha <= 1.0
-#             ema_mean_p_M = alpha * mean_p_M + (1 - alpha) * self.ema_mean_p_M
-#             # don't keep all the computational graph to avoid memory++
-#             self.ema_mean_p_M = ema_mean_p_M.detach().float()
-#         else:
-#             ema_mean_p_M = mean_p_M
-#
-#         # p(M) moving avg. batch shape: [] ; event shape: []
-#         ema_p_M = Categorical(probs=ema_mean_p_M)
-#
-#         # D[\hat{p}(M) || Unif(\calM)]. shape: []
-#         # this is equivalent to maximizing entropy `fit_pM_Unif = -ema_p_M.entropy()`
-#         # keeping the general code here in case you have a different prior on p(M)
-#         fit_pM_Unif = kl_divergence(ema_p_M, uniform)
-#
-#         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
-#         # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
-#         # p(M|Z) you want to min H[M|Z]. So min KL + H[M|Z] = - E_{p(M|Z)}[log q(M|Z)]
-#         fit_pMlz_qMlz = -(p_Mlz.probs * M_pred.log_softmax(-1)).sum(-1)
-#
-#         if self.is_symmetric_branches:
-#             p_M2lz = Categorical(logits=M_pred)
-#             # skips ema and only use current mean
-#             hat_p_M2 = Categorical(probs=p_M2lz.probs.float().mean(0))
-#             fit_pM_Unif = (fit_pM_Unif + kl_divergence(hat_p_M2, uniform)) / 2
-#             fit_pMlz_qMlz = (fit_pMlz_qMlz - (p_M2lz.probs * M_a.log_softmax(-1)).sum(-1)) / 2
-#
-#         # shape: [batch_size]
-#         loss = fit_pMlz_qMlz + self.beta_pM_unif * fit_pM_Unif
-#
-#         # H[M|Z]. shape: [batch_size]
-#         H_Mlz = p_Mlz.entropy()
-#
-#         if self.is_symmetric_branches:
-#             H_Mlz = (H_Mlz + p_M2lz.entropy()) / 2
-#
-#         logs = dict(
-#             fit_pM_Unif=fit_pM_Unif,
-#             fit_pMlz_qMlz=fit_pMlz_qMlz.mean(),
-#             H_Mlz=H_Mlz.mean(),
-#         )
-#         other = dict()
-#
-#         return loss, logs, other
-
-
 # do SSL by performing online clustering with hard constraint of equiprobability => learn a bank of M(X)
 add_doc_cluster = """
+    z_shape : sequence of int
+        Shape of the representation.
+
+    n_Mx : int, optional
+        Number of maximal invariant. This is different than `out_dim` because after the clustering.
+
+    is_ema : bool, optional
+        Whether to use an EMA encoder that is derived using exponential moving averaged of the predictor.
+
+    is_stop_grad : bool, optional
+        Whether to stop the gradients of the part of the projector that shares parameters with the encoder.
+        This will not stop gradients for self.projector.
+
     n_Mx : float, optional
-        Number of clusters (i.e. \calM) to use.
+        Number of maximal invariant to predict. Note that if  <= 1 it will be a percentage of z_dim.
         
     freeze_Mx_epochs : float, optional
         Freeze the M(X) that many epochs from the start.
-        
-    src_tgt_comparison : {"symmetric","single"}, optional
-        If `"symmetric"` then compare X - A and A - X, this is standard. If `"single"` then only compares X to A, This 
-        makes the most sense if A is not equivalent to X.
         
     temperature : float, optional
         Temperature for the predictions softmax predictions.
@@ -418,23 +273,22 @@ add_doc_cluster = """
         Additional arguments to `sinkhorn_knopp`.
 """
 
-
-class ClusterSelfDistillationISSL(SelfDistillationISSL):
-    __doc__ = SelfDistillationISSL.__doc__ + add_doc_cluster
+# for cifar 10 check : https://github.com/facebookresearch/swav/issues/23
+# and https://github.com/abhinavagarwalla/swav-cifar10
+class ClusterSelfDistillationISSL(BaseSelfDistillationISSL):
+    __doc__ = BaseSelfDistillationISSL.__doc__ + add_doc_cluster
 
     def __init__(
         self,
         *args,
+        out_dim: int=1024, # TODO check what is default value in paper
         n_Mx: int = 3000,
+        is_ema: bool = True,
+        is_stop_grad: bool = True,
         freeze_Mx_epochs: int = 1,
-        src_tgt_comparison: str = "symmetric",
         temperature: float = 0.1,
         queue_size: int = 30,
         sinkhorn_kwargs: dict = dict(eps=0.05),
-        is_normalize_proj: bool = True,
-        # clustering is non differentiable so no grad besides if `src_tgt_comparison=="symmetric"`
-        is_pred_proj_same: bool = True,
-        is_stop_grad: bool = True,
         **kwargs,
     ) -> None:
 
@@ -442,56 +296,61 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         self.queue_size = queue_size
         super().__init__(
             *args,
-            is_normalize_proj=is_normalize_proj,
-            is_pred_proj_same=is_pred_proj_same,
-            is_stop_grad=False,  # don't stop gradient in target if using symmetric
+            out_dim=out_dim,
             **kwargs,
         )
+
         self.n_Mx = n_Mx
+        self.is_ema = is_ema
+        self.is_stop_grad = is_stop_grad
         self.freeze_Mx_epochs = freeze_Mx_epochs  # will be frozen in ISSL
-        self.src_tgt_comparison = src_tgt_comparison
         self.temperature = temperature
         self.sinkhorn_kwargs = sinkhorn_kwargs
-        self.is_actual_stop_grad = is_stop_grad
 
-        proj_shape = self.projector_kwargs["out_shape"]
-        self.Mx_logits = nn.Linear(proj_shape, self.n_Mx, bias=False)
+        self.Mx_logits = nn.Linear(out_dim, self.n_Mx, bias=False)
+
+        self.reset_parameters()
+
 
     def reset_parameters(self) -> None:
         super().reset_parameters()
         self.queue = queue.Queue(maxsize=self.queue_size)
 
-    def forward(self, *args, **kwargs):
+    def forward(self, z, a, parent):
         # normalize M(X) weight (projected gradients descent)
         with torch.no_grad():
             w = self.Mx_logits.weight.data.clone()
             w = F.normalize(w, dim=1, p=2)
             self.Mx_logits.weight.copy_(w)
 
-        return super().forward(*args, **kwargs)
+        # TODO test if EMA + callback working
+        if self.is_ema and not hasattr(parent, "ema_p_ZlX"):
+            # make sure that encoder is part of the parent for EMA
+            parent.ema_p_ZlX = parent.p_ZlX
 
-    def compute_loss(
-        self, z_src: torch.Tensor, z_tgt: torch.Tensor,
+        return super().forward(z, a, parent)
+
+    def loss(
+        self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
+        # shape: [batch_size, M_shape]
+        z_proj = self.projector(z)
+        z_proj_a = self.projector(z_a)
+
+        z_src = F.normalize(z_proj, dim=1, p=2)
+        z_tgt = F.normalize(z_proj_a, dim=1, p=2)
+
+        # TODO: check if symemtric is actually what they do in the paper
         # compute logits. shape: [batch_size, n_Mx]
         tmp_Ms_logits = self.Mx_logits(z_src)
         tmp_Mt_logits = self.Mx_logits(z_tgt)
 
-        if self.src_tgt_comparison == "symmetric":
-            # shape: [2*batch_size, n_Mx]
-            # the src is target for target and the target is target for source => swap
-            Ms_logits = torch.cat([tmp_Ms_logits, tmp_Mt_logits], dim=0)
-            Mt_logits = torch.cat([tmp_Mt_logits, tmp_Ms_logits], dim=0)
-            n_tgt = Mt_logits.size(0)
-        elif self.src_tgt_comparison == "single":
-            Ms_logits = tmp_Ms_logits
-            Mt_logits = tmp_Mt_logits
-            n_tgt = Mt_logits.size(0)
-        else:
-            raise ValueError(f"Unknown src_tgt_comparison={self.src_tgt_comparison}.")
+        # symmetrize. shape: [2*batch_size, n_Mx]
+        Ms_logits = torch.cat([tmp_Ms_logits, tmp_Mt_logits], dim=0)
+        Mt_logits = torch.cat([tmp_Mt_logits, tmp_Ms_logits], dim=0)
 
-        if self.is_actual_stop_grad:
+        if self.is_stop_grad:
             Mt_logits = Mt_logits.detach()
 
         # use the queue.
@@ -539,3 +398,73 @@ class ClusterSelfDistillationISSL(SelfDistillationISSL):
         other = dict()
 
         return fit_pMlz_qMlz, logs, other
+
+
+add_doc_simsiam = """              
+    predictor_kwargs : dict, optional
+        Arguments to get `Predictor` from `get_Architecture`. To use no predictor set `architecture=flatten`.
+    """
+
+class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
+    __doc__ = BaseSelfDistillationISSL.__doc__ + add_doc_simsiam
+
+    def __init__(
+            self,
+            *args,
+            out_dim: int=2048,
+            projector_kwargs: dict[str, Any] = {
+                "architecture": "mlp",
+                "hid_dim": 2048,
+                "n_hid_layers": 2,
+                "norm_layer": "batch",
+                "is_bias": False},  # will be followed by batchnorm so drop bias
+            predictor_kwargs: dict[str, Any] = {
+                "architecture": "mlp",
+                "hid_dim": 512,
+                "n_hid_layers": 1,
+                "norm_layer": "batch",
+            },
+            **kwargs
+    ) -> None:
+
+        super().__init__(
+            *args,
+            out_dim=out_dim,
+            projector_kwargs=projector_kwargs,
+            **kwargs,
+        )
+
+        # add batchnorm to the projector
+        self.projector = nn.Sequential(get_Architecture(**projector_kwargs), nn.BatchNorm1d(self.out_dim, affine=False))
+
+        predictor_kwargs["in_shape"] = self.out_dim
+        self.predictor_kwargs = self.process_shapes(predictor_kwargs)
+        Predictor = get_Architecture(**self.predictor_kwargs)
+        self.predictor = Predictor()
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        super().reset_parameters()
+
+    def loss(self, z, z_a):
+        # shape: [batch_size, M_shape]
+        z = self.projector(z)
+        z_a = self.projector(z_a)
+
+        loss1 = self.asymmetric_loss(z, z_a)
+        loss2 = self.asymmetric_loss(z_a, z)
+        loss = (loss1 + loss2) / 2
+
+        logs = dict()
+        other = dict()
+
+        return loss, logs, other
+
+    def asymmetric_loss(self, z, z_a):
+        p = self.predictor(z)
+        z_a = z_a.detach()
+
+        # shape: [batch_size]
+        loss = F.cosine_similarity(p, z_a, dim=-1)
+        return loss

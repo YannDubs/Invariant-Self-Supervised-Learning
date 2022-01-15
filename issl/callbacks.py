@@ -303,7 +303,6 @@ class RepresentationUMAP(PlottingCallback):
         n_neighbors: list[int] = [5,30,100],
         min_dists: list[int] = [0.05,0.1,0.5],
         plot_interval: int = 50,
-        cmap: str ='tab10',
         **kwargs,
     ) -> None:
         super().__init__(**kwargs, plot_interval=plot_interval)
@@ -316,7 +315,6 @@ class RepresentationUMAP(PlottingCallback):
         self.n_labels = n_labels
         self.n_neighbors = n_neighbors
         self.min_dists = min_dists
-        self.cmap = cmap
 
         dataset = dm.test_dataset if self.is_test else dm.train_dataset
         targets = to_numpy(dataset.get_targets())
@@ -352,32 +350,14 @@ class RepresentationUMAP(PlottingCallback):
                     # need correct label and color. maybe just use seaborn ?
                     df = pd.DataFrame({"x1": Z_umap[:,0], "x2": Z_umap[:,1], "Label": self.y})
                     fig, ax = plt.subplots(1, 1, figsize=(15, 15))
-                    sns.scatterplot(data=df, x="x1", y="x2", hue="Label", alpha=0.7, ax=ax) #palette=self.cmap
-                    plt.legend(bbox_to_anchor=(1.25, 1), borderaxespad=0)
+                    sns.scatterplot(data=df, x="x1", y="x2", hue="Label", alpha=0.7, ax=ax)
+                    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
                     name_plots.append((name, fig))
 
         pl_module.train()
 
         for name, fig in name_plots:
             yield fig, dict(name=name)
-
-
-def plot_embeddings(embeddings, labels, label_names, cmap='tab10', title=None):
-
-    fig, ax = plt.subplots(1, len(embeddings), figsize=(26, 6))
-    if title is not None:
-        fig.suptitle(title, fontsize=18);
-    plt.setp(ax, xticks=[], yticks=[]);
-
-    for i, (k, embedding) in enumerate(embeddings.items()):
-        im = ax[i].scatter(*embedding.T, s=0.3, c=labels, cmap=cmap, alpha=1.0)
-        ax[i].set_title(k, fontsize=14)
-
-    cbaxes = fig.add_axes([0.12, 0.05, 0.78, 0.05])
-    cbar = fig.colorbar(im, boundaries=np.arange(num_labels + 1) - 0.5, orientation="horizontal", cax=cbaxes)
-    cbar.set_ticks(np.arange(num_labels))
-    cbar.set_ticklabels(label_names)
-    plt.show()
 
 class Freezer(BaseFinetuning):
     """Freeze entire model.

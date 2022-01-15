@@ -37,6 +37,9 @@ class MLP(nn.Module):
 
     is_skip_hidden : bool, optional
         Whether to skip all the hidden layers with a residual connection.
+
+    is_bias : bool, optional
+        Whether the last layer should have a bias.
     """
 
     def __init__(
@@ -49,6 +52,7 @@ class MLP(nn.Module):
         activation: str = "ReLU",
         dropout_p: float = 0,
         is_skip_hidden: bool = False,
+        is_bias: bool=True,
     ) -> None:
         super().__init__()
 
@@ -60,11 +64,12 @@ class MLP(nn.Module):
         Dropout = nn.Dropout if dropout_p > 0 else nn.Identity
         Norm = get_Normalization(norm_layer, dim=1)
         # don't use bias with batch_norm https://twitter.com/karpathy/status/1013245864570073090?l...
-        is_bias = Norm == nn.Identity
+        bias_hidden = Norm == nn.Identity
+        bias_last = is_bias
         self.is_skip_hidden = is_skip_hidden
 
         self.pre_block = nn.Sequential(
-            nn.Linear(in_dim, hid_dim, bias=is_bias),
+            nn.Linear(in_dim, hid_dim, bias=bias_hidden),
             Norm(hid_dim),
             Activation(),
             Dropout(p=dropout_p),
@@ -73,13 +78,13 @@ class MLP(nn.Module):
         # start at 1 because pre_block
         for _ in range(1, n_hid_layers):
             layers += [
-                nn.Linear(hid_dim, hid_dim, bias=is_bias),
+                nn.Linear(hid_dim, hid_dim, bias=bias_hidden),
                 Norm(hid_dim),
                 Activation(),
                 Dropout(p=dropout_p),
             ]
         self.hidden_block = nn.Sequential(*layers)
-        self.post_block = nn.Linear(hid_dim, out_dim)
+        self.post_block = nn.Linear(hid_dim, out_dim, bias=bias_last)
 
         self.reset_parameters()
 

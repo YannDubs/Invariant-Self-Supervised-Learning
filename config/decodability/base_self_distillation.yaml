@@ -7,7 +7,6 @@ kwargs:
   z_shape: ${encoder.z_shape}
   loss: null
   is_ema: False
-  is_process_Mx: False
   is_stop_grad:  True
   is_aux_already_represented: ${data.is_aux_already_represented}
   is_normalize_proj: False
