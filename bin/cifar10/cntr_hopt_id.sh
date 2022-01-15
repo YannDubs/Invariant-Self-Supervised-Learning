@@ -40,11 +40,12 @@ optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-8,1e-5))
 scheduler@scheduler_issl=warm_unifmultistep125,whitening,warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
 seed=1,2,3,4,5,6,7,8,9
 encoder.z_shape=512,1024,2048
-regularizer=huber,none
+regularizer=huber,cosine,rmse,none
 representor.loss.beta=tag(log,interval(1e-8,1e-4))
 decodability.kwargs.temperature=0.3,0.5,0.7
 decodability.kwargs.is_normalize_proj=True,False
 encoder.is_normalize_Z=True,False
+data_repr.kwargs.batch_size=256,512,1024
 trainer.max_epochs=200
 "
 # only train 200 epochs to make sure not too long

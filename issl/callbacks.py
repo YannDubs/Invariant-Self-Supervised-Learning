@@ -136,13 +136,23 @@ class ReconstructMx(PlottingCallback):
     -----
     - The model should have attribute `f_ZhatlM` and `suff_stat_AlZhat`.
     """
+    def __init__(
+        self,
+        *args,
+        plot_interval: int = 50,
+        max_Mx_plot=10,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, plot_interval=plot_interval, **kwargs)
+        self.max_Mx_plot = max_Mx_plot
+
     def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         n_Mx = pl_module.loss_decodability.predecode_n_Mx
 
         with torch.no_grad():
             pl_module.eval()
             with plot_config(**self.plot_config_kwargs, font_scale=2):
-                Ms = torch.eye(n_Mx, device=pl_module.device)
+                Ms = torch.eye(n_Mx, device=pl_module.device)[:self.max_Mx_plot, :]
                 Zhat = pl_module.loss_decodability.f_ZhatlM(Ms)
                 img = pl_module.loss_decodability.suff_stat_AlZhat(Zhat)
                 img = torch.sigmoid(img) # put back on [0,1]
@@ -184,9 +194,10 @@ class LatentDimInterpolator(PlottingCallback):
         range_end: float = 5,
         n_per_lat: int = 7,
         n_lat_traverse: int = 5,
+            plot_interval: int = 50,
         **kwargs,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(plot_interval=plot_interval, **kwargs)
         self.z_dim = z_dim
         self.range_start = range_start
         self.range_end = range_end
