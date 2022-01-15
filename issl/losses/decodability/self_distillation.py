@@ -433,7 +433,7 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
         )
 
         # add batchnorm to the projector
-        self.projector = nn.Sequential(get_Architecture(**projector_kwargs), nn.BatchNorm1d(self.out_dim, affine=False))
+        self.projector = nn.Sequential(self.projector, nn.BatchNorm1d(self.out_dim, affine=False))
 
         predictor_kwargs["in_shape"] = self.out_dim
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
@@ -455,6 +455,9 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
         loss = (loss1 + loss2) / 2
 
         logs = dict()
+        logs["std_collapse"] = F.normalize(z, dim=1, p=2).std(-1).mean()
+        logs["std_collapse_norm"] = logs["std_collapse"] * (z.size(1) ** 0.5) # should be one if gaussian
+
         other = dict()
 
         return loss, logs, other

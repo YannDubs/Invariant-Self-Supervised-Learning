@@ -33,6 +33,7 @@ monitor_direction=[maximize]
 monitor_return=[test/pred/cifar10/accuracy_score]
 hydra.sweeper.n_trials=20
 hydra.sweeper.n_jobs=20
+hydra.sweeper.study_name=v2
 optimizer@optimizer_issl=Adam,AdamW
 optimizer_issl.kwargs.lr=tag(log,interval(7e-4,3e-2))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-7,1e-5))

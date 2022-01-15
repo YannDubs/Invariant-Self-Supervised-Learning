@@ -15,8 +15,8 @@ def get_loss_decodability(mode: str, **kwargs) -> torch.nn.Module:
         return ContrastiveISSL(**kwargs)
     elif mode == "generative":
         return GenerativeISSL(**kwargs)
-    elif mode == "self_distillation":
-        return SelfDistillationISSL(**kwargs)
+    elif mode == "simsiam_self_distillation":
+        return SimSiamSelfDistillationISSL(**kwargs)
     elif mode == "prior_self_distillation":
         return PriorSelfDistillationISSL(**kwargs)
     elif mode == "cluster_self_distillation":

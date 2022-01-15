@@ -1,0 +1,17 @@
+defaults:
+  - base_self_distillation
+
+kwargs:
+  mode: simsiam_self_distillation
+  out_dim: 2048
+  projector_kwargs:
+    architecture: "mlp"
+    hid_dim: 2048
+    n_hid_layers: 2
+    norm_layer: "batch"
+    is_bias: False # will be followed by batchnorm so drop bias
+  predictor_kwargs:
+    architecture: "mlp"
+    hid_dim: 512
+    n_hid_layers: 1
+    norm_layer: "batch"

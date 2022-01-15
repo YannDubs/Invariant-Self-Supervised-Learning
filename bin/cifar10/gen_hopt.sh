@@ -31,6 +31,7 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/cifar10/accuracy_score]
+hydra.sweeper.study_name=v2
 hydra.sweeper.n_trials=10
 hydra.sweeper.n_jobs=10
 optimizer@optimizer_issl=Adam,AdamW
