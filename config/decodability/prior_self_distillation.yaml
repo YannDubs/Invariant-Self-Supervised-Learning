@@ -3,10 +3,12 @@ defaults:
 
 kwargs:
   mode: prior_self_distillation
-  beta_pM_unif: 1.0
+  is_symmetric_loss: True
+  beta_pM_unif: 1.0 # TODO: tune
   ema_weight_prior: null
-  is_normalize_proj: False
-  is_symmetrized: False
+  out_dim: 1000
+  is_symmetric_KL_H: True
+  is_reverse_kl: False
   predictor_kwargs:
     architecture: "linear"
   projector_kwargs:

@@ -37,6 +37,8 @@ except ImportError:
 class RunningMean(nn.Module):
     """Keep track of an exponentially moving average"""
     def __init__(self, init: torch.tensor, alpha: float=0.9):
+        super().__init__()
+
         assert 0.0 <= alpha <= 1.0
         self.alpha = alpha
         self.init = init
@@ -46,6 +48,7 @@ class RunningMean(nn.Module):
         self.running_mean = self.init
 
     def forward(self, x):
+
         out = self.alpha * x + (1 - self.alpha) * self.running_mean
         # don't keep all the computational graph to avoid memory++
         self.running_mean = out.detach().float()

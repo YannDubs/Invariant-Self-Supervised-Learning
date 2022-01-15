@@ -114,7 +114,7 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
 
         loss, logs, other = self.loss(z, z_a)
 
-        if self.is_symmetrized:
+        if self.is_symmetric_loss:
             loss2, _, __ = self.loss(z_a, z)
             loss = (loss + loss2) / 2
 
@@ -126,10 +126,6 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
 
 # performs SSL by having one part of the model implementing the M(X)
 add_doc_prior = """              
-    n_Mx : float, optional
-        Number of maximal invariant to predict. Replaces `out_dim`.
-        Note that if  <= 1 it will be a percentage of z_dim.
-          
     beta_pM_unif : float, optional
         Parameter that weights the divergence D[p_hat(M) || Unif]
         
@@ -153,26 +149,27 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         *args,
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
-        n_Mx: int=1000,
         is_symmetric_KL_H: bool=True,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
+        is_reverse_kl : bool=False, #TODO remove if worst
         **kwargs,
     ) -> None:
 
-        super().__init__(*args, out_dim=n_Mx, **kwargs)
+        super().__init__(*args,  **kwargs)
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
         self.is_symmetric_KL_H = is_symmetric_KL_H
+        self.is_reverse_kl = is_reverse_kl
 
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         Predictor = get_Architecture(**self.predictor_kwargs)
         self.predictor = Predictor()
 
         if self.ema_weight_prior is not None:
-            self.ema_marginal = RunningMean(torch.ones(n_Mx) / n_Mx, alpha=self.ema_weight_prior)
+            self.ema_marginal = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
 
             if self.is_symmetric_KL_H:
-                self.ema_marginal_a = RunningMean(torch.ones(n_Mx) / n_Mx, alpha=self.ema_weight_prior)
+                self.ema_marginal_a = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
 
         self.reset_parameters()
 
@@ -216,9 +213,13 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         # Unif(calM). batch shape: [] ; event shape: []
         prior = Categorical(logits=torch.ones_like(hat_p_M.probs))
 
-        # D[\hat{p}(M) || Unif(\calM)]. shape: []
-        # for unif prior same as maximizing entropy
-        fit_pM_Unif = kl_divergence(p_M, prior)
+        if self.is_reverse_kl:
+            # probably will be worst. Possible issue is that can go to infty loss.
+            fit_pM_Unif = kl_divergence(prior, p_M)
+        else:
+            # D[\hat{p}(M) || Unif(\calM)]. shape: []
+            # for unif prior same as maximizing entropy
+            fit_pM_Unif = kl_divergence(p_M, prior)
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
         # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
@@ -255,9 +256,6 @@ add_doc_cluster = """
     is_stop_grad : bool, optional
         Whether to stop the gradients of the part of the projector that shares parameters with the encoder.
         This will not stop gradients for self.projector.
-
-    n_Mx : float, optional
-        Number of maximal invariant to predict. Note that if  <= 1 it will be a percentage of z_dim.
         
     freeze_Mx_epochs : float, optional
         Freeze the M(X) that many epochs from the start.

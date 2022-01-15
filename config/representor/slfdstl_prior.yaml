@@ -14,15 +14,16 @@ data_repr:
       a_augmentations: ["data-standard"]
       train_x_augmentations: "a_augmentations"
 
-
 decodability:
   kwargs:
-    is_ema: False
-    is_stop_grad:  False
-    is_pred_proj_same:  False
     beta_pM_unif: 1.0 # TODO: tune
     ema_weight_prior: null
-    
+    out_dim: 1000
+    predictor_kwargs:
+      architecture: "linear"
+    projector_kwargs:
+      architecture: "linear"
+
 encoder:
   z_shape: 1024
   is_normalize_Z: False
