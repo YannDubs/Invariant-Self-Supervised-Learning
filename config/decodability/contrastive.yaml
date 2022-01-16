@@ -10,6 +10,7 @@ kwargs:
   is_aux_already_represented: ${data.is_aux_already_represented}
   src_tgt_comparison: "all"
   is_pred_proj_same: True
+  is_self_contrastive: 'yes' # TODO will have to be true or false
   predictor_kwargs:
     architecture: "flatten"
     out_shape: ${encoder.z_shape}

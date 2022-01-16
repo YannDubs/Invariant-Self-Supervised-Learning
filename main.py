@@ -225,6 +225,8 @@ def begin(cfg: Container) -> None:
 
     logger.info(f"Workdir : {cfg.paths.work}.")
 
+    # TODO should have argument to migrate data and change paths for saving
+
 
 def get_stage_name(stage: str) -> str:
     """Return the correct stage name given the mode (representor, predictor, ...)"""

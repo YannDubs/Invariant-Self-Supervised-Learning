@@ -140,6 +140,8 @@ encoder:
   name: ???
   z_shape: 1024
   is_normalize_Z: False
+  is_batchnorm_Z: False # drop if not useful
+  is_relu_Z: False # drop if not useful
   kwargs:
     in_shape: ${data.shape}
     out_shape: ${encoder.z_shape} # do not change that

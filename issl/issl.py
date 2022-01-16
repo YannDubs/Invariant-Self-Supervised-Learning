@@ -42,8 +42,8 @@ class ISSLModule(pl.LightningModule):
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
-        if self.hparams.encoder.is_batchnorm_z:
-            self.batchnorm_z = nn.BatchNorm1d(self.out_dim, prod(self.hparams.encoder.z_shape))
+        if self.hparams.encoder.is_batchnorm_Z:
+            self.batchnorm_Z = nn.BatchNorm1d(prod(self.p_ZlX.out_shape))
 
     @property
     def final_beta(self):
@@ -110,8 +110,8 @@ class ISSLModule(pl.LightningModule):
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
-        if self.hparams.encoder.is_batchnorm_z:
-            z = self.batchnorm_z(z)
+        if self.hparams.encoder.is_batchnorm_Z:
+            z = self.batchnorm_Z(z)
 
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)

@@ -86,8 +86,8 @@ class ResNet(nn.Module):
             # cannot load pretrained if wrong out dim
             kwargs["num_classes"] = self.tmp_out_dim
             # TODO: one difference compared to standard implementation is that our output is linear (i.e. fc)
-            # rather than directly output of the resnet. => one additional layer
-            # should check whether that gives worst performance
+            # while in standard implementation your return directly after avg pool. Issue with standard is that
+            # can't chose dimensionality of Z. Should check whether that gives worst performance
 
         self.resnet = torchvision.models.__dict__[base](
             pretrained=self.is_pretrained,

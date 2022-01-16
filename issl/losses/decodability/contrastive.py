@@ -84,6 +84,7 @@ class ContrastiveISSL(nn.Module):
         is_aux_already_represented: bool = False,
         src_tgt_comparison: str = "all",
         is_pred_proj_same: bool = True,
+        is_self_contrastive = "yes", # TODO document if useful (can be "yes", "no", or "symmetric")
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -103,6 +104,10 @@ class ContrastiveISSL(nn.Module):
         self.is_pred_proj_same = is_pred_proj_same
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         self.projector_kwargs = self.process_shapes(projector_kwargs)
+        self.is_self_contrastive = is_self_contrastive
+
+        if self.is_pred_proj_same:
+            self.is_self_contrastive = "no"
 
         Projector = get_Architecture(**self.projector_kwargs)
         self.projector = Projector()
@@ -175,8 +180,18 @@ class ContrastiveISSL(nn.Module):
 
         batch_size, z_dim = z.shape
 
+        # shape: [batch_size, z_dim]
+        if self.is_aux_already_represented:
+            # sometimes already represented, e.g., for CLIP the sentences are pre represented.
+            z_a = a
+        else:
+            # this should actually be different for the source (sample) and the target (no sampling)
+            # to be exact. i.e. should depend on `src_tgt_comparison`. But that complicated the code
+            # and usually deterministic in any case
+            z_a = parent(a, is_sample=False)
+
         # shape: [(2) * batch_size, (2) * batch_size * world_size]
-        logits = self.compute_logits_p_Alz(z, a, parent)
+        logits = self.compute_logits_p_Alz(z, z_a)
 
         # shape: [(2 *) batch_size]
         hat_H_mlz, logs = self.compute_loss(logits)
@@ -190,20 +205,10 @@ class ContrastiveISSL(nn.Module):
         return hat_H_mlz, logs, other
 
     def compute_logits_p_Alz(
-        self, z: torch.Tensor, a: torch.Tensor, parent: Any
+        self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> torch.Tensor:
         """Compute the logits for the contrastive predictor p(A|Z)."""
         batch_size = z.size(0)
-
-        # shape: [batch_size, z_dim]
-        if self.is_aux_already_represented:
-            # sometimes already represented, e.g., for CLIP the sentences are pre represented.
-            z_a = a
-        else:
-            # this should actually be different for the source (sample) and the target (no sampling)
-            # to be exact. i.e. should depend on `src_tgt_comparison`. But that complicated the code
-            # and usually deterministic in any case
-            z_a = parent(a, is_sample=False)
 
         if self.src_tgt_comparison in ["all", "symmetric"]:
             # shape: [2*batch_size, z_dim]
@@ -274,7 +279,6 @@ class ContrastiveISSL(nn.Module):
             # shape: [2*batch_size, 2*batch_size * world_size]
             mask = torch.cat([mask, ones], dim=1)
             n_classes -= 1  # remove the current example due to masking
-            logits = logits[mask].view(new_batch_size, n_classes)
 
             # infoNCE is essentially the same as a softmax (where weights are other z => try to predict
             # index of positive z). The label is the index of the positive z, which for each z is the
@@ -287,12 +291,14 @@ class ContrastiveISSL(nn.Module):
             # when both batches are only compared with the ones from other batch then you don't drop anything
             # so positives are twice on the diagonal
             pos_idx = torch.cat([arange, arange], dim=0)
+            mask = torch.ones_like(logits).bool()
 
         elif self.src_tgt_comparison == "single":
             # TODO test if correct
             # if you do not treat z and z_a as positives then you simply have's nothing to drop:positives are
             # the ones from the same index
             pos_idx = arange
+            mask = torch.ones_like(logits).bool()
 
         effective_n_classes = n_classes
 
@@ -313,12 +319,43 @@ class ContrastiveISSL(nn.Module):
         # = log(N-1) - E[ crossentropy(z^Tz, p) ]
         # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
         hat_H_m = math.log(effective_n_classes)
-        hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
+        hat_H_mlz = F.cross_entropy(logits[mask].view(new_batch_size, n_classes), # select the logits
+                                    pos_idx,
+                                    reduction="none")
 
         logs = dict(
             I_q_zm=(hat_H_m - hat_H_mlz.mean()),
             hat_H_m=hat_H_m,
             n_negatives=n_classes,
         )
+
+
+        # TODO clean once you decided your best
+        if self.is_self_contrastive == "symmetric":
+            # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
+            assert self.src_tgt_comparison == "all"
+            # all the add examples have 0 probability under p
+            log_q = F.log_softmax(logits)[:, :new_batch_size]
+            # only keep the probability you assign to the 2 positives then sum and divide by 2
+            # essentially multiply and sum by p giving mass 0.5 to each
+            mask = torch.eye(batch_size, device=device).bool()
+            mask = torch.cat([mask, mask], dim=1)
+            mask = torch.cat([mask, mask], dim=0)
+            log_q = log_q[mask].view(new_batch_size, 2)
+            hat_H_mlz = - log_q.sum(1) / 2
+
+        elif self.is_self_contrastive == "yes":
+            # instead of predicting the augmented view from current and masking out current
+            # you will mask out augmented and predict current
+            assert self.src_tgt_comparison == "all"
+            mask = ~torch.eye(new_batch_size, device=device).bool()
+            # mask out the augmented view this time => invert
+            mask = torch.cat([mask[batch_size:, :], mask[:batch_size, :]], dim=0)
+            mask = torch.cat([mask, ones], dim=1)
+            pos_idx = torch.cat([arange, arange + batch_size - 1], dim=0)
+            self_hat_H_mlz = F.cross_entropy(logits[mask].view(new_batch_size, n_classes),
+                                             pos_idx, reduction="none")
+            hat_H_mlz = (hat_H_mlz + self_hat_H_mlz) / 2
+            logs["self_I_q_zm"] = (hat_H_m - self_hat_H_mlz.mean())
 
         return hat_H_mlz, logs

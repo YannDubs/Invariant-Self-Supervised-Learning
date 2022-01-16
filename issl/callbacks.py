@@ -309,7 +309,7 @@ class RepresentationUMAP(PlottingCallback):
         self,
         dm : pl.LightningDataModule,
         is_test: bool = True,
-        n_samples: int = 5000,
+        n_samples: int = 1000,
         n_labels: int = 5,
         n_neighbors: list[int] = [5,30,100],
         min_dists: list[int] = [0.05,0.1,0.5],

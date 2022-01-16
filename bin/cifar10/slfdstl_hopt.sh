@@ -51,6 +51,8 @@ decodability.kwargs.is_symmetric_KL_H=True,False
 decodability.kwargs.is_reverse_kl=True,False
 data_repr.kwargs.batch_size=256,512,1024
 encoder.is_normalize_Z=True,False
+encoder.is_relu_Z=True,False
+encoder.is_batchnorm_Z=True,False
 trainer.max_epochs=200
 "
 # only train 200 epochs to make sure not too long
