@@ -10,7 +10,7 @@ main="main.py"
 
 
 # MODE ?
-while getopts ':s:p:m:t:v:a:c:' flag; do
+while getopts ':s:p:m:t:v:a:c:i' flag; do
   case "${flag}" in
     p )
       prfx="${OPTARG}"
@@ -20,6 +20,10 @@ while getopts ':s:p:m:t:v:a:c:' flag; do
       server="${OPTARG}"
       add_kwargs="${add_kwargs} server=$server"
       echo "$server server ..."
+      ;;
+    i )
+      add_kwargs="${add_kwargs} hydra.launcher.partition=jag-hi"
+      echo "High priority mode"
       ;;
     c )
       id="${OPTARG}"
@@ -57,7 +61,7 @@ while getopts ':s:p:m:t:v:a:c:' flag; do
       echo "Adding ${OPTARG}"
       ;;
     \? )
-      echo "Usage: "$name".sh [-scmvta]"
+      echo "Usage: "$name".sh [-scmvtai]"
       exit 1
       ;;
     : )
@@ -92,7 +96,7 @@ optuna="$results/optuna.db"
 logs="logs/exp_$experiment"
 
 if [[ "$is_plot_only" = false && "$mode" != "continue" ]] ; then
-  if [ -d "$checkpoints" ]; then
+  if [[ -d "$checkpoints" || -d "$logs" || -d "$optuna" || -d "$pretrained" ]]; then
 
     echo -n "$checkpoints and/or pretrained/... exist and/or logs/... exist. Should I delete them (y/n) ? "
     read answer

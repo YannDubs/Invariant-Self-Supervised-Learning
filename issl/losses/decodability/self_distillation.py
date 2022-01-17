@@ -151,7 +151,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         ema_weight_prior: Optional[float] = None,
         is_symmetric_KL_H: bool=True,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
-        is_reverse_kl : bool=False, #TODO remove if worst
         **kwargs,
     ) -> None:
 
@@ -159,7 +158,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
         self.is_symmetric_KL_H = is_symmetric_KL_H
-        self.is_reverse_kl = is_reverse_kl
 
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         Predictor = get_Architecture(**self.predictor_kwargs)
@@ -213,13 +211,9 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         # Unif(calM). batch shape: [] ; event shape: []
         prior = Categorical(logits=torch.ones_like(hat_p_M.probs))
 
-        if self.is_reverse_kl:
-            # probably will be worst. Possible issue is that can go to infty loss.
-            fit_pM_Unif = kl_divergence(prior, p_M)
-        else:
-            # D[\hat{p}(M) || Unif(\calM)]. shape: []
-            # for unif prior same as maximizing entropy
-            fit_pM_Unif = kl_divergence(p_M, prior)
+        # D[\hat{p}(M) || Unif(\calM)]. shape: []
+        # for unif prior same as maximizing entropy
+        fit_pM_Unif = kl_divergence(p_M, prior)
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
         # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic

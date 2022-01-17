@@ -618,12 +618,13 @@ def get_lr_scheduler(
     scheduler_type: Optional[str],
     epochs: Optional[int] = None,
     decay_factor: int = 1000,
-    k_steps: int = 3,
+    k_steps: Optional[int] = None,
     name: Optional[str] = None,
     kwargs_config_scheduler: dict[str, Any] = {},
     is_warmup_lr: bool = False,
     warmup_epochs: float = 10,
     warmup_multiplier: float = 1.0,
+    decay_per_step: Optional[float] = None,
     **kwargs,
 ):
     """Return the correct lr scheduler as a dictionary as required by pytorch lightning.
@@ -647,7 +648,8 @@ def get_lr_scheduler(
         `name in ["expdecay","UniformMultiStepLR"]`.
 
     k_steps : int, optional
-        Number of steps for decreasing the learning rate in `"UniformMultiStepLR"`.
+        Number of steps for decreasing the learning rate in `"UniformMultiStepLR"`. If `None` uses 3 if number of
+        epochs is more than 300 and 200 else.
 
     name : str, optional
         Name of the scheduler for logging.
@@ -666,6 +668,9 @@ def get_lr_scheduler(
         Target learning rate = base lr * multiplier if multiplier > 1.0. if multiplier = 1.0, lr starts from 0
         and ends up with the base_lr. For CosineAnnealingLR scheduler need to be warmup_multiplier=1.0.
 
+    decay_per_step : float, optional
+        Decay to use per step. If given will replace `decay_factor` which is over training.
+
     kwargs :
         Additional arguments to any `torch.optim.lr_scheduler`.
     """
@@ -683,12 +688,20 @@ def get_lr_scheduler(
     if scheduler_type is None:
         scheduler = None
     elif scheduler_type == "expdecay":
-        gamma = (1 / decay_factor) ** (1 / epochs)
+        if decay_per_step is not None:
+            gamma = (1 / decay_per_step)
+        else:
+            gamma = (1 / decay_factor) ** (1 / epochs)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma)
     elif scheduler_type == "UniformMultiStepLR":
+        if k_steps is None:
+            k_steps = 3 if epochs > 300 else 2
         delta_epochs = epochs // (k_steps + 1)
         milestones = [delta_epochs * i for i in range(1, k_steps + 1)]
-        gamma = (1 / decay_factor) ** (1 / k_steps)
+        if decay_per_step is not None:
+            gamma = (1 / decay_per_step)
+        else:
+            gamma = (1 / decay_factor) ** (1 / k_steps)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=milestones, gamma=gamma
         )

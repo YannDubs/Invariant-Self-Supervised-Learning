@@ -131,7 +131,7 @@ class ISSLDataset(abc.ABC):
             return {v: k for k, v in self.class_to_idx.items()}
         else:
             # if no class name just return the index in string
-            return {i: str(i) for i in range(self.shapes["target"])}
+            return {i: str(i) for i in range(self.shapes["target"][0])}
 
     @property
     @abc.abstractmethod

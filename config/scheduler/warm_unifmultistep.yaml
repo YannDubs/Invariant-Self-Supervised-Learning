@@ -1,0 +1,14 @@
+defaults:
+  - base
+
+name: warm${format:${.kwargs.base.warmup_epochs},.1e}_unifmultistep_d${.kwargs.UniformMultiStepLR.decay_per_step}
+modes: ["UniformMultiStepLR"] # list of scheduler to use
+kwargs:
+  # all kwargs
+  UniformMultiStepLR:
+    decay_per_step: 2
+    k_steps: null
+
+  base:
+    is_warmup_lr: True
+    warmup_epochs: 0.1

@@ -335,7 +335,7 @@ class ContrastiveISSL(nn.Module):
             # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
             assert self.src_tgt_comparison == "all"
             # all the add examples have 0 probability under p
-            log_q = F.log_softmax(logits)[:, :new_batch_size]
+            log_q = logits.log_softmax(-1)[:, :new_batch_size]
             # only keep the probability you assign to the 2 positives then sum and divide by 2
             # essentially multiply and sum by p giving mass 0.5 to each
             mask = torch.eye(batch_size, device=device).bool()

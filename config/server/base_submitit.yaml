@@ -1,0 +1,28 @@
+job_id: ${hydra:job.num}_${hydra:job.id} # job num is number in sweep. ID is unique ID like SLURM_JOB_ID
+
+# avoid unnecessary logging : remove progressbar
+callbacks: # can use any callback name of issl.callbacks, pl.callbacks
+  RichProgressBar:
+    is_use : false
+trainer:
+  enable_progress_bar: false
+
+hydra:
+  launcher:
+    # maximum time for the job in minutes
+    timeout_min: ${timeout}
+    # number of cpus to use for each task
+    cpus_per_task: 8
+    # number of gpus to use on each node
+    gpus_per_node: ${trainer.gpus}
+    # number of tasks to spawn on each node
+    tasks_per_node: 1 # number of tasks on single machine
+    # memory to reserve for the job on each node (in GB)
+    mem_gb: 32
+    # number of nodes to use for the job
+    nodes: ${trainer.num_nodes}
+    # name of the job
+    name: ${experiment}
+    # uncomment following once https://github.com/facebookresearch/hydra/pull/1968
+    # log errors and output together
+    #stderr_to_stdout: True

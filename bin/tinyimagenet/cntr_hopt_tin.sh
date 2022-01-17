@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"cntr_hopt_id"
+experiment=$prfx"cntr_hopt_tin"
 notes="
 **Goal**: hyperparameter tuning for contrastive on cifar10.
 "
@@ -11,7 +11,7 @@ source `dirname $0`/../utils.sh
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
-+logger.wandb_kwargs.project=cifar10
++logger.wandb_kwargs.project=tinyimagenet
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_datarepr001test]
@@ -19,7 +19,7 @@ downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_datarepr001test]
 +trainer.num_sanity_val_steps=0
 representor=cntr_stdA
 scheduler_issl.kwargs.base.is_warmup_lr=True
-data@data_repr=cifar10
+data@data_repr=tinyimagenet
 scheduler@scheduler_issl=warm_unifmultistep
 checkpoint@checkpoint_repr=bestTrainLoss
 +trainer.limit_val_batches=0
@@ -36,8 +36,8 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/cifar10/accuracy_score]
-hydra.sweeper.n_trials=1
-hydra.sweeper.n_jobs=1
+hydra.sweeper.n_trials=20
+hydra.sweeper.n_jobs=20
 hydra.sweeper.study_name=v3
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,1e-2))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-7,3e-5))
@@ -48,12 +48,12 @@ encoder.z_shape=512,1024,2048
 regularizer=huber,none
 representor.loss.beta=tag(log,interval(1e-7,3e-5))
 decodability.kwargs.temperature=0.3,0.5,0.7
-decodability.kwargs.is_self_contrastive=no,symmetric
+decodability.kwargs.is_self_contrastive=yes,no,symmetric
 encoder.is_normalize_Z=True,False
 encoder.is_relu_Z=True,False
 encoder.is_batchnorm_Z=True,False
-data_repr.kwargs.batch_size=256,512,1024
-trainer.max_epochs=1000
+data_repr.kwargs.batch_size=256,512
+trainer.max_epochs=300
 "
 # only train 200 epochs to make sure not too long
 # reincorporate warm_unifmultistep125 when longer epochs

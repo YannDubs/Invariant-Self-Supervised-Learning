@@ -15,15 +15,14 @@ mode=dev
 trainer.max_epochs=1
 architecture@encoder=mlp
 data@data_repr=mnist
-data@data_pred=data_repr
+downstream_task.all_tasks=[sklogistic_datarepr]
 timeout=$time
 
 "
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=base_contrastive
-regularizer=kl
+representor=cntr
 "
 
 if [ "$is_plot_only" = false ] ; then
@@ -32,7 +31,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m
 
     wait
 

@@ -53,6 +53,7 @@ from utils.helpers import (
     remove_rf,
     replace_keys,
     set_debug,
+    nlp_cluster,
 )
 
 try:
@@ -81,6 +82,13 @@ except:
 
 
 @hydra.main(config_name="main", config_path="config")
+def main_except(cfg):
+    if cfg.is_nlp_cluster:
+        with nlp_cluster(cfg):
+            main(cfg)
+    else:
+        main(cfg)
+
 def main(cfg):
     logger.info(os.uname().nodename)
 
@@ -224,8 +232,6 @@ def begin(cfg: Container) -> None:
     cfg.other.git_hash = GIT_HASH
 
     logger.info(f"Workdir : {cfg.paths.work}.")
-
-    # TODO should have argument to migrate data and change paths for saving
 
 
 def get_stage_name(stage: str) -> str:
@@ -784,4 +790,4 @@ def get_hypopt_monitor(cfg: NamespaceMap, all_results: dict) -> Any:
 if __name__ == "__main__":
     OmegaConf.register_new_resolver("format", format_resolver)
     OmegaConf.register_new_resolver("list2str", list2str_resolver)
-    main()
+    main_except()
