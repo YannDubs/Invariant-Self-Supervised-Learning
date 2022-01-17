@@ -2,7 +2,7 @@
 
 experiment=$prfx"cntr_hopt_tin"
 notes="
-**Goal**: hyperparameter tuning for contrastive on cifar10.
+**Goal**: hyperparameter tuning for contrastive on tinyimagenet.
 "
 
 # parses special mode for running the script
@@ -35,7 +35,7 @@ hydra/sweeper=optuna
 hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
-monitor_return=[pred/cifar10/accuracy_score]
+monitor_return=[pred/tinyimagenet/accuracy_score]
 hydra.sweeper.n_trials=20
 hydra.sweeper.n_jobs=20
 hydra.sweeper.study_name=v3

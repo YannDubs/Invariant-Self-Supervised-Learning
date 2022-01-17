@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"slfdst_hopt"
+experiment=$prfx"slfdst_hopt_tin"
 notes="
-**Goal**: hyperparameter tuning for selfdistillation on cifar10.
+**Goal**: hyperparameter tuning for selfdistillation on tinyimagenet.
 "
 
 # parses special mode for running the script
@@ -21,7 +21,7 @@ representor=slfdstl_prior
 scheduler_issl.kwargs.base.is_warmup_lr=True
 checkpoint@checkpoint_repr=bestTrainLoss
 scheduler@scheduler_issl=warm_unifmultistep
-data@data_repr=cifar10
+data@data_repr=tinyimagenet
 +trainer.limit_val_batches=0
 ++data_repr.kwargs.val_size=2
 optimizer@optimizer_issl=AdamW
@@ -35,7 +35,7 @@ hydra/sweeper=optuna
 hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
-monitor_return=[pred/cifar10/accuracy_score]
+monitor_return=[pred/tinyimagenet/accuracy_score]
 hydra.sweeper.n_trials=20
 hydra.sweeper.n_jobs=20
 hydra.sweeper.study_name=v3
@@ -57,7 +57,7 @@ data_repr.kwargs.batch_size=128,256,512
 encoder.is_normalize_Z=True,False
 encoder.is_relu_Z=True,False
 encoder.is_batchnorm_Z=True,False
-trainer.max_epochs=200
+trainer.max_epochs=300
 "
 # only train 200 epochs to make sure not too long
 
