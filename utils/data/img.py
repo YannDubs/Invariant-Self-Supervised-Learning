@@ -55,9 +55,10 @@ from .helpers import (
     image_loader,
     int_or_ratio,
     np_img_resize,
-    remove_rf,
     unzip,
 )
+
+import utils.helpers # avoids circular imports
 
 try:
     import tensorflow_datasets as tfds  # only used for tfds data
@@ -612,8 +613,9 @@ class ISSLImgDataModule(ISSLDataModule):
                 self.data_dir, curr_split=split, download=True, **self.dataset_kwargs
             )
 
+    @classmethod
     @property
-    def mode(self) -> str:
+    def mode(cls) -> str:
         return "image"
 
 
@@ -647,8 +649,9 @@ class MnistDataset(ISSLImgDataset, MNIST):
         img, target = MNIST.__getitem__(self, index)
         return img, target
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "MNIST"
 
     @property
@@ -663,8 +666,10 @@ class MnistDataset(ISSLImgDataset, MNIST):
 
 
 class MnistDataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return MnistDataset
 
 
@@ -685,8 +690,9 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
         img, target = CIFAR10.__getitem__(self, index)
         return img, target
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "CIFAR10"
 
     @property
@@ -695,26 +701,33 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
 
 
 class Cifar10DataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Cifar10Dataset
 
 
 # Cifar10 #
 class Cifar10DevDataset(Cifar10Dataset):
+
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "CIFAR10_dev"
 
 
 class Cifar10DevDataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Cifar10DevDataset
 
 
 # Cifar100 #
 class Cifar100Dataset(ISSLImgDataset, CIFAR100):
+
     def __init__(self, *args, curr_split: str = "train", **kwargs) -> None:
         is_train = curr_split == "train"
         super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
@@ -730,8 +743,9 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
         img, target = CIFAR100.__getitem__(self, index)
         return img, target
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "CIFAR100"
 
     @property
@@ -740,13 +754,17 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
 
 
 class Cifar100DataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Cifar100Dataset
+
 
 
 # STL10 #
 class STL10Dataset(ISSLImgDataset, STL10):
+
     def __init__(self, *args, curr_split: str = "train", **kwargs):
         super().__init__(*args, curr_split=curr_split, split=curr_split, **kwargs)
 
@@ -761,8 +779,9 @@ class STL10Dataset(ISSLImgDataset, STL10):
         img, target = STL10.__getitem__(self, index)
         return img, target
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "STL10"
 
     @property
@@ -771,10 +790,11 @@ class STL10Dataset(ISSLImgDataset, STL10):
 
 
 class STL10DataModule(ISSLImgDataModule):
-    @property
-    def Dataset(self) -> Any:
-        return STL10Dataset
 
+    @classmethod
+    @property
+    def Dataset(cls) -> Any:
+        return STL10Dataset
 
 # STL10 Unlabeled #
 class STL10UnlabeledDataset(STL10Dataset):
@@ -784,13 +804,15 @@ class STL10UnlabeledDataset(STL10Dataset):
 
 
 class STL10UnlabeledDataModule(ISSLImgDataModule):
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return STL10UnlabeledDataset
 
 
 # Imagenet #
 class ImageNetDataset(ISSLImgDataset, ImageNet):
+
     def __init__(
         self,
         root: str,
@@ -835,8 +857,9 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
         img, target = ImageNet.__getitem__(self, index)
         return img, target
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "ImageNet"
 
     def __len__(self) -> int:
@@ -848,10 +871,11 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
 
 
 class ImagenetDataModule(ISSLImgDataModule):
-    @property
-    def Dataset(self) -> Any:
-        return ImageNetDataset
 
+    @classmethod
+    @property
+    def Dataset(cls) -> Any:
+        return ImageNetDataset
 
 ### Tensorflow Datasets Modules ###
 class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
@@ -883,7 +907,6 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
         Recommended for images that will be always rescaled to a smaller version (for memory gains).
         Only used when downloading.
     """
-
     min_size = 256
 
     def __init__(
@@ -945,7 +968,7 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
 
         for split, np_data in zip(self.get_available_splits(), np_datasets):
             split_path = self.get_dir(split)
-            remove_rf(split_path, not_exist_ok=True)
+            utils.helpers.remove_rf(split_path, not_exist_ok=True)
             split_path.mkdir()
             for i, (x, y) in enumerate(tqdm(np_data)):
                 if self.min_size is not None:
@@ -969,7 +992,7 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
             check_file.touch()
 
         # remove all downloading files
-        remove_rf(Path(metadata.data_dir))
+        utils.helpers.remove_rf(Path(metadata.data_dir))
 
     def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
         img, target = ImageFolder.__getitem__(self, index)
@@ -992,9 +1015,11 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
     def standard_augmentations(self) -> list[str]:
         return ["simclr-imagenet"]
 
+
+    @classmethod
     @property
     @abc.abstractmethod
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         """Name of datasets to load, this should be the same as found at `www.tensorflow.org/datasets/catalog/`."""
         ...
 
@@ -1010,8 +1035,9 @@ class Food101Dataset(TensorflowBaseDataset):
         shapes["target"] = (101,)
         return shapes
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "food101"
 
     def to_tfds_split(self, split: str) -> str:
@@ -1025,8 +1051,10 @@ class Food101Dataset(TensorflowBaseDataset):
 
 
 class Food101DataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Food101Dataset
 
 
@@ -1041,14 +1069,17 @@ class Cars196Dataset(TensorflowBaseDataset):
         shapes["target"] = (196,)
         return shapes
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "cars196"
 
 
 class Cars196DataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Cars196Dataset
 
 
@@ -1063,8 +1094,9 @@ class PCamDataset(TensorflowBaseDataset):
         shapes["target"] = (2,)
         return shapes
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "patch_camelyon"
 
     @classmethod
@@ -1073,8 +1105,10 @@ class PCamDataset(TensorflowBaseDataset):
 
 
 class PCamDataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return PCamDataset
 
 
@@ -1092,14 +1126,16 @@ class Pets37Dataset(TensorflowBaseDataset):
         shapes["target"] = (37,)
         return shapes
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "oxford_iiit_pet"
 
 
 class Pets37DataModule(ISSLImgDataModule):
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Pets37Dataset
 
     @property
@@ -1118,14 +1154,17 @@ class Caltech101Dataset(TensorflowBaseDataset):
         shapes["target"] = (102,)  # ?!? there are 102 classes in caltech 101
         return shapes
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "caltech101"
 
 
 class Caltech101DataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return Caltech101Dataset
 
     @property
@@ -1211,7 +1250,7 @@ class ExternalImgDataset(ISSLImgDataset):
         logger.info(f"Downloading {self.dataset_name} ...")
 
         data_dir = self.get_dir()
-        remove_rf(data_dir, not_exist_ok=True)
+        utils.helpers.remove_rf(data_dir, not_exist_ok=True)
         data_dir.mkdir(parents=True)
 
         self.download(data_dir)
@@ -1235,7 +1274,7 @@ class ExternalImgDataset(ISSLImgDataset):
             split_path = self.get_dir(split)
 
             self.move_split(split)
-            remove_rf(split_path, not_exist_ok=True)
+            utils.helpers.remove_rf(split_path, not_exist_ok=True)
             split_path.mkdir()
 
             to_rm = self.preprocess_split(split)
@@ -1245,7 +1284,7 @@ class ExternalImgDataset(ISSLImgDataset):
 
             for f in to_rm:
                 # remove all files and directories that are not needed
-                remove_rf(f)
+                utils.helpers.remove_rf(f)
 
         logger.info(f"{self.dataset_name} successfully pre-processed.")
 
@@ -1361,11 +1400,12 @@ class TinyImagenetDataset(ExternalImgDataset):
         tmp_dir = Path(self.root) / f"tmp_{self.dataset_name}"
 
         curr_dir.rename(tmp_dir)
-        remove_rf(curr_dir.parent)
+        utils.helpers.remove_rf(curr_dir.parent)
         tmp_dir.rename(curr_dir.parent)
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "tiny-imagenet-200"
 
     @property
@@ -1374,8 +1414,10 @@ class TinyImagenetDataset(ExternalImgDataset):
 
 
 class TinyImagenetDataModule(ISSLImgDataModule):
+
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return TinyImagenetDataset
 
 
@@ -1479,8 +1521,9 @@ class CocoClipDataset(ExternalImgDataset):
         # no data needed to be loaded
         pass
 
+    @classmethod
     @property
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         return "coco_captions"
 
     @property
@@ -1493,8 +1536,9 @@ class CocoClipDataset(ExternalImgDataset):
 
 
 class CocoClipDataModule(ISSLImgDataModule):
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         return CocoClipDataset
 
 

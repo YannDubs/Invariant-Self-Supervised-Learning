@@ -98,9 +98,10 @@ class ISSLDataset(abc.ABC):
                 len(np.unique(m)) for m in self.agg_tgt_mapper
             )
 
+    @classmethod
     @property
     @abc.abstractmethod
-    def dataset_name(self) -> str:
+    def dataset_name(cls) -> str:
         """Name of the dataset."""
         ...
 
@@ -306,8 +307,9 @@ class ISSLDataModule(LightningDataModule):
         self.dataset_kwargs = dataset_kwargs
         self.is_shuffle_train = is_shuffle_train
 
+    @classmethod
     @property
-    def Dataset(self) -> Any:
+    def Dataset(cls) -> Any:
         """Return the correct dataset."""
         raise NotImplementedError()
 
@@ -327,8 +329,9 @@ class ISSLDataModule(LightningDataModule):
         """Download and save data on file if needed."""
         raise NotImplementedError()
 
+    @classmethod
     @property
-    def mode(self) -> str:
+    def mode(cls) -> str:
         """Says what is the mode/type of data. E.g. images, distributions, ...."""
         raise NotImplementedError()
 

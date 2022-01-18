@@ -188,7 +188,7 @@ class ContrastiveISSL(nn.Module):
             # this should actually be different for the source (sample) and the target (no sampling)
             # to be exact. i.e. should depend on `src_tgt_comparison`. But that complicated the code
             # and usually deterministic in any case
-            z_a = parent(a, is_sample=False)
+            z_a = parent(a, is_sample=False, is_process=True)
 
         # shape: [(2) * batch_size, (2) * batch_size * world_size]
         logits = self.compute_logits_p_Alz(z, z_a)

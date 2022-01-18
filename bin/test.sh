@@ -17,7 +17,6 @@ architecture@encoder=mlp
 data@data_repr=mnist
 downstream_task.all_tasks=[sklogistic_datarepr]
 timeout=$time
-
 "
 
 # every arguments that you are sweeping over

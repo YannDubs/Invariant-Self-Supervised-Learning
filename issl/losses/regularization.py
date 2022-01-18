@@ -118,7 +118,7 @@ class CoarseningRegularizer(nn.Module):
                 # sometimes already represented, e.g., for CLIP the sentences are pre represented.
                 z_a = a
             else:
-                z_a = parent(a, is_sample=True)
+                z_a = parent(a, is_sample=True, is_process=True)
 
             in_x = z
             in_a = z_a

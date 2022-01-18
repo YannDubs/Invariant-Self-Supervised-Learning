@@ -110,7 +110,7 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             # sometimes already represented, e.g., for CLIP the sentences are pre represented.
             z_a = a
         else:
-            z_a = parent(a, is_sample=False)
+            z_a = parent(a, is_sample=False, is_process=True)
 
         loss, logs, other = self.loss(z, z_a)
 

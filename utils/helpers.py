@@ -3,7 +3,6 @@ from __future__ import annotations
 import glob
 import logging
 import os
-import platform
 import shutil
 import warnings
 from contextlib import contextmanager
@@ -510,52 +509,6 @@ def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
         path.unlink()
     elif path.is_dir:
         shutil.rmtree(path)
-
-def get_nlp_path(cfg: Container) -> Path:
-    """Return (create if needed) path on current machine for NLP stanford."""
-    machine_name = platform.node().split(".")[0]
-    machine_path = Path(f"/{machine_name}/")
-
-    user_paths = list(machine_path.glob(f"*/{cfg.user}"))
-    if len(user_paths) == 0:
-        user_path = list(machine_path.iterdir())[-1] / str(cfg.user)
-        user_path.mkdir()
-    else:
-        user_path = user_paths[-1]
-
-    return user_path
-
-def nlp_smooth_exit(cfg: Container) -> None:
-    """Run after exciting on NLP stanford cluster. E.g. chckpt to juice."""
-    pass # TODO: move checpoints
-
-
-
-@contextmanager
-def nlp_cluster(cfg: Container):
-    """Set the cluster for NLP stanford."""
-    user_path = get_nlp_path(cfg)
-
-    prev_dir = os.getcwd()
-    os.chdir(user_path / str(cfg.paths.relative_work)) # change directory on current machine
-
-    # project path on current machine
-    proj_path = user_path / "Invariant-Self-Supervised-Learning"
-    proj_path.mkdir(exist_ok=True)
-
-    cfg.paths.tmp_dir = str(proj_path)
-
-    # TODO: move data
-
-    try:
-        try:
-            yield
-        except SystemExit:
-            # submitit returns sys.exit when SIGTERM. This will be run before exiting.
-            nlp_smooth_exit(cfg)
-    finally:
-        os.chdir(prev_dir) # put back old dir to be safe
-
 
 
 

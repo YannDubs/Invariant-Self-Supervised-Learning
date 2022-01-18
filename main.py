@@ -11,6 +11,7 @@ import copy
 import logging
 import math
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, Optional, Type
@@ -37,6 +38,7 @@ from issl.callbacks import (
 )
 from issl.helpers import MAWeightUpdate, check_import, prod
 from issl.predictors import SklearnPredictor, get_representor_predictor
+from utils.cluster.nlprun import nlp_cluster
 from utils.data import get_Datamodule
 from utils.helpers import (
     ModelCheckpoint,
@@ -53,7 +55,6 @@ from utils.helpers import (
     remove_rf,
     replace_keys,
     set_debug,
-    nlp_cluster,
 )
 
 try:
@@ -83,11 +84,17 @@ except:
 
 @hydra.main(config_name="main", config_path="config")
 def main_except(cfg):
-    if cfg.is_nlp_cluster:
-        with nlp_cluster(cfg):
+    try:
+        if cfg.is_nlp_cluster:
+            with nlp_cluster(cfg):
+                main(cfg)
+        else:
             main(cfg)
-    else:
-        main(cfg)
+
+    except SystemExit:
+        # submitit returns sys.exit when SIGTERM. This will be run before exiting.
+        smooth_exit(cfg)
+
 
 def main(cfg):
     logger.info(os.uname().nodename)
@@ -785,6 +792,19 @@ def get_hypopt_monitor(cfg: NamespaceMap, all_results: dict) -> Any:
     if len(out) == 1:
         return out[0]  # return single value rather than tuple
     return tuple(out)
+
+
+def smooth_exit(cfg: NamespaceMap) -> None:
+    """Everything to run in case you get preempted / exit."""
+
+    training_chckpnt = Path(cfg.paths.checkpoint)
+    exit_chckpnt = Path(cfg.paths.exit_checkpoint)
+
+    if training_chckpnt != exit_chckpnt:
+        # if you want the checkpoints to be saved somewhere else in case exit
+        exit_chckpnt.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copytree(training_chckpnt, exit_chckpnt, dirs_exist_ok=True)
+        logging.info(f"Moved checkpoint to {exit_chckpnt} for smooth exit.")
 
 
 if __name__ == "__main__":

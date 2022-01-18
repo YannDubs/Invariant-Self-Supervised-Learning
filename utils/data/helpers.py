@@ -122,8 +122,7 @@ def download_url(url, save_dir):
         )
 
 
-
-def remove_rf(path, not_exist_ok: bool = False) -> Any:
+def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
     """Remove a file or a folder"""
     path = Path(path)
 
@@ -134,6 +133,8 @@ def remove_rf(path, not_exist_ok: bool = False) -> Any:
         path.unlink()
     elif path.is_dir:
         shutil.rmtree(path)
+
+
 
 
 def np_img_resize(np_imgs: np.ndarray, size: Union[Sequence[int], int]) -> np.ndarray:

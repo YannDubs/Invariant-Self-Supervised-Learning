@@ -80,7 +80,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False
+        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False, is_process: bool=True
     ):
         """Represents the data `x`.
 
@@ -106,15 +106,28 @@ class ISSLModule(pl.LightningModule):
         else:
             z = p_Zlx.mean
 
+        is_bn = self.hparams.encoder.is_batchnorm_Z
+        mode_bn = self.hparams.encoder.batchnorm_mode
+
+        if is_bn and mode_bn == "pre":
+            z = self.batchnorm_Z(z)
+
         # one difference compared to standard implementation is that our representation does not go through a relu
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
-        if self.hparams.encoder.is_batchnorm_Z:
+        if is_bn and mode_bn is None:
+            z = self.batchnorm_Z(z)
+
+        if self.hparams.encoder.batchnorm_mode is None:
             z = self.batchnorm_Z(z)
 
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
+
+        if is_bn and mode_bn == "pre" and is_process:
+            # doesn't do that when goes to predictor
+            z = self.batchnorm_Z(z)
 
         if is_return_p_ZlX:
             return z, p_Zlx
@@ -131,7 +144,7 @@ class ISSLModule(pl.LightningModule):
 
         # z shape: [batch_size, *z_shape]
         # p_Zlx batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
+        z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True, is_process=True)
 
         if self.loss_regularizer is not None:
             # `sample_eff` is proxy to ensure supp(p(Z|M(X))) = supp(p(Z|X)). shape: [batch_size]
