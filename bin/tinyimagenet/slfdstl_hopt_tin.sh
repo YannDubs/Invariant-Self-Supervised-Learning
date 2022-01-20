@@ -38,7 +38,7 @@ monitor_direction=[maximize]
 monitor_return=[pred/tinyimagenet/accuracy_score]
 hydra.sweeper.n_trials=20
 hydra.sweeper.n_jobs=20
-hydra.sweeper.study_name=v4
+hydra.sweeper.study_name=main
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,5e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,7e-6))
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
@@ -60,6 +60,8 @@ encoder.is_batchnorm_Z=True
 encoder.batchnorm_mode=pre,post,null
 trainer.max_epochs=300
 "
+# symmetric loss seems to be worst !!! :O
+
 # only train 200 epochs to make sure not too long
 
 # is_ema and is_stop_grad are just to test that actually worst in practice

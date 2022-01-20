@@ -6,6 +6,8 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
     is_use : false
 trainer:
   enable_progress_bar: false
+  log_every_n_steps: 1000
+  flush_logs_every_n_steps: 1000
 
 hydra:
   launcher:

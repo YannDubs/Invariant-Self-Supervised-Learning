@@ -328,7 +328,7 @@ class RepresentationUMAP(PlottingCallback):
         self.min_dists = min_dists
 
         dataset = dm.test_dataset if self.is_test else dm.train_dataset
-        targets = to_numpy(dataset.get_targets())
+        targets = dataset.cached_targets
         selected_Y = np.random.choice(np.unique(targets), size=self.n_labels, replace=False)
         mask = np.isin(targets,selected_Y)
         idcs_y = np.arange(len(targets))[mask]

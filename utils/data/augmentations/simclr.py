@@ -63,20 +63,6 @@ def get_simclr_augmentations(
         transforms.RandomApply([color_jitter], p=0.8),
         transforms.RandomGrayscale(p=p_gray),
     ]
-    # elif mode is None:
-    #     # DEV trying the one from whitening which is NOT SAME as SIMCRL
-    #     data_transforms = [
-    #         transforms.RandomApply([color_jitter], p=0.8),
-    #         transforms.RandomGrayscale(p=p_gray),
-    #         transforms.RandomResizedCrop(
-    #             size=input_height,
-    #             scale=(crop_s, 1.0),
-    #             interpolation=InterpolationMode.BICUBIC,
-    #         ),
-    #         transforms.RandomHorizontalFlip(p=0.5),
-    #     ]
-    # else:
-    #     raise ValueError(f"Unknown mode={mode}.")
 
     if gaussian_blur:
         # need to check if correct implementation because most people used different gaussian blur

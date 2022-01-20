@@ -119,13 +119,10 @@ class ISSLModule(pl.LightningModule):
         if is_bn and mode_bn is None:
             z = self.batchnorm_Z(z)
 
-        if self.hparams.encoder.batchnorm_mode is None:
-            z = self.batchnorm_Z(z)
-
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
 
-        if is_bn and mode_bn == "pre" and is_process:
+        if is_bn and mode_bn == "pred" and is_process:
             # doesn't do that when goes to predictor
             z = self.batchnorm_Z(z)
 

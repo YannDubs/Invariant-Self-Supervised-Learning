@@ -19,11 +19,12 @@ from torchvision.datasets import (
     CIFAR10,
     CIFAR100,
     CocoCaptions,
-    ImageFolder,
     ImageNet,
     MNIST,
     STL10,
+    ImageFolder,
 )
+from torchvision.transforms.functional_pil import _is_pil_image
 from torchvision.transforms import (
     CenterCrop,
     ColorJitter,
@@ -44,7 +45,7 @@ from torchvision.transforms import (
 )
 from tqdm import tqdm
 
-from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy
+from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy, int_or_ratio
 from .augmentations import get_simclr_augmentations
 from .base import ISSLDataModule, ISSLDataset
 from .helpers import (
@@ -53,7 +54,6 @@ from .helpers import (
     Pets37BalancingWeights,
     download_url,
     image_loader,
-    int_or_ratio,
     np_img_resize,
     unzip,
 )
@@ -104,7 +104,6 @@ __all__ = [
     "ImagenetDataModule",
     "TinyImagenetDataModule",
     "CocoClipDataModule",
-    "Cifar10DevDataModule",
 ]
 
 
@@ -143,12 +142,11 @@ class ISSLImgDataset(ISSLDataset):
         What dataset to use for the normalization, e.g., "clip" for standard online normalization. If `None`, uses the
         default from the dataset. Only used if `is_normalize`.
 
-    base_resize : {"resize","upscale_crop_eval", "clip_resize",None}, optional
+    base_resize : {"resize","upscale_crop_eval", "clip_resize", None}, optional
         What resizing to apply. If "resize" uses the same standard resizing during train and test.
-        If "scale_crop_eval" then during test first up scale to 1.1*size and then center crop (this
+        If "scale_crop_eval" then (ONLY) during test first up scale to 1.1*size and then center crop (this
         is used by SimCLR). If "clip_resize" during test first resize such that smallest side is
-        224 size and then center crops, during training ensures that image is first rescaled to smallest
-        side of 256. If None does not perform any resizing.
+        224 size and then center crops, during training same but random crop. If None does not perform any resizing.
 
     curr_split : str, optional
         Which data split you are considering.
@@ -165,11 +163,15 @@ class ISSLImgDataset(ISSLDataset):
         label class of size. There will be n_sub_label subpartitions. This is useful to know exactly the number of
         equivalence classes you are learning, while being somewhat realistic.
 
+    is_data_in_memory : bool, optional
+        Whether to pre-load all the data in memory.
+
     kwargs:
         Additional arguments to `ISSLDataset`.
     """
 
     is_aux_already_represented = False
+    attr_data_memory = ""   # set following if data already precomputed to avoid duplication
 
     def __init__(
         self,
@@ -184,6 +186,7 @@ class ISSLImgDataset(ISSLDataset):
         is_shuffle_targets: bool = False,
         is_shuffle_Mx: bool = False,
         n_sub_label: int = 1,
+        is_data_in_memory: bool = False,
         **kwargs,
     ):
         self.base_resize = base_resize
@@ -203,6 +206,9 @@ class ISSLImgDataset(ISSLDataset):
         self.n_sub_label = n_sub_label
         self.is_shuffle_targets = is_shuffle_targets
         self.is_shuffle_Mx = is_shuffle_Mx
+        self.is_data_in_memory = is_data_in_memory
+
+        self.cache_imgs_tgt_()  # pre compute the cached targets and images
 
         if self.is_shuffle_targets:
             # need to shuffle before computing Mx
@@ -256,29 +262,24 @@ class ISSLImgDataset(ISSLDataset):
         """Whether considering training split."""
         return self.curr_split == "train"
 
-    def get_targets(self):
-        """Return the targets."""
-        if hasattr(self, "targets"):
-            # some dataset already load them by default (a.g. MNIST)
-            return self.targets
+    def cache_imgs_tgt_(self):
+        """Cache the images and targets if necessary. PIL for images, numpy for tgt."""
+        self.cached_targets = np.stack(
+            [to_numpy(self.get_img_target(i)[1]) for i in range(self._tmp_len)]
+        )
 
-        if not hasattr(self, "_targets"):
-            self._targets = np.stack(
-                [to_numpy(self.get_img_target(i)[1]) for i in range(len(self))]
-            )
+        if self.is_data_in_memory:
+            # This should all be in PIL
+            self.cached_images = [self.get_img_target(i)[0] for i in range(self._tmp_len)]
+            assert _is_pil_image(self.cached_images[0])
 
-        return self._targets
+            if self.attr_data_memory != "":
+                # delete possible other data in memory to avoid duplicate
+                delattr(self, self.attr_data_memory)
 
     def shuffle_targets_(self):
-        targets = self.get_targets()
         with tmp_seed(self.seed):
-            if isinstance(targets, torch.Tensor):
-                targets = targets.numpy()
-            elif isinstance(targets, (list, np.ndarray)):
-                pass  # np and list can be shuffled in place
-            else:
-                raise ValueError("Unknown type of targets for inplace shuffling.")
-            np.random.shuffle(targets)  # inplace
+            np.random.shuffle(self.cached_targets)  # inplace
 
     @property
     def Mxs(self) -> np.ndarray:
@@ -287,7 +288,7 @@ class ISSLImgDataset(ISSLDataset):
             return self._Mxs
 
         if self.is_Mx_aug:
-            targets = to_numpy(self.get_targets())
+            targets = self.cached_targets
             if self.n_sub_label > 1:
                 assert len(self) % self.n_sub_label == 0
                 with tmp_seed(self.seed):
@@ -314,11 +315,8 @@ class ISSLImgDataset(ISSLDataset):
             self._Mxs = np.array(range(len(self)))
 
         if self.is_coarser_Mx:
-            targets = to_numpy(self.get_targets())
+            targets = self.cached_targets
             self._Mxs = targets % 2
-
-        # targets might not always be numpy. To simplify code let Mxs be numpy
-        self._Mxs = to_numpy(self._Mxs)
 
         if self.is_shuffle_Mx:
             with tmp_seed(self.seed):
@@ -328,6 +326,15 @@ class ISSLImgDataset(ISSLDataset):
 
     def set_eval_(self):
         self.curr_split = "test"
+
+
+    def get_img_target_cached(self, index: int) -> tuple[Any, npt.ArrayLike]:
+        """Return the unaugmented image (in PIL format) and target. With possibility of caching."""
+        if self.is_data_in_memory:
+            return self.cached_images[index], self.cached_targets[index]
+        else:
+            return super().__getitem__(index)[0], self.cached_targets[index]
+
 
     @abc.abstractmethod
     def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
@@ -374,7 +381,7 @@ class ISSLImgDataset(ISSLDataset):
 
     def get_x_target_Mx(self, index: int) -> tuple[Any, Any, Any]:
         """Return the correct example, target, and maximal invariant."""
-        img, target = self.get_img_target(index)
+        img, target = self.get_img_target_cached(index)
 
         x = self.sample_p_XlI(img)
 
@@ -464,7 +471,7 @@ class ISSLImgDataset(ISSLDataset):
         choices = (Mxs == Mx).nonzero(as_tuple=True)[0]
         index = choices[torch.randint(len(choices), size=[])]
 
-        img, _ = self.get_img_target(index)
+        img, _ = self.get_img_target_cached(index)
 
         return img
 
@@ -474,7 +481,7 @@ class ISSLImgDataset(ISSLDataset):
             img = self.get_img_from_Mx(Mx)
         else:
             index = Mx
-            img, _ = self.get_img_target(index)
+            img, _ = self.get_img_target_cached(index)
 
         # augment it as desired
         a = self.sample_p_AlI(img)
@@ -490,7 +497,7 @@ class ISSLImgDataset(ISSLDataset):
         else:
             # representative is simply the non augmented example
             index = Mx
-            representative, _ = self.get_img_target(index)
+            representative, _ = self.get_img_target_cached(index)
 
         return self.base_transform(representative)
 
@@ -505,12 +512,17 @@ class ISSLImgDataset(ISSLDataset):
         elif self.base_resize == "upscale_crop_eval":
             if not self.is_train:
                 # this is what simclr does : first upscale by 10% then center crop
+                # `1.143` chosen so that 224 -> 256 as is standard for imagenet
                 trnsfs += [
-                    Resize((int(shape[1] * 1.1), int(shape[2] * 1.1))),
+                    Resize((int(shape[1] * 1.143), int(shape[2] * 1.143))),
                     CenterCrop((shape[1], shape[2])),
                 ]
         elif self.base_resize == "clip_resize":
-            if not self.is_train:
+            if self.is_train:
+                trnsfs += [Resize(224, interpolation=InterpolationMode.BICUBIC),
+                           RandomCrop(size=(224, 224))
+                           ]
+            else:
                 trnsfs += [
                     # resize smallest to 224
                     Resize(224, interpolation=InterpolationMode.BICUBIC),
@@ -532,6 +544,11 @@ class ISSLImgDataset(ISSLDataset):
         return Compose(trnsfs)
 
     def __len__(self) -> int:
+        return len(self.cached_targets)
+
+    @property
+    def _tmp_len(self):
+        # has to use length before cached targets
         return len(self.data)
 
     @property
@@ -624,10 +641,11 @@ class ISSLImgDataModule(ISSLDataModule):
 # MNIST #
 class MnistDataset(ISSLImgDataset, MNIST):
     FOLDER = "MNIST"
+    attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split: str = "train", **kwargs) -> None:
+    def __init__(self, *args, curr_split= "train", is_data_in_memory=True, **kwargs) -> None:
         is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
+        super().__init__(*args, curr_split=curr_split, train=is_train, is_data_in_memory=is_data_in_memory, **kwargs)
 
     # avoid duplicates by saving once at "MNIST" rather than at multiple  __class__.__name__
     @property
@@ -675,9 +693,11 @@ class MnistDataModule(ISSLImgDataModule):
 
 # Cifar10 #
 class Cifar10Dataset(ISSLImgDataset, CIFAR10):
-    def __init__(self, *args, curr_split: str = "train", **kwargs) -> None:
+    attr_data_memory = "data"
+
+    def __init__(self, *args, curr_split = "train", is_data_in_memory=True, **kwargs) -> None:
         is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
+        super().__init__(*args, curr_split=curr_split, train=is_train, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -708,29 +728,13 @@ class Cifar10DataModule(ISSLImgDataModule):
         return Cifar10Dataset
 
 
-# Cifar10 #
-class Cifar10DevDataset(Cifar10Dataset):
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "CIFAR10_dev"
-
-
-class Cifar10DevDataModule(ISSLImgDataModule):
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return Cifar10DevDataset
-
-
 # Cifar100 #
 class Cifar100Dataset(ISSLImgDataset, CIFAR100):
+    attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split: str = "train", **kwargs) -> None:
+    def __init__(self, *args, curr_split = "train", is_data_in_memory=True, **kwargs) -> None:
         is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
+        super().__init__(*args, curr_split=curr_split, train=is_train, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -764,9 +768,10 @@ class Cifar100DataModule(ISSLImgDataModule):
 
 # STL10 #
 class STL10Dataset(ISSLImgDataset, STL10):
+    attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split: str = "train", **kwargs):
-        super().__init__(*args, curr_split=curr_split, split=curr_split, **kwargs)
+    def __init__(self, *args, curr_split = "train", is_data_in_memory=True, **kwargs):
+        super().__init__(*args, curr_split=curr_split, split=curr_split, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -820,6 +825,7 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
         curr_split: str = "train",
         base_resize: str = "upscale_crop_eval",
         download=None,  # for compatibility
+        is_data_in_memory: bool = False,
         **kwargs,
     ) -> None:
 
@@ -862,7 +868,8 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
     def dataset_name(cls) -> str:
         return "ImageNet"
 
-    def __len__(self) -> int:
+    @property
+    def _tmp_len(self) -> int:
         return ImageNet.__len__(self)
 
     @property
@@ -916,6 +923,7 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
         download: bool = True,
         base_resize: str = "clip_resize",
         normalization: str = "clip",
+        is_data_in_memory: bool= False,
         **kwargs,
     ):
         check_import("tensorflow_datasets", "TensorflowBaseDataset")
@@ -931,9 +939,10 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
             base_resize=base_resize,
             curr_split=curr_split,
             normalization=normalization,
+            is_data_in_memory=is_data_in_memory,
             **kwargs,
         )
-        self.root = root  # over write root from tfds which is currently split folder
+        self.root = root  # overwrite root from tfds which is currently split folder
 
     def get_dir(self, split: Optional[str] = None) -> Path:
         """Return the main directory or the one for a split."""
@@ -998,7 +1007,8 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
         img, target = ImageFolder.__getitem__(self, index)
         return img, target
 
-    def __len__(self) -> int:
+    @property
+    def _tmp_len(self) -> int:
         return ImageFolder.__len__(self)
 
     def to_tfds_split(self, split: str) -> str:
@@ -1185,6 +1195,9 @@ class ExternalImgDataset(ISSLImgDataset):
     download : bool, optional
         Whether to download the data if it does not exist.
 
+    is_in_memory : bool, optional
+        Whether to pre-load all the data in memory.
+
     kwargs :
         Additional arguments to `ISSLImgDataset`.
 
@@ -1222,7 +1235,8 @@ class ExternalImgDataset(ISSLImgDataset):
 
         super().__init__(*args, curr_split=curr_split, **kwargs)
 
-    def __len__(self) -> int:
+    @property
+    def _tmp_len(self) -> int:
         return self.length
 
     def get_dir(self, split: Optional[str] = None) -> Path:
@@ -1331,9 +1345,9 @@ class TinyImagenetDataset(ExternalImgDataset):
         "http://cs231n.stanford.edu/tiny-imagenet-200.zip",
     ]
 
-    def __init__(self, *args, normalization="ImageNet", **kwargs):
+    def __init__(self, *args, normalization="ImageNet", is_data_in_memory=True, **kwargs):
         super().__init__(
-            *args, normalization=normalization, **kwargs,
+            *args, normalization=normalization, is_data_in_memory=is_data_in_memory, **kwargs,
         )
 
     def download(self, data_dir: Path) -> None:
@@ -1382,7 +1396,8 @@ class TinyImagenetDataset(ExternalImgDataset):
         shapes["target"] = (200,)
         return shapes
 
-    def __len__(self) -> int:
+    @property
+    def _tmp_len(self) -> int:
         return len(self.loader)
 
     def get_img_target(self, index: int) -> tuple[Any, int]:
@@ -1391,7 +1406,6 @@ class TinyImagenetDataset(ExternalImgDataset):
 
     def load_data_(self, curr_split: str) -> None:
         self.loader = ImageFolder(self.get_dir(curr_split))
-        self.targets = self.loader.targets
 
     def download_extract(self) -> None:
         super().download_extract()
@@ -1517,7 +1531,7 @@ class CocoClipDataset(ExternalImgDataset):
 
         return text_features[selected_idx]
 
-    def load_data_(self, curr_split: str) -> None:
+    def load_data_(self, curr_split: str, is_in_memory: bool=False) -> None:
         # no data needed to be loaded
         pass
 
@@ -1527,7 +1541,7 @@ class CocoClipDataset(ExternalImgDataset):
         return "coco_captions"
 
     @property
-    def __len__(self) -> int:
+    def _tmp_len(self) -> int:
         return self.length
 
     @property

@@ -25,6 +25,7 @@ checkpoint@checkpoint_repr=bestTrainLoss
 +trainer.limit_val_batches=0
 ++data_repr.kwargs.val_size=2
 optimizer@optimizer_issl=AdamW
+data_repr.kwargs.batch_size=512
 timeout=$time
 "
 
@@ -38,24 +39,21 @@ monitor_direction=[maximize]
 monitor_return=[pred/tinyimagenet/accuracy_score]
 hydra.sweeper.n_trials=20
 hydra.sweeper.n_jobs=20
-hydra.sweeper.study_name=v4
-optimizer_issl.kwargs.lr=tag(log,interval(1e-3,1e-2))
-optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-7,3e-5))
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
+hydra.sweeper.study_name=main
+optimizer_issl.kwargs.lr=tag(log,interval(1e-3,5e-3))
+optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-7,1e-5))
+scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(4,8))
 scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.3)
 seed=1,2,3,4,5,6,7,8,9
 encoder.z_shape=512,1024,2048
 regularizer=huber,none
 representor.loss.beta=tag(log,interval(3e-7,3e-5))
-decodability.kwargs.temperature=0.1,0.3,0.5
-decodability.kwargs.min_temperature=0.05
-decodability.kwargs.is_train_temperature=False,True
+decodability.kwargs.temperature=0.07,0.1,0.3
 decodability.kwargs.is_self_contrastive=yes,no,symmetric
 encoder.is_normalize_Z=True,False
 encoder.is_relu_Z=True,False
 encoder.is_batchnorm_Z=True
-data_repr.kwargs.batch_size=256,512
-encoder.batchnorm_mode=pre,post,null
+encoder.batchnorm_mode=pre,pred,null
 trainer.max_epochs=300
 "
 # only train 200 epochs to make sure not too long

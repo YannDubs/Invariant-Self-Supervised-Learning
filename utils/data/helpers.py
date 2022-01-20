@@ -16,7 +16,7 @@ from torchvision.datasets.folder import default_loader
 from torchvision.transforms import Compose, functional as F_trnsf
 from tqdm import tqdm
 
-from issl.helpers import to_numpy, int_or_ratio
+from issl.helpers import to_numpy
 
 logger = logging.getLogger(__name__)
 
