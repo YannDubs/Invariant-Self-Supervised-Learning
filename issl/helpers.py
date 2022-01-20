@@ -33,6 +33,9 @@ try:
 except ImportError:
     pass
 
+def is_pow_of_k(n, k):
+    """Check if `n` is a power of k. Can be wrong for huge n."""
+    return math.log(n, k).is_integer()
 
 class RunningMean(nn.Module):
     """Keep track of an exponentially moving average"""

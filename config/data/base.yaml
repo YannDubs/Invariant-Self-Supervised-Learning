@@ -8,7 +8,6 @@ kwargs:
   seed: ${seed}
   data_dir: ${paths.data}
   batch_size: 256
-  reload_dataloaders_every_n_epochs: ${trainer.reload_dataloaders_every_n_epochs}
   num_workers: 8
   subset_train_size: null
   dataset_kwargs:

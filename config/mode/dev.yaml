@@ -21,6 +21,7 @@ data_repr:
     # decreased because it was giving an error
     batch_size: 128
     val_batch_size: 128
+    is_data_in_memory: False
 
 data_pred:
   kwargs:

@@ -14,7 +14,7 @@ import numpy.typing as npt
 from torchvision.transforms import InterpolationMode
 import torch
 from PIL import Image
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision.datasets import (
     CIFAR10,
     CIFAR100,
@@ -56,6 +56,7 @@ from .helpers import (
     image_loader,
     np_img_resize,
     unzip,
+    random_split_cache
 )
 
 import utils.helpers # avoids circular imports
@@ -163,15 +164,9 @@ class ISSLImgDataset(ISSLDataset):
         label class of size. There will be n_sub_label subpartitions. This is useful to know exactly the number of
         equivalence classes you are learning, while being somewhat realistic.
 
-    is_data_in_memory : bool, optional
-        Whether to pre-load all the data in memory.
-
     kwargs:
         Additional arguments to `ISSLDataset`.
     """
-
-    is_aux_already_represented = False
-    attr_data_memory = ""   # set following if data already precomputed to avoid duplication
 
     def __init__(
         self,
@@ -186,7 +181,6 @@ class ISSLImgDataset(ISSLDataset):
         is_shuffle_targets: bool = False,
         is_shuffle_Mx: bool = False,
         n_sub_label: int = 1,
-        is_data_in_memory: bool = False,
         **kwargs,
     ):
         self.base_resize = base_resize
@@ -206,9 +200,8 @@ class ISSLImgDataset(ISSLDataset):
         self.n_sub_label = n_sub_label
         self.is_shuffle_targets = is_shuffle_targets
         self.is_shuffle_Mx = is_shuffle_Mx
-        self.is_data_in_memory = is_data_in_memory
 
-        self.cache_imgs_tgt_()  # pre compute the cached targets and images
+        self.cache_targets_() # cache only targets
 
         if self.is_shuffle_targets:
             # need to shuffle before computing Mx
@@ -262,20 +255,26 @@ class ISSLImgDataset(ISSLDataset):
         """Whether considering training split."""
         return self.curr_split == "train"
 
-    def cache_imgs_tgt_(self):
-        """Cache the images and targets if necessary. PIL for images, numpy for tgt."""
+    def cache_targets_(self):
+        """Cache the targets as numpy array."""
         self.cached_targets = np.stack(
             [to_numpy(self.get_img_target(i)[1]) for i in range(self._tmp_len)]
         )
 
-        if self.is_data_in_memory:
-            # This should all be in PIL
-            self.cached_images = [self.get_img_target(i)[0] for i in range(self._tmp_len)]
-            assert _is_pil_image(self.cached_images[0])
+    def cache_data_(self, idcs : Sequence[int]=None):
+        """Cache the images as list of PIL."""
+        all_idcs = np.arange(self._tmp_len, dtype=object)
+        if idcs is not None:
+            mask = np.ones_like(all_idcs, dtype=bool)
+            mask[to_numpy(idcs)] = False
+            all_idcs[mask] = None
 
-            if self.attr_data_memory != "":
-                # delete possible other data in memory to avoid duplicate
-                delattr(self, self.attr_data_memory)
+        cached_data = [self.get_img_target(i)[0] if i is not None else None
+                       for i in all_idcs ]
+        assert _is_pil_image(next(img for img in cached_data if img is not None)) # all PIL
+        self.del_cached_data_()  # delete previous cached data before assigning
+        self.cached_data = cached_data
+        self.is_cache_data = True
 
     def shuffle_targets_(self):
         with tmp_seed(self.seed):
@@ -330,10 +329,10 @@ class ISSLImgDataset(ISSLDataset):
 
     def get_img_target_cached(self, index: int) -> tuple[Any, npt.ArrayLike]:
         """Return the unaugmented image (in PIL format) and target. With possibility of caching."""
-        if self.is_data_in_memory:
-            return self.cached_images[index], self.cached_targets[index]
+        if self.is_cache_data:
+            return self.cached_data[index], self.cached_targets[index]
         else:
-            return super().__getitem__(index)[0], self.cached_targets[index]
+            return self.get_img_target(index)
 
 
     @abc.abstractmethod
@@ -583,7 +582,7 @@ class ISSLImgDataModule(ISSLDataModule):
             self.data_dir, download=False, curr_split="train", **dataset_kwargs,
         )
         n_val = int_or_ratio(self.val_size, len(dataset))
-        train, valid = random_split(
+        train, valid = random_split_cache(
             dataset,
             [len(dataset) - n_val, n_val],
             generator=torch.Generator().manual_seed(self.seed),
@@ -603,6 +602,7 @@ class ISSLImgDataModule(ISSLDataModule):
         else:
             # if there is no validation split will compute it on the fly
             train, _ = self.get_train_val_dataset(**dataset_kwargs)
+
         return train
 
     def get_val_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
@@ -616,12 +616,14 @@ class ISSLImgDataModule(ISSLDataModule):
         else:
             # if there is no validation split will compute it on the fly
             _, valid = self.get_train_val_dataset(**dataset_kwargs)
+
         return valid
 
     def get_test_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
         test = self.Dataset(
             self.data_dir, curr_split="test", download=False, **dataset_kwargs,
         )
+
         return test
 
     def prepare_data(self) -> None:
@@ -643,9 +645,9 @@ class MnistDataset(ISSLImgDataset, MNIST):
     FOLDER = "MNIST"
     attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split= "train", is_data_in_memory=True, **kwargs) -> None:
+    def __init__(self, *args, curr_split= "train", **kwargs) -> None:
         is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, is_data_in_memory=is_data_in_memory, **kwargs)
+        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
 
     # avoid duplicates by saving once at "MNIST" rather than at multiple  __class__.__name__
     @property
@@ -684,6 +686,8 @@ class MnistDataset(ISSLImgDataset, MNIST):
 
 
 class MnistDataModule(ISSLImgDataModule):
+    def __init__(self, *args, is_data_in_memory=True, **kwargs):
+        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @classmethod
     @property
@@ -695,9 +699,9 @@ class MnistDataModule(ISSLImgDataModule):
 class Cifar10Dataset(ISSLImgDataset, CIFAR10):
     attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split = "train", is_data_in_memory=True, **kwargs) -> None:
+    def __init__(self, *args, curr_split = "train",  **kwargs) -> None:
         is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, is_data_in_memory=is_data_in_memory, **kwargs)
+        super().__init__(*args, curr_split=curr_split, train=is_train,  **kwargs)
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -721,6 +725,8 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
 
 
 class Cifar10DataModule(ISSLImgDataModule):
+    def __init__(self, *args, is_data_in_memory=True, **kwargs):
+        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @classmethod
     @property
@@ -732,9 +738,9 @@ class Cifar10DataModule(ISSLImgDataModule):
 class Cifar100Dataset(ISSLImgDataset, CIFAR100):
     attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split = "train", is_data_in_memory=True, **kwargs) -> None:
+    def __init__(self, *args, curr_split = "train",  **kwargs) -> None:
         is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, is_data_in_memory=is_data_in_memory, **kwargs)
+        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -758,6 +764,8 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
 
 
 class Cifar100DataModule(ISSLImgDataModule):
+    def __init__(self, *args, is_data_in_memory=True, **kwargs):
+        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @classmethod
     @property
@@ -770,8 +778,8 @@ class Cifar100DataModule(ISSLImgDataModule):
 class STL10Dataset(ISSLImgDataset, STL10):
     attr_data_memory = "data"
 
-    def __init__(self, *args, curr_split = "train", is_data_in_memory=True, **kwargs):
-        super().__init__(*args, curr_split=curr_split, split=curr_split, is_data_in_memory=is_data_in_memory, **kwargs)
+    def __init__(self, *args, curr_split = "train",  **kwargs):
+        super().__init__(*args, curr_split=curr_split, split=curr_split,**kwargs)
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -795,6 +803,8 @@ class STL10Dataset(ISSLImgDataset, STL10):
 
 
 class STL10DataModule(ISSLImgDataModule):
+    def __init__(self, *args, is_data_in_memory=True, **kwargs):
+        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @classmethod
     @property
@@ -803,7 +813,7 @@ class STL10DataModule(ISSLImgDataModule):
 
 # STL10 Unlabeled #
 class STL10UnlabeledDataset(STL10Dataset):
-    def __init__(self, *args, curr_split: str = "train", **kwargs) -> Any:
+    def __init__(self, *args, curr_split: str = "train", **kwargs):
         curr_split = "train+unlabeled" if curr_split == "train" else curr_split
         super().__init__(*args, curr_split=curr_split, **kwargs)
 
@@ -825,7 +835,6 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
         curr_split: str = "train",
         base_resize: str = "upscale_crop_eval",
         download=None,  # for compatibility
-        is_data_in_memory: bool = False,
         **kwargs,
     ) -> None:
 
@@ -923,7 +932,6 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
         download: bool = True,
         base_resize: str = "clip_resize",
         normalization: str = "clip",
-        is_data_in_memory: bool= False,
         **kwargs,
     ):
         check_import("tensorflow_datasets", "TensorflowBaseDataset")
@@ -939,7 +947,6 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
             base_resize=base_resize,
             curr_split=curr_split,
             normalization=normalization,
-            is_data_in_memory=is_data_in_memory,
             **kwargs,
         )
         self.root = root  # overwrite root from tfds which is currently split folder
@@ -1345,9 +1352,9 @@ class TinyImagenetDataset(ExternalImgDataset):
         "http://cs231n.stanford.edu/tiny-imagenet-200.zip",
     ]
 
-    def __init__(self, *args, normalization="ImageNet", is_data_in_memory=True, **kwargs):
+    def __init__(self, *args, normalization="ImageNet", **kwargs):
         super().__init__(
-            *args, normalization=normalization, is_data_in_memory=is_data_in_memory, **kwargs,
+            *args, normalization=normalization, **kwargs,
         )
 
     def download(self, data_dir: Path) -> None:
@@ -1428,6 +1435,8 @@ class TinyImagenetDataset(ExternalImgDataset):
 
 
 class TinyImagenetDataModule(ISSLImgDataModule):
+    def __init__(self, *args, is_data_in_memory=True, **kwargs):
+        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
 
     @classmethod
     @property

@@ -20,6 +20,7 @@ from .helpers import (
     plot_config,
     tensors_to_fig,
     to_numpy,
+    is_pow_of_k,
     check_import
 )
 
@@ -54,7 +55,12 @@ def save_img(pl_module, trainer, img, name, caption):
 
 
 def is_plot(trainer, plot_interval):
-    is_plot_interval = (trainer.current_epoch + 1) % plot_interval == 0
+    epoch = trainer.current_epoch
+    if plot_interval == -1:
+        # check if power of 2 (starting from 4)
+        is_plot_interval = is_pow_of_k(int(epoch) + 2, k=2)
+    else:
+        is_plot_interval = (trainer.current_epoch + 1) % plot_interval == 0
     is_last_epoch = trainer.current_epoch == trainer.max_epochs - 1
     return is_plot_interval or is_last_epoch
 
@@ -65,14 +71,14 @@ class PlottingCallback(Callback):
     Parameters
     ----------
     plot_interval : int, optional
-        Every how many epochs to plot.
+        Every how many epochs to plot. If -1 will plot every power of 3 starting from 3.
 
     plot_config_kwargs : dict, optional
             General config for plotting, e.g. arguments to matplotlib.rc, sns.plotting_context,
             matplotlib.set ...
     """
 
-    def __init__(self, plot_interval: int = 10, plot_config_kwargs: dict = {}) -> None:
+    def __init__(self, plot_interval: int = -1, plot_config_kwargs: dict = {}) -> None:
         super().__init__()
         self.plot_interval = plot_interval
         self.plot_config_kwargs = plot_config_kwargs
@@ -139,11 +145,10 @@ class ReconstructMx(PlottingCallback):
     def __init__(
         self,
         *args,
-        plot_interval: int = 50,
         max_Mx_plot=10,
         **kwargs,
     ) -> None:
-        super().__init__(*args, plot_interval=plot_interval, **kwargs)
+        super().__init__(*args,  **kwargs)
         self.max_Mx_plot = max_Mx_plot
 
     def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
@@ -194,10 +199,9 @@ class LatentDimInterpolator(PlottingCallback):
         range_end: float = 5,
         n_per_lat: int = 7,
         n_lat_traverse: int = 5,
-            plot_interval: int = 50,
         **kwargs,
     ) -> None:
-        super().__init__(plot_interval=plot_interval, **kwargs)
+        super().__init__(**kwargs)
         self.z_dim = z_dim
         self.range_start = range_start
         self.range_end = range_end
@@ -313,10 +317,9 @@ class RepresentationUMAP(PlottingCallback):
         n_labels: int = 10,
         n_neighbors: list[int] = [5,30,100],
         min_dists: list[int] = [0.05,0.1,0.5],
-        plot_interval: int = 50,
         **kwargs,
     ) -> None:
-        super().__init__(**kwargs, plot_interval=plot_interval)
+        super().__init__(**kwargs)
 
         check_import("umap", "RepresentationUMAP")
         check_import("pandas", "RepresentationUMAP")

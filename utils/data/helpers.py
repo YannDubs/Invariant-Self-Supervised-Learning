@@ -11,14 +11,31 @@ from typing import Any, Callable, Optional, Union
 import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
+from torch import randperm
 from torch.utils.data import Dataset, Subset
 from torchvision.datasets.folder import default_loader
 from torchvision.transforms import Compose, functional as F_trnsf
 from tqdm import tqdm
+from torch._utils import _accumulate
 
 from issl.helpers import to_numpy
 
 logger = logging.getLogger(__name__)
+
+def random_split_cache(dataset: Dataset, lengths: Sequence[int], generator: Any) -> list[CachedSubset]:
+    """Like `random_split` but returns CachedSubset instead of Subset
+
+    Args:
+        dataset (Dataset): Dataset to be split
+        lengths (sequence): lengths of splits to be produced
+        generator (Generator): Generator used for the random permutation.
+    """
+    # Cannot verify that dataset is Sized
+    if sum(lengths) != len(dataset):  # type: ignore[arg-type]
+        raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
+
+    indices = randperm(sum(lengths), generator=generator).tolist()
+    return [CachedSubset(dataset, indices[offset - length : offset]) for offset, length in zip(_accumulate(lengths), lengths)]
 
 
 def subset2dataset(subset):
@@ -28,8 +45,37 @@ def subset2dataset(subset):
         dataset = dataset.dataset
     return dataset
 
+class CachedSubset(Subset):
+    """Subset a dataset on idcs with optional possibility of caching the data in memory.
 
-class BalancedSubset(Subset):
+    Parameters
+    ----------
+    dataset : Dataset
+        Dataset to subset.
+
+    idcs : sequence of int
+        Indices in the whole set selected for subset.
+
+    is_cache_data : bool, optional
+        Whether to cache the data in memory.
+    """
+    def __init__(self, dataset: Dataset, indices: Sequence[int], is_cache_data: bool=False):
+        super().__init__(dataset, indices)
+
+        if hasattr(dataset, "cached_targets"):
+            self.cached_targets = self.dataset.cached_targets[indices]
+
+        if is_cache_data:
+            self.cache_data_()
+
+    def cache_data_(self, idcs=None):
+        all_idcs = to_numpy(self.indices)
+        if idcs is not None:
+            all_idcs = all_idcs[idcs]
+
+        self.dataset.cache_data_(idcs=all_idcs)
+
+class BalancedSubset(CachedSubset):
     """Split the dataset into a subset with possibility of stratifying.
 
     Parameters

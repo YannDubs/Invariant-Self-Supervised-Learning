@@ -14,10 +14,10 @@ from typing import Any, Optional, Union
 import numpy as np
 import numpy.typing as npt
 
-from issl.helpers import tmp_seed, to_numpy
+from issl.helpers import tmp_seed
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, Subset
-from utils.data.helpers import BalancedSubset, subset2dataset
+from torch.utils.data import DataLoader
+from utils.data.helpers import BalancedSubset, CachedSubset, subset2dataset
 
 DIR = Path(__file__).parents[2].joinpath("data")
 logger = logging.getLogger(__name__)
@@ -63,6 +63,7 @@ class ISSLDataset(abc.ABC):
     """
 
     is_aux_already_represented = False
+    attr_data_memory = ""  # set following if data already precomputed to avoid duplication when caching
 
     def __init__(
         self,
@@ -84,6 +85,7 @@ class ISSLDataset(abc.ABC):
         self.n_agg_tasks = n_agg_tasks
         self.max_k_ary_agg = max_k_ary_agg
         self.shape_agg_target = None
+        self.is_cache_data = False
 
         self.normalization = (
             self.dataset_name if normalization is None else normalization
@@ -97,6 +99,7 @@ class ISSLDataset(abc.ABC):
             self.shape_agg_target = tuple(
                 len(np.unique(m)) for m in self.agg_tgt_mapper
             )
+
 
     @classmethod
     @property
@@ -221,6 +224,20 @@ class ISSLDataset(abc.ABC):
 
         return shapes["target"], shapes[self.aux_target]
 
+    @abc.abstractmethod
+    def cache_data_(self, idcs=None):
+        """Caches the data for given idcs. If `None` caches all."""
+        ...
+
+    def del_cached_data_(self):
+        """Clear all data in memory. Useful after caching to make sure avoiding duplicates."""
+        if self.is_cache_data and hasattr(self, "cached_data"):
+            delattr(self, "cached_data")
+            self.is_cache_data = False
+
+        elif self.attr_data_memory != "" and hasattr(self, self.attr_data_memory):
+            delattr(self, self.attr_data_memory)
+
 
 ### Base Datamodule ###
 
@@ -256,9 +273,6 @@ class ISSLDataModule(LightningDataModule):
     seed : int, optional
         Pseudo random seed.
 
-    reload_dataloaders_every_n_epochs : int, optional
-        Reload dataloaders every n epochs. If 0, no reload.
-
     subset_train_size : float or int, optional
         Will subset the training data in a balanced fashion. If float, should be
         between 0.0 and 1.0 and represent the proportion of the dataset to retain.
@@ -274,6 +288,9 @@ class ISSLDataModule(LightningDataModule):
         This avoid having to train on the union of train + validation + test to have
         the same result, i.e., it keeps an unseen test set if needed.
 
+    is_data_in_memory : bool, optional
+        Whether to pre-load all the data in memory.
+
     dataset_kwargs : dict, optional
         Additional arguments for the dataset.
     """
@@ -287,11 +304,11 @@ class ISSLDataModule(LightningDataModule):
         batch_size: int = 128,
         val_batch_size: Optional[int] = None,
         seed: int = 123,
-        reload_dataloaders_every_n_epochs: int = 0,
         subset_train_size: Optional[float] = None,
         is_test_nonsubset_train: bool = False,
         dataset_kwargs: dict = {},
         is_shuffle_train: bool = True,
+        is_data_in_memory: bool=False
     ) -> None:
         super().__init__()
         self.data_dir = data_dir
@@ -301,11 +318,11 @@ class ISSLDataModule(LightningDataModule):
         self.batch_size = batch_size
         self.val_batch_size = batch_size if val_batch_size is None else val_batch_size
         self.seed = seed
-        self.reload_dataloaders_every_n_epochs = reload_dataloaders_every_n_epochs
         self.subset_train_size = subset_train_size
         self.is_test_nonsubset_train = is_test_nonsubset_train
         self.dataset_kwargs = dataset_kwargs
         self.is_shuffle_train = is_shuffle_train
+        self.is_data_in_memory = is_data_in_memory
 
     @classmethod
     @property
@@ -338,18 +355,9 @@ class ISSLDataModule(LightningDataModule):
     def get_train_dataset_subset(self, **dataset_kwargs):
         train_dataset = self.get_train_dataset(**dataset_kwargs)
         if self.subset_train_size is not None:
-            # targets need to exist
-            # TODO: clean all the mess with subset
-            if isinstance(train_dataset, Subset):
-                dataset = train_dataset.dataset
-                # only take the targets that are selected
-                stratify = to_numpy(dataset.targets)[train_dataset.indices]
-            else:
-                stratify = train_dataset.targets
-
             logger.info(f"Subsetting {self.subset_train_size} examples.")
             train_dataset = BalancedSubset(
-                train_dataset, self.subset_train_size, stratify=stratify, seed=self.seed
+                train_dataset, self.subset_train_size, stratify=train_dataset.cached_targets, seed=self.seed
             )
         return train_dataset
 
@@ -393,8 +401,20 @@ class ISSLDataModule(LightningDataModule):
             self.set_info_()
             self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
 
+            if self.is_data_in_memory:
+                self.val_dataset.cache_data_()
+                logger.info(f"Cached the data for split=val.")
+
+                self.train_dataset.cache_data_()
+                logger.info(f"Cached the data for split=train.")
+
+
         if stage == "test" or stage is None:
             self.test_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
+
+            if self.is_data_in_memory:
+                self.test_dataset.cache_data_()
+                logger.info(f"Cached the data for split=test.")
 
     def train_dataloader(
         self,
@@ -403,11 +423,6 @@ class ISSLDataModule(LightningDataModule):
         **kwargs,
     ) -> DataLoader:
         """Return the training dataloader while possibly modifying dataset kwargs."""
-        data_kwargs = kwargs.pop("dataset_kwargs", {})
-        if self.reload_dataloaders_every_n_epochs > 0 or len(data_kwargs) > 0:
-            logger.info("Reloading train dataloader.")
-            curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
-            train_dataset = self.get_train_dataset_subset(**curr_kwargs)
 
         if train_dataset is None:
             train_dataset = self.train_dataset
@@ -426,11 +441,6 @@ class ISSLDataModule(LightningDataModule):
 
     def val_dataloader(self, batch_size: Optional[int] = None, **kwargs) -> DataLoader:
         """Return the validation dataloader while possibly modifying dataset kwargs."""
-        data_kwargs = kwargs.pop("dataset_kwargs", {})
-        if self.reload_dataloaders_every_n_epochs > 0 or len(data_kwargs) > 0:
-            logger.info("Reloading val dataloader.")
-            curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
-            self.val_dataset = self.get_val_dataset(**curr_kwargs)
 
         if batch_size is None:
             batch_size = self.val_batch_size
@@ -446,13 +456,6 @@ class ISSLDataModule(LightningDataModule):
 
     def test_dataloader(self, batch_size: Optional[int] = None, **kwargs) -> DataLoader:
         """Return the test dataloader while possibly modifying dataset kwargs."""
-        data_kwargs = kwargs.pop("dataset_kwargs", {})
-        if self.reload_dataloaders_every_n_epochs > 0 or len(data_kwargs) > 0:
-            logger.info("Reloading test dataloader.")
-            # in the case where `self.is_test_nonsubset_train` this is not 100% correct
-            # because _test_dataset is not used. SO kwargs are effectively disregarded
-            curr_kwargs = dict(self.dataset_kwargs, **data_kwargs)
-            self.test_dataset = self.get_test_dataset_proc(**curr_kwargs)
 
         if batch_size is None:
             batch_size = self.val_batch_size

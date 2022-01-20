@@ -38,7 +38,7 @@ monitor_direction=[maximize]
 monitor_return=[pred/tinyimagenet/accuracy_score]
 hydra.sweeper.n_trials=20
 hydra.sweeper.n_jobs=20
-hydra.sweeper.study_name=main
+hydra.sweeper.study_name=main2
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,5e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,7e-6))
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
@@ -57,7 +57,7 @@ data_repr.kwargs.batch_size=128,256
 encoder.is_normalize_Z=True,False
 encoder.is_relu_Z=True,False
 encoder.is_batchnorm_Z=True
-encoder.batchnorm_mode=pre,post,null
+encoder.batchnorm_mode=pre,pred,null
 trainer.max_epochs=300
 "
 # symmetric loss seems to be worst !!! :O

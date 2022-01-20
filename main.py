@@ -111,6 +111,7 @@ def main(cfg):
     repr_datamodule = instantiate_datamodule_(repr_cfg)
     repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
 
+
     if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
         representor = ISSLModule(hparams=repr_cfg)
         repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)

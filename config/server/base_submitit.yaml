@@ -1,3 +1,4 @@
+# @package _global_
 job_id: ${hydra:job.num}_${hydra:job.id} # job num is number in sweep. ID is unique ID like SLURM_JOB_ID
 
 # avoid unnecessary logging : remove progressbar
