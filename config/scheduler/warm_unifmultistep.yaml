@@ -6,7 +6,7 @@ modes: ["UniformMultiStepLR"] # list of scheduler to use
 kwargs:
   # all kwargs
   UniformMultiStepLR:
-    decay_per_step: 2
+    decay_per_step: 5
     k_steps: null
 
   base:
