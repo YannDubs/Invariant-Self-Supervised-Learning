@@ -40,8 +40,8 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=1
-hydra.sweeper.n_jobs=1
+hydra.sweeper.n_trials=30
+hydra.sweeper.n_jobs=30
 hydra.sweeper.study_name=v2
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,4e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,5e-6))
@@ -53,9 +53,9 @@ regularizer=huber,none
 representor.loss.beta=tag(log,interval(1e-6,4e-6))
 decodability.kwargs.out_dim=tag(log,int(interval(500,3000)))
 decodability.kwargs.beta_pM_unif=tag(log,interval(1.5,3))
-decodability.kwargs.freeze_predictor_epochs=0,1
-decodability.kwargs.projector_kwargs.architecture=linear,unitlinear
-decodability.kwargs.is_normalize_logits=True,False
+decodability.kwargs.freeze_predproj_epochs=0,1
+decodability.kwargs.projector_kwargs.architecture=linear,cosine
+decodability.kwargs.temperature=0.07,0.1,0.3
 encoder.is_normalize_Z=True,False
 encoder.is_relu_Z=True,False
 encoder.batchnorm_mode=pre,pred,null
@@ -64,10 +64,10 @@ trainer.max_epochs=300
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "trainer.max_epochs=1 +trainer.limit_train_batches=0.05 +data_repr.kwargs.is_data_in_memory=False"
+  for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m #&
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &
 
     sleep 10
 

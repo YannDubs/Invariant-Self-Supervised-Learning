@@ -8,9 +8,7 @@ kwargs:
   ema_weight_prior: null
   out_dim: 1000
   is_symmetric_KL_H: True
-  freeze_predictor_epochs: 0
-  is_normalize_logits: False
-  predictor_kwargs:
-    architecture: "linear"
+  freeze_predproj_epochs: 0
+  temperature: 0.1
   projector_kwargs:
-    architecture: {.kwargs.predictor_kwargs}
+    architecture:  "linear"

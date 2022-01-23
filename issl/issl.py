@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from typing import Any, Optional
+import logging
 
 import pytorch_lightning as pl
 import torch
@@ -15,7 +16,7 @@ from issl.predictors import OnlineEvaluator
 from torch.nn import functional as F
 
 __all__ = ["ISSLModule"]
-
+logger = logging.getLogger(__name__)
 
 class ISSLModule(pl.LightningModule):
     """Main module for invariant SSL module."""
@@ -329,12 +330,16 @@ class ISSLModule(pl.LightningModule):
         dec = self.loss_decodability
         is_swav_slfdstl = isinstance(dec, SwavSelfDistillationISSL)
         if is_swav_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
+            logger.info("Freezeing")
             for name, p in dec.named_parameters():
                 if "Mx_logits" in name:
                     p.grad = None
 
         is_prior_slfdstl = isinstance(dec, PriorSelfDistillationISSL)
-        if is_prior_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
+        if is_prior_slfdstl and self.current_epoch < dec.freeze_predproj_epochs:
             for name, p in dec.named_parameters():
                 if "predictor" in name:
+                    p.grad = None
+
+                if "projector" in name:
                     p.grad = None

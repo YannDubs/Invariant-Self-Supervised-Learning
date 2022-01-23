@@ -10,7 +10,7 @@ import abc
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from issl.architectures import FlattenUnitLinear, get_Architecture
+from issl.architectures import FlattenCosine, get_Architecture
 from issl.helpers import RunningMean, kl_divergence, prod, queue_push_, sinkhorn_knopp, weights_init
 from torch.distributions import Categorical
 from torch.nn import functional as F
@@ -142,6 +142,13 @@ add_doc_prior = """
         
     is_symmetric_KL_H : bool, optional
         Whether to treat both the projector and predictor with the same loss.
+        
+    freeze_predproj_epochs : int, optional
+        Freeze the projector / predictor that many epochs from the start.  
+        
+    temperature : float, optional
+        Temperature before the softmax. Only used if architecture has `cosine` in 
+        the name e.g. `cosine` or `cosine_mlp`.
     """
 
 class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
@@ -153,8 +160,7 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
         is_symmetric_KL_H: bool=True,
-        freeze_predictor_epochs: int = 0,  # TODO rm if worst or doc
-        is_normalize_logits : bool = False, # TODO rm if bad
+        freeze_predproj_epochs: int = 0,  # TODO rm if worst
         temperature: float = 0.1, # TODO tune / or rm if bad
         **kwargs,
     ) -> None:
@@ -165,14 +171,12 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
         self.is_symmetric_KL_H = is_symmetric_KL_H
-        self.freeze_predictor_epochs = freeze_predictor_epochs # will be frozen in ISSL
-        self.is_normalize_logits = is_normalize_logits
+        self.freeze_predproj_epochs = freeze_predproj_epochs # will be frozen in ISSL
         self.temperature = temperature
 
         # use same arch as projector
         Predictor = get_Architecture(**self.projector_kwargs)
         self.predictor = Predictor()
-
 
         if self.ema_weight_prior is not None:
             self.ema_marginal = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
@@ -190,9 +194,9 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         M = self.predictor(z)
         M_a = self.projector(z_a)
 
-        if self.is_normalize_logits:
-            M = F.normalize(M, dim=1, p=2) / self.temperature
-            M_a = F.normalize(M_a, dim=1, p=2) / self.temperature
+        if "cosine" in self.projector_kwargs["architecture"].lower():
+            M = M / self.temperature
+            M_a = M_a / self.temperature
 
         # shape: [batch_size, M_shape]
         loss, logs, other = self.asymmetric_loss(M, M_a)
@@ -258,7 +262,7 @@ add_doc_swav = """
         Freeze the prototypes that many epochs from the start.
         
     temperature : float, optional
-        Temperature for the predictions softmax predictions.
+        Temperature for the softmax predictions.
         
     queue_size : int, optional
         Size of the queue to keep to enforce equipartition. Note that those examples will not be backpropagated through.
@@ -282,7 +286,7 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
         temperature: float = 0.1,
         queue_size: int = 15,
         sinkhorn_kwargs: dict = {},
-        epoch_queue_starts : int = 0,
+        epoch_queue_starts : int = 15,
         **kwargs,
     ) -> None:
 
@@ -299,7 +303,7 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
         self.epoch_queue_starts = epoch_queue_starts
         self.sinkhorn_kwargs = sinkhorn_kwargs
 
-        self.Mx_logits = FlattenUnitLinear(out_dim, self.n_Mx)
+        self.Mx_logits = FlattenCosine(out_dim, self.n_Mx)
 
         self.reset_parameters()
 
@@ -310,10 +314,16 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
     def forward(self, *args, **kwargs):
 
         out = super().forward(*args,**kwargs)
-        queue_push_(self.queue, self._to_add_to_queue)
-        del self._to_add_to_queue
+
+        if self.is_curr_using_queue:
+            queue_push_(self.queue, self._to_add_to_queue)
+            del self._to_add_to_queue
 
         return out
+
+    @property
+    def is_curr_using_queue(self):
+        return (self.queue_size > 0) and (self.current_epoch >= self.epoch_queue_starts)
 
     def loss(
         self, z: torch.Tensor, z_a: torch.Tensor,
@@ -329,25 +339,25 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
 
         # compute logits. shape: [2*batch_size, n_Mx]
         logits = self.Mx_logits(zs_proj)
-        logits = F.normalize(logits, dim=1, p=2)
 
         # compute logits. shape: [batch_size, n_Mx]
         Ms_logits, Mt_logits = logits.chunk(2)
 
-        # use the queue.
-        if self.queue_size > 0 and self.epoch_queue_starts >= self.current_epoch:
-            # fill the queue with the representations => ensure that you still use the most
-            # recent logits. + detach to avoid huge memory cost.
-            # Will only store after going through z and z_a!
-            self._to_add_to_queue = Mt_logits.detach()
+        if self.is_curr_using_queue:
+            # fill the queue with the target embedding => ensure that you still use the most recent logits.
+            # + detach to avoid huge memory cost. Will only store after going through z and z_a!
+            self._to_add_to_queue = zs_proj.chunk(2)[1].detach()
 
             if len(self.queue.queue) > 0:
                 # get logits for the queue and add them to the target ones => assignments will consider queue
-                # shape: [batch_size * queue_size, n_Mx]
-                Mq_logits = torch.cat(list(self.queue.queue), dim=0)
+                # shape: [batch_size * queue_size, M_shape]
+                zs_proj_queue = torch.cat(list(self.queue.queue), dim=0)
 
                 # shape: [batch_size * queue_size + n_tgt, n_Mx]
+                with torch.no_grad():
+                    Mq_logits = self.Mx_logits(zs_proj_queue)
                 Mt_logits = torch.cat([Mt_logits, Mq_logits], dim=0)
+
             else:
                 pass  # at the start has noting (and cat breaks if nothing)
 
@@ -355,8 +365,8 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
         Ms_logits = Ms_logits.float()
         Mt_logits = Mt_logits.float()
 
-        # compute assignments
         with torch.no_grad():
+            # compute assignments
             if dist.is_available() and dist.is_initialized():
                 world_size = dist.get_world_size()
             else:

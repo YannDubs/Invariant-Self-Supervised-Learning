@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from issl.architectures.helpers import get_Activation, get_Normalization
 from issl.helpers import batch_flatten, batch_unflatten, prod, weights_init
 
-__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenUnitLinear"]
+__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine"]
 
 
 class MLP(nn.Module):
@@ -41,6 +41,9 @@ class MLP(nn.Module):
 
     is_bias : bool, optional
         Whether the last layer should have a bias.
+
+    is_cosine_last : bool, optional
+        Whether the last layer should be a cosine instead of linear.
     """
 
     def __init__(
@@ -54,6 +57,7 @@ class MLP(nn.Module):
         dropout_p: float = 0,
         is_skip_hidden: bool = False,
         is_bias: bool=True,
+        is_cosine_last: bool=False,
     ) -> None:
         super().__init__()
 
@@ -68,6 +72,7 @@ class MLP(nn.Module):
         bias_hidden = Norm == nn.Identity
         bias_last = is_bias
         self.is_skip_hidden = is_skip_hidden
+        self.is_cosine_last = is_cosine_last
 
         self.pre_block = nn.Sequential(
             nn.Linear(in_dim, hid_dim, bias=bias_hidden),
@@ -85,7 +90,11 @@ class MLP(nn.Module):
                 Dropout(p=dropout_p),
             ]
         self.hidden_block = nn.Sequential(*layers)
-        self.post_block = nn.Linear(hid_dim, out_dim, bias=bias_last)
+
+        if self.is_cosine_last:
+            self.post_block = FlattenCosine(hid_dim, out_dim)
+        else:
+            self.post_block = nn.Linear(hid_dim, out_dim, bias=bias_last)
 
         self.reset_parameters()
 
@@ -178,15 +187,15 @@ class FlattenLinear(nn.Linear):
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         # flattens in_shape
         X = X.flatten(start_dim=X.ndim - len(self.in_shape))
-        X = super().forward(X)
+        out = super().forward(X)
         # unflattens out_shape
-        X = X.unflatten(dim=-1, sizes=self.out_shape)
-        return X
+        out = out.unflatten(dim=-1, sizes=self.out_shape)
+        return out
 
     def reset_parameters(self):
         weights_init(self)
 
-class FlattenUnitLinear(FlattenLinear):
+class FlattenCosine(FlattenLinear):
     """
     Flatten linear layer where the weight matrix is normalized and no bias by default => useful for cosine.
 
@@ -211,13 +220,23 @@ class FlattenUnitLinear(FlattenLinear):
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
 
+        # flattens in_shape
+        X = X.flatten(start_dim=X.ndim - len(self.in_shape))
+
+        unit_X = F.normalize(X, dim=1, p=2)
+
         with torch.no_grad():
             # could simply normalize the weight before linear, but then actual norm could explode
             # because does not matter => could be instable
             unit_weight = F.normalize(self.weight.data.clone(), dim=1, p=2)
             self.weight.copy_(unit_weight)
 
-        return super().forward(X)
+        out = nn.Linear.forward(self, unit_X)
+
+        # unflattens out_shape
+        out = out.unflatten(dim=-1, sizes=self.out_shape)
+
+        return out
 
 
 class Flatten(nn.Flatten):

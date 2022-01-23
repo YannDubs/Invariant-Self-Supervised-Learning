@@ -41,31 +41,18 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
-hydra.sweeper.study_name=v1
+hydra.sweeper.n_trials=10
+hydra.sweeper.n_jobs=10
+hydra.sweeper.study_name=v2
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,4e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,5e-6))
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
 scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.3)
+decodability.kwargs.temperature=0.07,0.1,0.3
+decodability.kwargs.n_Mx=tag(log,int(interval(500,3000)))
 seed=1,2,3,4,5,6,7,8,9
 trainer.max_epochs=300
 "
-
-kwargs_multi="
-optimizer_issl.kwargs.lr=1e-3
-optimizer_issl.kwargs.weight_decay=1e-6
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=4
-scheduler_issl.kwargs.base.warmup_epochs=0.2
-seed=1
-trainer.max_epochs=300
-"
-# to replicate should add 1000 epochs and warm_unifmultistep125
-# they used decodability.kwargs.temperature=0.5 but given that improves a lot when decreased should also be tuned
-
-
-# difference for gen: linear resnet / augmentations / larger dim
-
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""

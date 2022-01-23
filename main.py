@@ -783,7 +783,6 @@ def finalize(
 def get_hypopt_monitor(cfg: NamespaceMap, all_results: dict) -> Any:
     """Return the correct monitor for hyper parameter tuning."""
     out = []
-    logger.info(str(all_results.keys()))
     for i, result_key in enumerate(cfg.monitor_return):
         res = all_results[result_key]
         try:
