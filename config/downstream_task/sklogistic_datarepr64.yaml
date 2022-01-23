@@ -1,5 +1,0 @@
-defaults:
-  - base
-
-data: data_repr_64
-predictor: sk_logistic

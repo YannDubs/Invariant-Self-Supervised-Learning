@@ -16,7 +16,6 @@ data_repr:
       train_x_augmentations: []
 
 decodability:
-  factor_beta: 1
   kwargs:
     mode: exact
     z_shape: ${encoder.z_shape}

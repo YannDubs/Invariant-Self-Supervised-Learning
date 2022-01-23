@@ -4,11 +4,12 @@ from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from issl.architectures.helpers import get_Activation, get_Normalization
 from issl.helpers import batch_flatten, batch_unflatten, prod, weights_init
 
-__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten"]
+__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenUnitLinear"]
 
 
 class MLP(nn.Module):
@@ -184,6 +185,39 @@ class FlattenLinear(nn.Linear):
 
     def reset_parameters(self):
         weights_init(self)
+
+class FlattenUnitLinear(FlattenLinear):
+    """
+    Flatten linear layer where the weight matrix is normalized and no bias by default => useful for cosine.
+
+    Parameters
+    ----------
+    in_shape : tuple or int
+
+    out_shape : tuple or int
+
+    kwargs :
+        Additional arguments to `torch.nn.Linear`.
+    """
+
+    def __init__(
+        self, *args,  bias=False, **kwargs
+    ) -> None:
+
+        # do not use any bias when performing cosine similarity
+        super().__init__(*args, bias=bias, **kwargs)
+
+        self.reset_parameters()
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+
+        with torch.no_grad():
+            # could simply normalize the weight before linear, but then actual norm could explode
+            # because does not matter => could be instable
+            unit_weight = F.normalize(self.weight.data.clone(), dim=1, p=2)
+            self.weight.copy_(unit_weight)
+
+        return super().forward(X)
 
 
 class Flatten(nn.Flatten):

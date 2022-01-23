@@ -291,6 +291,14 @@ class ISSLDataModule(LightningDataModule):
     is_data_in_memory : bool, optional
         Whether to pre-load all the data in memory.
 
+    is_train_on_test : bool, optional
+        Whether to use the test set as the training set. Useful to evaluate the generalization
+        of the encoder without taking into account that of the predictor.
+
+    is_force_all_train : bool, optional
+        Whether to force using all the training set, even if no validation is present.
+        I.e. no splitting and use part of train as valid.
+
     dataset_kwargs : dict, optional
         Additional arguments for the dataset.
     """
@@ -308,7 +316,9 @@ class ISSLDataModule(LightningDataModule):
         is_test_nonsubset_train: bool = False,
         dataset_kwargs: dict = {},
         is_shuffle_train: bool = True,
-        is_data_in_memory: bool=False
+        is_data_in_memory: bool=False,
+        is_train_on_test : bool = False,
+        is_force_all_train: bool=False
     ) -> None:
         super().__init__()
         self.data_dir = data_dir
@@ -323,6 +333,8 @@ class ISSLDataModule(LightningDataModule):
         self.dataset_kwargs = dataset_kwargs
         self.is_shuffle_train = is_shuffle_train
         self.is_data_in_memory = is_data_in_memory
+        self.is_train_on_test = is_train_on_test
+        self.is_force_all_train = is_force_all_train
 
     @classmethod
     @property
@@ -396,8 +408,14 @@ class ISSLDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         """Prepare the datasets for the current stage."""
+
         if stage == "fit" or stage is None:
-            self.train_dataset = self.get_train_dataset_subset(**self.dataset_kwargs)
+            if self.is_train_on_test :
+                logger.info("Training on the test set.")
+                self.train_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
+            else:
+                self.train_dataset = self.get_train_dataset_subset(**self.dataset_kwargs)
+
             self.set_info_()
             self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
 

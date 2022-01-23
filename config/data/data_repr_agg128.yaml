@@ -1,6 +1,0 @@
-defaults:
-  - data_repr_agg4
-
-kwargs:
-  dataset_kwargs:
-    n_agg_tasks: 128

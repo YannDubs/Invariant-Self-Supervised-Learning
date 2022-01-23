@@ -1,8 +1,0 @@
-defaults:
-  - data_repr_agg
-
-name: "{name}_agg${.kwargs.dataset_kwargs.n_agg_tasks}"
-
-kwargs:
-  dataset_kwargs:
-    n_agg_tasks: 4

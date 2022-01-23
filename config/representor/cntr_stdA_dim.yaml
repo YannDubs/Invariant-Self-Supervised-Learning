@@ -1,9 +1,0 @@
-# @package _global_
-defaults:
-  - cntr_stdA
-
-representor:
-  name: cntr_stdA_dim
-
-encoder:
-  z_shape: 4096

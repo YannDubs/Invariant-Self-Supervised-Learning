@@ -36,7 +36,7 @@ from issl.callbacks import (
     LatentDimInterpolator,
     ReconstructImages, ReconstructMx,RepresentationUMAP
 )
-from issl.helpers import MAWeightUpdate, check_import, prod
+from issl.helpers import check_import, prod
 from issl.predictors import SklearnPredictor, get_representor_predictor
 from utils.cluster.nlprun import nlp_cluster
 from utils.data import get_Datamodule
@@ -111,7 +111,6 @@ def main(cfg):
     repr_datamodule = instantiate_datamodule_(repr_cfg)
     repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
 
-
     if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
         representor = ISSLModule(hparams=repr_cfg)
         repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
@@ -166,6 +165,8 @@ def main(cfg):
         pre_representor = repr_trainer
 
     ############## DOWNSTREAM PREDICTOR ##############
+    pred_res_all = dict()
+
     for task in cfg.downstream_task.all_tasks:
         logger.info(f"Stage : Predict {task}")
         stage = "predictor"
@@ -212,17 +213,22 @@ def main(cfg):
         else:
             pred_res = load_results(pred_cfg, stage)
 
-        # TODO currently finalize_stage only stores the last predictor
-        # so if you return, will only return last result from last loop
-        finalize_stage_(
-            stage,
-            pred_cfg,
-            predictor,
-            pred_trainer,
-            pred_datamodule,
-            pred_res,
-            finalize_kwargs,
-        )
+
+        pred_res_all.update(pred_res)
+
+    breakpoint()
+
+    # TODO currently finalize_stage only stores the last predictor
+    # so if you return, will only return last result from last loop
+    finalize_stage_(
+        stage,
+        pred_cfg,
+        predictor,
+        pred_trainer,
+        pred_datamodule,
+        pred_res_all,
+        finalize_kwargs,
+    )
 
     ############## SHUTDOWN ##############
 
@@ -249,6 +255,8 @@ def get_stage_name(stage: str) -> str:
 
 def set_downstream_task(cfg: Container, task: str):
     """Set the downstream task."""
+
+
     cfg = copy.deepcopy(cfg)  # not inplace
     with omegaconf.open_dict(cfg):
         cfg.downstream_task = compose(
@@ -282,6 +290,11 @@ def set_downstream_task(cfg: Container, task: str):
 
             cfg.data_pred.name = cfg.data_pred.name.format(name=name)
             cfg.data_pred = OmegaConf.merge(cfg.data_repr, cfg.data_pred)
+
+    if cfg.predictor.is_sklearn:
+        # don't cache if will only see once
+        with omegaconf.open_dict(cfg):
+            cfg.data_pred.kwargs.is_data_in_memory = False
 
     return cfg
 
@@ -426,10 +439,6 @@ def get_callbacks(
 
             if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
                 callbacks += [ReconstructMx()]
-
-
-    if hasattr(cfg.decodability.kwargs, "is_ema") and cfg.decodability.kwargs.is_ema:
-        callbacks += [MAWeightUpdate()]
 
     callbacks += [ModelCheckpoint(**cfg.checkpoint.kwargs)]
 
@@ -775,6 +784,7 @@ def finalize(
 def get_hypopt_monitor(cfg: NamespaceMap, all_results: dict) -> Any:
     """Return the correct monitor for hyper parameter tuning."""
     out = []
+    logger.info(str(all_results.keys()))
     for i, result_key in enumerate(cfg.monitor_return):
         res = all_results[result_key]
         try:

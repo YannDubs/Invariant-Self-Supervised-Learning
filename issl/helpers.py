@@ -1162,69 +1162,6 @@ class Annealer:
         return current
 
 
-# modified from https://github.com/PyTorchLightning/lightning-bolts/blob/ad771c615284816ecadad11f3172459afdef28e3/pl_bolts/callbacks/byol_updates.py
-class MAWeightUpdate(pl.Callback):
-    """EMA Weight update rule from BYOL.
-
-        Notes
-        -----
-        - model should have `p_ZlX` and `ema_p_ZlX`.
-        - BYOL claims this keeps the online_network from collapsing.
-        - Automatically increases tau from ``initial_tau`` to 1.0 with every training step
-        """
-
-    def __init__(self, initial_tau: float = 0.996):
-        """
-        Args:
-            initial_tau: starting tau. Auto-updates with every training step
-        """
-        super().__init__()
-        self.initial_tau = initial_tau
-        self.current_tau = initial_tau
-
-    def on_train_batch_end(
-        self,
-        trainer: Any,
-        pl_module: pl.LightningModule,
-        outputs: Sequence,
-        batch: Sequence,
-        batch_idx: int,
-        dataloader_idx: int,
-    ) -> None:
-        # get networks
-        online_net = pl_module.p_ZlX
-        target_net = pl_module.ema_p_ZlX
-
-        # update weights
-        self.update_weights(online_net, target_net)
-
-        # update tau after
-        self.current_tau = self.update_tau(pl_module, trainer)
-
-    def update_tau(self, pl_module: pl.LightningModule, trainer: pl.Trainer) -> float:
-        max_steps = len(trainer.train_dataloader) * trainer.max_epochs
-        tau = (
-            1
-            - (1 - self.initial_tau)
-            * (math.cos(math.pi * pl_module.global_step / max_steps) + 1)
-            / 2
-        )
-        return tau
-
-    def update_weights(
-        self,
-        online_net: Union[nn.Module, torch.Tensor],
-        target_net: Union[nn.Module, torch.Tensor],
-    ) -> None:
-        # apply MA weight update
-        for (name, online_p), (_, target_p) in zip(
-            online_net.named_parameters(), target_net.named_parameters(),
-        ):
-            target_p.data = (
-                self.current_tau * target_p.data
-                + (1 - self.current_tau) * online_p.data
-            )
-
 
 # modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11
 def sinkhorn_knopp(
@@ -1233,7 +1170,7 @@ def sinkhorn_knopp(
     n_iter: int = 3,
     is_hard_assignment: bool = False,
     world_size: int = 1,
-    is_double_prec: bool = True,
+    is_double_prec: bool = False,
     is_force_no_gpu: bool = False,
 ):
     """Sinkhorn knopp algorithm to find an equipartition giving logits.
@@ -1269,25 +1206,27 @@ def sinkhorn_knopp(
 
     is_gpu = (not is_force_no_gpu) and torch.cuda.is_available()
 
+    logits = logits.float()
     if is_double_prec:
         logits = logits.double()
 
-    # shape: [n_Mx, n_samples]
-    Q = (logits / eps).exp().T
+    # Q shape: [n_Mx, n_samples]
+    # log sum exp trick for stability
+    M = torch.max(logits) / eps
+    if world_size > 1: dist.all_reduce(M, op=dist.ReduceOp.MAX)
+    Q = (logits / eps - M).exp().T
 
     # remove potential infs in Q. Replace by max non inf.
     Q = torch.nan_to_num(Q, posinf=Q.masked_fill(torch.isinf(Q), 0).max().item())
 
-    # number of clusters, and examples to be clustered
+    # make the matrix sum to 1
     sum_Q = torch.sum(Q, dtype=Q.dtype)
+    if world_size > 1: dist.all_reduce(sum_Q, op=dist.ReduceOp.SUM)
+    Q /= sum_Q
+
+    # number of clusters, and examples to be clustered
     n_Mx, n_samples = Q.shape
     n_samples_world = n_samples * world_size
-
-    if world_size > 1:
-        dist.all_reduce(sum_Q, op=dist.ReduceOp.SUM)
-
-    # make the matrix sum to 1
-    Q /= sum_Q
 
     # Shape: [n_Mx]
     r = torch.ones(n_Mx) / n_Mx
@@ -1300,14 +1239,15 @@ def sinkhorn_knopp(
         c = c.cuda(non_blocking=True)
 
     for _ in range(n_iter):
-        # for numerical stability, add a small epsilon value for zeros
-        if (Q == 0).any():
-            Q += 1e-12
-
         # normalize each row: total weight per prototype must be 1/K. Shape : [n_Mx]
         sum_rows = torch.sum(Q, dim=1, dtype=Q.dtype)
-        if world_size > 1:
-            dist.all_reduce(sum_rows, op=dist.ReduceOp.SUM)
+        if world_size > 1: dist.all_reduce(sum_rows, op=dist.ReduceOp.SUM)
+
+        # for numerical stability, add a small epsilon value for zeros
+        if len(torch.nonzero(sum_rows == 0)) > 0:
+            Q += 1e-12
+            sum_rows = torch.sum(Q, dim=1, dtype=Q.dtype)
+            if world_size > 1: dist.all_reduce(sum_rows, op=dist.ReduceOp.SUM)
 
         #  Shape : [n_Mx]
         u = r / sum_rows

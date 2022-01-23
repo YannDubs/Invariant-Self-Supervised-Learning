@@ -1,0 +1,8 @@
+defaults:
+  - base
+
+# measures how well the predictor will generalize by training the encoder on all of train
+# then predictor on subset of train and test on rest of train
+
+data: data_repr_001
+predictor: sk_logistic

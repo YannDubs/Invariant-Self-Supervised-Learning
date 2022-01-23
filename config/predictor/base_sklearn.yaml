@@ -1,13 +1,7 @@
-# @package _global_
-data_repr:
-  kwargs:
-    is_data_in_memory: False # don't cache everything in pytorch if only one pass
-
-predictor:
-  is_sklearn: True
-  is_scale: False
-  is_preprocess: False
-  scaler:
-    _target_: sklearn.preprocessing.StandardScaler
-  preprocesser: {}
-  metrics: [accuracy_score] # balanced_accuracy_score
+is_sklearn: True
+is_scale: False
+is_preprocess: False
+scaler:
+  _target_: sklearn.preprocessing.StandardScaler
+preprocesser: {}
+metrics: [accuracy_score] # balanced_accuracy_score

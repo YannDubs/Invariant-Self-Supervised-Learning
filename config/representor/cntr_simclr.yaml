@@ -5,7 +5,7 @@ defaults:
   - override /decodability: contrastive
 
 representor:
-  name: cntr
+  name: cntr_simclr
 
 data_repr:
   kwargs:
@@ -17,16 +17,14 @@ data_repr:
 decodability:
   kwargs:
     is_train_temperature: False
-    is_pred_proj_same: False
-    predictor_kwargs: # will be replaced by projector when `is_pred_proj_same`
-      architecture: "flatten"
-      out_shape: ${encoder.z_shape}
+    is_pred_proj_same: True
     projector_kwargs:
       architecture: "mlp"
-      hid_dim: 2048
-      n_hid_layers: 2
+      hid_dim: 1024
+      n_hid_layers: 1
       norm_layer: "batch"
-      out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
+      out_shape: 64
 
 encoder:
-  z_shape: 1024
+  z_shape: 512
+  is_normalize_Z: False

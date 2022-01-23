@@ -10,6 +10,8 @@ kwargs:
   batch_size: 256
   num_workers: 8
   subset_train_size: null
+  is_train_on_test: False
+  is_force_all_train: False
   dataset_kwargs:
     seed: ${seed}
     is_normalize: True

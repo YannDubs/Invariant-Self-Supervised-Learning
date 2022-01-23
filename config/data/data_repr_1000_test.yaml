@@ -1,6 +1,0 @@
-defaults:
-  - base_subset
-
-kwargs:
-  subset_train_size: 1000
-  is_test_nonsubset_train: False # test on actual test

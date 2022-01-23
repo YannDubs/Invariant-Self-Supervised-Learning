@@ -1,9 +1,9 @@
 # @package _global_
-defaults:
-  - cntr
+  defaults:
+    - slfdstl
 
 representor:
-  name: cntr_optA
+  name: slfdstl_optA
 
 data_repr:
   kwargs:

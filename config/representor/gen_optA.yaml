@@ -1,9 +1,9 @@
 # @package _global_
-defaults:
-  - cntr
+  defaults:
+    - gen
 
 representor:
-  name: cntr_optA
+  name: gen_optA
 
 data_repr:
   kwargs:

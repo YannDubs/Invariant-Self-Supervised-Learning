@@ -7,9 +7,10 @@ name: sk_logistic
 model:
   _target_: sklearn.linear_model.LogisticRegression
   penalty: "l2"
-  C: 1 #smaller regularizes more
+  C: 1 #smaller regularizes more (should tune it)
   class_weight: null # might want to use "balanced"
   random_state: ${seed}
   solver: "lbfgs" # should probably use "saga" for large datasets (but might need to normalize)
   n_jobs: -1
   max_iter: 200
+  verbose: 1

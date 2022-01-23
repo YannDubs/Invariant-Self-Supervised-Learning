@@ -59,10 +59,6 @@ encoder.is_relu_Z=True,False
 encoder.is_batchnorm_Z=True,False
 trainer.max_epochs=200
 "
-# only train 200 epochs to make sure not too long
-
-# is_ema and is_stop_grad are just to test that actually worst in practice
-
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""

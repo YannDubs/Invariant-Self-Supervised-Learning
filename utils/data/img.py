@@ -595,7 +595,7 @@ class ISSLImgDataModule(ISSLDataModule):
         return train, valid
 
     def get_train_dataset(self, **dataset_kwargs) -> ISSLImgDataset:
-        if "validation" in self.Dataset.get_available_splits():
+        if self.is_force_all_train or "validation" in self.Dataset.get_available_splits():
             train = self.Dataset(
                 self.data_dir, curr_split="train", download=False, **dataset_kwargs,
             )
@@ -1201,9 +1201,6 @@ class ExternalImgDataset(ISSLImgDataset):
 
     download : bool, optional
         Whether to download the data if it does not exist.
-
-    is_in_memory : bool, optional
-        Whether to pre-load all the data in memory.
 
     kwargs :
         Additional arguments to `ISSLImgDataset`.

@@ -147,7 +147,6 @@ encoder:
   name: ???
   z_shape: 1024
   is_normalize_Z: False
-  is_batchnorm_Z: False # drop if not useful
   batchnorm_mode: null # drop if not useful
   is_relu_Z: False # drop if not useful
   kwargs:

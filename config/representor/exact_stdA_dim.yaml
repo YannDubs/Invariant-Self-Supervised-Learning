@@ -1,9 +1,0 @@
-# @package _global_
-defaults:
-  - exact_stdA
-
-representor:
-  name: exact_stdA_dim
-
-encoder:
-  z_shape: 4096

@@ -1,6 +1,0 @@
-# @package _global_
-defaults:
-  - gen_stdA_resnetlin
-
-representor:
-  name: gen_stdA

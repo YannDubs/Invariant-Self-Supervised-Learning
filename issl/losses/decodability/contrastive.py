@@ -344,18 +344,4 @@ class ContrastiveISSL(nn.Module):
             log_q = log_q[mask].view(new_batch_size, 2)
             hat_H_mlz = - log_q.sum(1) / 2
 
-        elif self.is_self_contrastive == "yes":
-            # instead of predicting the augmented view from current and masking out current
-            # you will mask out augmented and predict current
-            assert self.src_tgt_comparison == "all"
-            mask = ~torch.eye(new_batch_size, device=device).bool()
-            # mask out the augmented view this time => invert
-            mask = torch.cat([mask[batch_size:, :], mask[:batch_size, :]], dim=0)
-            mask = torch.cat([mask, ones], dim=1)
-            pos_idx = torch.cat([arange, arange + batch_size - 1], dim=0)
-            self_hat_H_mlz = F.cross_entropy(logits[mask].view(new_batch_size, n_classes),
-                                             pos_idx, reduction="none")
-            hat_H_mlz = (hat_H_mlz + self_hat_H_mlz) / 2
-            logs["self_I_q_zm"] = (hat_H_m - self_hat_H_mlz.mean())
-
         return hat_H_mlz, logs

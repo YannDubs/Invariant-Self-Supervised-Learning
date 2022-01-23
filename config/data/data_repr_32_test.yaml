@@ -1,5 +1,0 @@
-defaults:
-  - data_repr_10_test
-
-kwargs:
-  subset_train_size: 32

@@ -2,7 +2,7 @@
 hydra:
   sweeper:
     sampler:
-      seed: ${seed}
+      seed: null # can set if you want the sampler to be deterministic
     direction: ${monitor_direction}
     study_name: main
     storage: sqlite:///${hydra.runtime.cwd}/results/exp_${experiment}/optuna.db

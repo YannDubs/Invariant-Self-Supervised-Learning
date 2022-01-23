@@ -10,7 +10,7 @@ import torch.nn as nn
 from issl.distributions import CondDist
 from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod
 from issl.losses import get_loss_decodability, get_regularizer
-from issl.losses.decodability import ClusterSelfDistillationISSL
+from issl.losses.decodability import PriorSelfDistillationISSL, SwavSelfDistillationISSL
 from issl.predictors import OnlineEvaluator
 from torch.nn import functional as F
 
@@ -42,8 +42,7 @@ class ISSLModule(pl.LightningModule):
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
-        if self.hparams.encoder.is_batchnorm_Z:
-            self.batchnorm_Z = nn.BatchNorm1d(prod(self.p_ZlX.out_shape))
+        self.batchnorm_Z = nn.BatchNorm1d(prod(self.p_ZlX.out_shape))
 
     @property
     def final_beta(self):
@@ -106,23 +105,19 @@ class ISSLModule(pl.LightningModule):
         else:
             z = p_Zlx.mean
 
-        is_bn = self.hparams.encoder.is_batchnorm_Z
         mode_bn = self.hparams.encoder.batchnorm_mode
 
-        if is_bn and mode_bn == "pre":
+        if mode_bn == "pre":
             z = self.batchnorm_Z(z)
 
         # one difference compared to standard implementation is that our representation does not go through a relu
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
-        if is_bn and mode_bn is None:
-            z = self.batchnorm_Z(z)
-
         if self.hparams.encoder.is_normalize_Z:
             z = F.normalize(z, dim=1, p=2)
 
-        if is_bn and mode_bn == "pred" and is_process:
+        if mode_bn == "pred" and is_process:
             # doesn't do that when goes to predictor
             z = self.batchnorm_Z(z)
 
@@ -332,8 +327,14 @@ class ISSLModule(pl.LightningModule):
 
     def on_after_backward(self):
         dec = self.loss_decodability
-        is_cluster_slfdstl = isinstance(dec, ClusterSelfDistillationISSL)
-        if is_cluster_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
+        is_swav_slfdstl = isinstance(dec, SwavSelfDistillationISSL)
+        if is_swav_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
             for name, p in dec.named_parameters():
                 if "Mx_logits" in name:
+                    p.grad = None
+
+        is_prior_slfdstl = isinstance(dec, PriorSelfDistillationISSL)
+        if is_prior_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
+            for name, p in dec.named_parameters():
+                if "predictor" in name:
                     p.grad = None
