@@ -17,7 +17,7 @@ architecture@online_evaluator=linear
 downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_encgen,sklogistic_predgen]
 ++data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
-representor=gen_stdA
+representor=gen
 scheduler_issl.kwargs.base.is_warmup_lr=True
 data@data_repr=tinyimagenet
 scheduler@scheduler_issl=warm_unifmultistep
@@ -61,7 +61,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m #&
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 

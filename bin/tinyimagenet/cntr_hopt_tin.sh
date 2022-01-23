@@ -17,7 +17,7 @@ architecture@online_evaluator=linear
 downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_encgen,sklogistic_predgen]
 ++data_pred.kwargs.val_size=2
 +trainer.num_sanity_val_steps=0
-representor=cntr_stdA
+representor=cntr
 scheduler_issl.kwargs.base.is_warmup_lr=True
 data@data_repr=tinyimagenet
 scheduler@scheduler_issl=warm_unifmultistep
@@ -56,8 +56,6 @@ encoder.is_relu_Z=True,False
 encoder.batchnorm_mode=pre,pred,null
 trainer.max_epochs=300
 "
-# only train 200 epochs to make sure not too long
-# reincorporate warm_unifmultistep125 when longer epochs
 # high temperature is better for sample efficiency but low one is better for decodability
 # normalize Z is good for sample efficiency but maybe slightly worst for general ?
 
@@ -66,7 +64,7 @@ if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m #&
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 

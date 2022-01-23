@@ -50,22 +50,12 @@ data_repr.kwargs.batch_size=128,256
 trainer.max_epochs=300
 "
 
-kwargs_multi="
-optimizer_issl.kwargs.lr=1e-3
-optimizer_issl.kwargs.weight_decay=1e-6
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=4
-scheduler_issl.kwargs.base.warmup_epochs=0.2
-seed=1
-trainer.max_epochs=300
-downstream_task.all_tasks=[sklogistic_predgen]
-"
-
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m #&
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 

@@ -41,8 +41,8 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=1
-hydra.sweeper.n_jobs=1
+hydra.sweeper.n_trials=15
+hydra.sweeper.n_jobs=15
 hydra.sweeper.study_name=v1
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,4e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,5e-6))
@@ -68,10 +68,10 @@ trainer.max_epochs=300
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "trainer.max_epochs=1 +trainer.limit_train_batches=0.05 +data_repr.kwargs.is_data_in_memory=False"
+  for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m #&
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
 
     sleep 10
 
