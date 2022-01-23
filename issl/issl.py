@@ -330,7 +330,6 @@ class ISSLModule(pl.LightningModule):
         dec = self.loss_decodability
         is_swav_slfdstl = isinstance(dec, SwavSelfDistillationISSL)
         if is_swav_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
-            logger.info("Freezeing")
             for name, p in dec.named_parameters():
                 if "Mx_logits" in name:
                     p.grad = None
