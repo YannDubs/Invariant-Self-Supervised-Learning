@@ -216,7 +216,6 @@ def main(cfg):
 
         pred_res_all.update(pred_res)
 
-    breakpoint()
 
     # TODO currently finalize_stage only stores the last predictor
     # so if you return, will only return last result from last loop

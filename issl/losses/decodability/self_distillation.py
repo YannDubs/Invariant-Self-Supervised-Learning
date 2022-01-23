@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import copy
 import queue
-from collections import Callable, Sequence
+from collections import Sequence
 from typing import Any, Optional
 import abc
 
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from issl.architectures import FlattenCosine, get_Architecture
+from issl.architectures import FlattenUnitLinear, get_Architecture
 from issl.helpers import RunningMean, kl_divergence, prod, queue_push_, sinkhorn_knopp, weights_init
 from torch.distributions import Categorical
 from torch.nn import functional as F
@@ -103,7 +103,6 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         other : dict
             Additional values to return.
         """
-        breakpoint()
 
         self.current_epoch = parent.current_epoch
 
@@ -300,7 +299,7 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
         self.epoch_queue_starts = epoch_queue_starts
         self.sinkhorn_kwargs = sinkhorn_kwargs
 
-        self.Mx_logits = FlattenCosine(out_dim, self.n_Mx)
+        self.Mx_logits = FlattenUnitLinear(out_dim, self.n_Mx)
 
         self.reset_parameters()
 
@@ -319,7 +318,6 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
     def loss(
         self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
-        breakpoint()
 
         n_tgt = z_a.size(0)
 
