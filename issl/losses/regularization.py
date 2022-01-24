@@ -65,7 +65,7 @@ class CoarseningRegularizer(nn.Module):
             self.loss_f = nn.SmoothL1Loss(reduction="none")
             self.is_distributions = False
         elif loss == "cosine":
-            self.loss_f = lambda z, z_a: F.cosine_similarity(
+            self.loss_f = lambda z, z_a: - F.cosine_similarity(
                 z.flatten(1, -1), z_a.flatten(1, -1), dim=-1, eps=1e-08
             )
             self.is_distributions = False
@@ -234,7 +234,7 @@ class CoarseningRegularizerMx(nn.Module):
             dist = torch.cdist(z, z, p=1.0)
 
         elif self.loss == "cosine":
-            dist = F.cosine_similarity(
+            dist = - F.cosine_similarity(
                 z.unsqueeze(-1), z.T.unsqueeze(0), dim=1, eps=1e-08
             )
 

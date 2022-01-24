@@ -27,8 +27,6 @@ data@data_repr=tinyimagenet
 ++data_repr.kwargs.val_size=2
 optimizer@optimizer_issl=AdamW
 data_repr.kwargs.batch_size=256
-decodability.kwargs.is_symmetric_loss=True
-decodability.kwargs.is_symmetric_KL_H=True
 timeout=$time
 "
 
@@ -49,7 +47,7 @@ scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
 scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.3)
 seed=1,2,3,4,5,6,7,8,9
 encoder.z_shape=2048,4096
-regularizer=huber,none
+regularizer=huber,none,cosine
 representor.loss.beta=tag(log,interval(1e-6,4e-6))
 decodability.kwargs.out_dim=tag(log,int(interval(500,3000)))
 decodability.kwargs.beta_pM_unif=tag(log,interval(1.5,3))

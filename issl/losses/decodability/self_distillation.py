@@ -37,9 +37,6 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
         for clip, where the positive examples are text sentences that are already represented.
 
-    is_symmetric_loss : bool, optional
-        Whether to use the two augmentations A,A' for both branches and symmetrize loss.
-
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`.
     """
@@ -49,14 +46,12 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             z_shape: Sequence[int],
             out_dim: float = 512,
             is_aux_already_represented: bool = False,
-            is_symmetric_loss: bool=True,
             projector_kwargs: dict[str, Any] = {"architecture": "linear"},
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.out_dim = out_dim if out_dim > 1 else max(10, int(prod(self.z_shape) * out_dim))
         self.is_aux_already_represented = is_aux_already_represented
-        self.is_symmetric_loss = is_symmetric_loss
 
         self.projector_kwargs = self.process_shapes(projector_kwargs)
         Projector = get_Architecture(**self.projector_kwargs)
@@ -120,14 +115,20 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
 
         loss, logs, other = self.loss(z, z_a)
 
-        if self.is_symmetric_loss:
-            loss2, _, __ = self.loss(z_a, z)
-            loss = (loss + loss2) / 2
+        return loss, logs, other
+
+    def loss(
+        self, z: torch.Tensor, z_a: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict, dict]:
+
+        loss1, logs, other = self.asymmetric_loss(z, z_a)
+        loss2, _, __ = self.asymmetric_loss(z_a, z)
+        loss = (loss1 + loss2) / 2
 
         return loss, logs, other
 
     @abc.abstractmethod
-    def loss(self, z : torch.Tensor, z_a: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
+    def asymmetric_loss(self, z : torch.Tensor, z_a: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
         pass
 
 # performs SSL by having one part of the model implementing the M(X)
@@ -139,9 +140,6 @@ add_doc_prior = """
         Weight of the exponential moving average for estimating the marginal distribution p(M). Larger means more weight 
         to the current estimate. Note that previous estimate will only be used to compute a better estimate but will not 
         be backpropagation through to avoid large memory usage for the backprop. If `None` does not use ema. 
-        
-    is_symmetric_KL_H : bool, optional
-        Whether to treat both the projector and predictor with the same loss.
         
     freeze_predproj_epochs : int, optional
         Freeze the projector / predictor that many epochs from the start.  
@@ -159,7 +157,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         *args,
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
-        is_symmetric_KL_H: bool=True,
         freeze_predproj_epochs: int = 0,  # TODO rm if worst
         temperature: float = 0.1, # TODO tune / or rm if bad
         **kwargs,
@@ -170,7 +167,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         super().__init__(*args,  **kwargs)
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
-        self.is_symmetric_KL_H = is_symmetric_KL_H
         self.freeze_predproj_epochs = freeze_predproj_epochs # will be frozen in ISSL
         self.temperature = temperature
 
@@ -179,14 +175,16 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         self.predictor = Predictor()
 
         if self.ema_weight_prior is not None:
+            # moving average should depend on predictor or projector => do not share
             self.ema_marginal = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
-
-            if self.is_symmetric_KL_H:
-                self.ema_marginal_a = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
+            self.ema_marginal_a = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
+        else:
+            self.ema_marginal = None
+            self.ema_marginal_a = None
 
         self.reset_parameters()
 
-    def loss(
+    def asymmetric_loss(
         self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
@@ -199,15 +197,13 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
             M_a = M_a / self.temperature
 
         # shape: [batch_size, M_shape]
-        loss, logs, other = self.asymmetric_loss(M, M_a)
-
-        if self.is_symmetric_KL_H:
-            loss2, _, __ = self.asymmetric_loss(M_a, M, is_a=True)
-            loss = (loss + loss2) / 2
+        loss1, logs, other = self.compare_branches(M, M_a, self.ema_marginal)
+        loss2, _, __ = self.compare_branches(M_a, M, self.ema_marginal_a)
+        loss = (loss1 + loss2) / 2
 
         return loss, logs, other
 
-    def asymmetric_loss(self, M, M_a, is_a: bool=False):
+    def compare_branches(self, M, M_a, run_marginal):
 
         # p(M|Z). batch shape: [batch_size] ; event shape: []
         p_Mlz = Categorical(logits=M_a)
@@ -216,9 +212,7 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         hat_p_M = Categorical(probs=p_Mlz.probs.mean(0))
 
         mean_p_M = hat_p_M.probs.float()
-        if self.ema_weight_prior is not None:
-            # moving average should depend on predictor or projector => do not share
-            run_marginal = self.ema_marginal_a if is_a else self.ema_marginal
+        if run_marginal is not None:
             mean_p_M = run_marginal(mean_p_M)
 
         # p(M) moving avg. batch shape: [] ; event shape: []
@@ -325,7 +319,7 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
     def is_curr_using_queue(self):
         return (self.queue_size > 0) and (self.current_epoch >= self.epoch_queue_starts)
 
-    def loss(
+    def asymmetric_loss(
         self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
@@ -438,25 +432,26 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
 
     def loss(self, z, z_a):
         # shape: [batch_size, M_shape]
-        z = self.projector(z)
-        z_a = self.projector(z_a)
+        z_proj = self.projector(z)
+        z_a_proj = self.projector(z_a)
 
-        loss1 = self.asymmetric_loss(z, z_a)
-        loss2 = self.asymmetric_loss(z_a, z)
-        loss = (loss1 + loss2) / 2
+        loss, logs, other = super().loss(z_proj, z_a_proj)
 
-        logs = dict()
-        logs["std_collapse"] = F.normalize(z, dim=1, p=2).std(-1).mean()
-        logs["std_collapse_norm"] = logs["std_collapse"] * (z.size(1) ** 0.5) # should be one if gaussian
-
-        other = dict()
+        logs["std_collapse"] = F.normalize(z_proj, dim=1, p=2).std(-1).mean()
+        logs["std_collapse_norm"] = logs["std_collapse"] * (z_proj.size(1) ** 0.5)  # should be one if gaussian
 
         return loss, logs, other
 
-    def asymmetric_loss(self, z, z_a):
+    def asymmetric_loss(
+        self, z: torch.Tensor, z_a: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict, dict]:
         p = self.predictor(z)
         z_a = z_a.detach()
 
         # shape: [batch_size]
-        loss = F.cosine_similarity(p, z_a, dim=-1)
-        return loss
+        loss = -F.cosine_similarity(p, z_a, dim=-1)
+
+        logs = dict()
+        other = dict()
+
+        return loss, logs, other

@@ -7,6 +7,5 @@ kwargs:
   z_shape: ${encoder.z_shape}
   is_aux_already_represented: ${data.is_aux_already_represented}
   out_dim: 1000
-  is_symmetric_loss: True
   projector_kwargs:
     architecture: "mlp"
