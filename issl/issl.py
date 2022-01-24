@@ -331,7 +331,7 @@ class ISSLModule(pl.LightningModule):
         is_swav_slfdstl = isinstance(dec, SwavSelfDistillationISSL)
         if is_swav_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
             for name, p in dec.named_parameters():
-                if "Mx_logits" in name:
+                if "prototypes" in name:
                     p.grad = None
 
         is_prior_slfdstl = isinstance(dec, PriorSelfDistillationISSL)

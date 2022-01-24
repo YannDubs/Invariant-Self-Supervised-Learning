@@ -50,6 +50,7 @@ scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
 scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.3)
 decodability.kwargs.temperature=0.07,0.1,0.3
 decodability.kwargs.n_Mx=tag(log,int(interval(500,3000)))
+decodability.kwargs.epoch_queue_starts=0,1,5,15
 seed=1,2,3,4,5,6,7,8,9
 trainer.max_epochs=300
 "

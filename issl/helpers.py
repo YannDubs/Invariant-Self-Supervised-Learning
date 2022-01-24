@@ -1170,7 +1170,7 @@ def sinkhorn_knopp(
     n_iter: int = 3,
     is_hard_assignment: bool = False,
     world_size: int = 1,
-    is_double_prec: bool = False,
+    is_double_prec: bool = True,
     is_force_no_gpu: bool = False,
 ):
     """Sinkhorn knopp algorithm to find an equipartition giving logits.
@@ -1212,9 +1212,10 @@ def sinkhorn_knopp(
 
     # Q shape: [n_Mx, n_samples]
     # log sum exp trick for stability
-    M = torch.max(logits) / eps
+    logits = logits / eps
+    M = torch.max(logits)
     if world_size > 1: dist.all_reduce(M, op=dist.ReduceOp.MAX)
-    Q = (logits / eps - M).exp().T
+    Q = (logits - M).exp().T
 
     # remove potential infs in Q. Replace by max non inf.
     Q = torch.nan_to_num(Q, posinf=Q.masked_fill(torch.isinf(Q), 0).max().item())

@@ -297,7 +297,7 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
         self.epoch_queue_starts = epoch_queue_starts
         self.sinkhorn_kwargs = sinkhorn_kwargs
 
-        self.Mx_logits = FlattenCosine(out_dim, self.n_Mx)
+        self.prototypes = FlattenCosine(out_dim, self.n_Mx)
 
         self.reset_parameters()
 
@@ -325,41 +325,36 @@ class SwavSelfDistillationISSL(BaseSelfDistillationISSL):
 
         n_tgt = z_a.size(0)
 
-        # shape: [2*batch_size, z_shape]
-        zs = torch.cat([z, z_a], dim=0)
-
-        # shape: [2*batch_size, M_shape]
-        zs_proj = self.projector(zs)
-
-        # compute logits. shape: [2*batch_size, n_Mx]
-        logits = self.Mx_logits(zs_proj)
+        # shape: [batch_size, M_shape]
+        # makes more sense to not concat because of batchnorms (but slower)
+        z_proj_s = self.projector(z)
 
         # compute logits. shape: [batch_size, n_Mx]
-        Ms_logits, Mt_logits = logits.chunk(2)
-
-        if self.is_curr_using_queue:
-            # fill the queue with the target embedding => ensure that you still use the most recent logits.
-            # + detach to avoid huge memory cost. Will only store after going through z and z_a!
-            self._to_add_to_queue = zs_proj.chunk(2)[1].detach()
-
-            if len(self.queue.queue) > 0:
-                # get logits for the queue and add them to the target ones => assignments will consider queue
-                # shape: [batch_size * queue_size, M_shape]
-                zs_proj_queue = torch.cat(list(self.queue.queue), dim=0)
-
-                # shape: [batch_size * queue_size + n_tgt, n_Mx]
-                with torch.no_grad():
-                    Mq_logits = self.Mx_logits(zs_proj_queue)
-                Mt_logits = torch.cat([Mt_logits, Mq_logits], dim=0)
-
-            else:
-                pass  # at the start has noting (and cat breaks if nothing)
-
         # make sure float32 and not 16
-        Ms_logits = Ms_logits.float()
-        Mt_logits = Mt_logits.float()
+        Ms_logits = self.prototypes(z_proj_s).float()
 
         with torch.no_grad():
+            z_proj_t = self.projector(z_a).detach()
+
+            if self.is_curr_using_queue:
+                # fill the queue with the target embedding => ensure that you still use the most recent logits.
+                # + detach to avoid huge memory cost. Will only store after going through z and z_a!
+                self._to_add_to_queue = z_proj_t
+
+                if len(self.queue.queue) > 0:
+                    # get logits for the queue and add them to the target ones => assignments will consider queue
+                    # shape: [batch_size * queue_size, M_shape]
+                    zs_proj_queue = torch.cat(list(self.queue.queue), dim=0)
+
+                    # shape: [batch_size * queue_size + n_tgt, n_Mx]
+                    z_proj_t = torch.cat([z_proj_t, zs_proj_queue], dim=0)
+
+                else:
+                    pass  # at the start has noting (and cat breaks if nothing)
+
+            # compute logits. shape: [batch_size, n_Mx]
+            Mt_logits = self.prototypes(z_proj_t).float()
+
             # compute assignments
             if dist.is_available() and dist.is_initialized():
                 world_size = dist.get_world_size()
