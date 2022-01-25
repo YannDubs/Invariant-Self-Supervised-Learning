@@ -30,6 +30,12 @@ data_repr.kwargs.batch_size=512
 decodability.kwargs.temperature=0.07
 encoder.is_relu_Z=True
 encoder.batchnorm_mode=pred
+encoder.is_normalize_Z=False
+encoder.z_shape=2048
+optimizer_issl.kwargs.lr=2e-3
+scheduler_issl.kwargs.base.warmup_epochs=0.1
+encoder.is_relu_Z=True
+encoder.batchnorm_mode=pred
 timeout=$time
 "
 
@@ -41,28 +47,23 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
+hydra.sweeper.n_trials=5
+hydra.sweeper.n_jobs=5
 hydra.sweeper.study_name=v3
-optimizer_issl.kwargs.lr=tag(log,interval(2e-3,4e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(2e-6,1e-5))
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(4,8))
-scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.2)
 seed=1,2,3,4,5,6,7,8,9
-encoder.z_shape=1024,2048
-regularizer=huber,none,cosine
-representor.loss.beta=tag(log,interval(1e-6,3e-5))
-decodability.kwargs.is_self_contrastive=no,symmetric
-encoder.is_normalize_Z=True,False
+regularizer=huber,none
+representor.loss.beta=tag(log,interval(1e-6,1e-5))
+decodability.kwargs.is_self_contrastive=no,symmetric,yes
 trainer.max_epochs=300
 "
 # high temperature is better for sample efficiency but low one is better for decodability
 # normalize Z is good for sample efficiency but maybe slightly worst for general ?
-# try encoder.kwargs.arch_kwargs.is_no_linear=True
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in ""
+  for kwargs_dep in "" "encoder.kwargs.arch_kwargs.is_no_linear=True encoder.z_shape=512" "encoder.is_relu_Z=False encoder.batchnorm_mode=null encoder.kwargs.arch_kwargs.is_no_linear=True encoder.z_shape=512"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
