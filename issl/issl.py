@@ -115,9 +115,6 @@ class ISSLModule(pl.LightningModule):
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
-        if self.hparams.encoder.is_normalize_Z:
-            z = F.normalize(z, dim=1, p=2)
-
         if mode_bn == "pred" and is_process:
             # doesn't do that when goes to predictor
             z = self.batchnorm_Z(z)

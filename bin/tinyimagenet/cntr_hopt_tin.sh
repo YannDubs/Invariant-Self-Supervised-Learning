@@ -30,7 +30,6 @@ data_repr.kwargs.batch_size=512
 decodability.kwargs.temperature=0.07
 encoder.is_relu_Z=True
 encoder.batchnorm_mode=pred
-encoder.is_normalize_Z=False
 encoder.z_shape=2048
 optimizer_issl.kwargs.lr=2e-3
 scheduler_issl.kwargs.base.warmup_epochs=0.1

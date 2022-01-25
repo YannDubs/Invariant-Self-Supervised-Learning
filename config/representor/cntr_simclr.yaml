@@ -27,4 +27,3 @@ decodability:
 
 encoder:
   z_shape: 512
-  is_normalize_Z: False

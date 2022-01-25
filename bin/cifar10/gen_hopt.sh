@@ -46,7 +46,6 @@ decodability.kwargs.predecode_n_Mx=tag(log,int(interval(50,10000)))
 decodability.kwargs.softmax_kwargs.temperature_mode='anneal','train','constant'
 decodability.kwargs.softmax_kwargs.temperature=tag(log,interval(0.5,5))
 data_repr.kwargs.batch_size=128,256,512,1024
-encoder.is_normalize_Z=True,False
 trainer.max_epochs=200
 "
 

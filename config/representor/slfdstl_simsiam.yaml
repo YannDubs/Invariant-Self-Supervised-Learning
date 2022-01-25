@@ -16,5 +16,3 @@ data_repr:
 
 encoder:
   z_shape: 2048
-  is_normalize_Z: False
-

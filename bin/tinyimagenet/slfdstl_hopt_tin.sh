@@ -30,7 +30,6 @@ data_repr.kwargs.batch_size=256
 encoder.is_relu_Z=True
 encoder.batchnorm_mode=pred
 decodability.kwargs.projector_kwargs.architecture=linear
-encoder.is_normalize_Z=False
 encoder.z_shape=4096
 timeout=$time
 "
