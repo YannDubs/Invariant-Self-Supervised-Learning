@@ -143,10 +143,6 @@ add_doc_prior = """
         
     freeze_predproj_epochs : int, optional
         Freeze the projector / predictor that many epochs from the start.  
-        
-    temperature : float, optional
-        Temperature before the softmax. Only used if architecture has `cosine` in 
-        the name e.g. `cosine` or `cosine_mlp`.
     """
 
 class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
@@ -158,7 +154,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
         freeze_predproj_epochs: int = 0,  # TODO rm if worst
-        temperature: float = 0.1, # TODO tune / or rm if bad
         **kwargs,
     ) -> None:
 
@@ -191,10 +186,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         # shape: [batch_size, M_shape]
         M = self.predictor(z)
         M_a = self.projector(z_a)
-
-        if "cosine" in self.projector_kwargs["architecture"].lower():
-            M = M / self.temperature
-            M_a = M_a / self.temperature
 
         # shape: [batch_size, M_shape]
         loss1, logs, other = self.compare_branches(M, M_a, self.ema_marginal)
