@@ -22,6 +22,7 @@ representor=slfdstl_simsiam
 data_repr.kwargs.batch_size=512
 scheduler_issl.kwargs.base.is_warmup_lr=True
 encoder.z_shape=512
+encoder.kwargs.arch_kwargs.is_no_linear=True
 data@data_repr=tinyimagenet
 data_repr.kwargs.is_force_all_train=True
 checkpoint@checkpoint_repr=bestTrainLoss
@@ -29,6 +30,7 @@ checkpoint@checkpoint_repr=bestTrainLoss
 ++data_repr.kwargs.val_size=2
 optimizer@optimizer_issl=AdamW
 scheduler@scheduler_issl=warm_unifmultistep
+optimizer_issl.kwargs.lr=2e-3
 timeout=$time
 "
 
@@ -39,13 +41,12 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
+hydra.sweeper.n_trials=10
+hydra.sweeper.n_jobs=10
 hydra.sweeper.study_name=v1
-optimizer_issl.kwargs.lr=tag(log,interval(1e-3,4e-3))
-optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,5e-6))
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(3,8))
-scheduler_issl.kwargs.base.warmup_epochs=interval(0.,0.3)
+scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(4,8))
+scheduler_issl.kwargs.base.warmup_epochs=interval(0.,0.2)
+optimizer_issl.kwargs.weight_decay=tag(log,interval(7e-5,7e-4))
 seed=1,2,3,4,5,6,7,8,9
 trainer.max_epochs=300
 "

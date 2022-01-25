@@ -58,6 +58,7 @@ trainer.max_epochs=300
 "
 # high temperature is better for sample efficiency but low one is better for decodability
 # normalize Z is good for sample efficiency but maybe slightly worst for general ?
+# try encoder.kwargs.arch_kwargs.is_no_linear=True
 
 
 if [ "$is_plot_only" = false ] ; then

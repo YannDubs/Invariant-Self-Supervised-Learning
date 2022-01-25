@@ -26,6 +26,8 @@ checkpoint@checkpoint_repr=bestTrainLoss
 ++data_repr.kwargs.val_size=2
 data_repr.kwargs.is_force_all_train=True
 optimizer@optimizer_issl=AdamW
+encoder.batchnorm_mode=pred
+encoder.is_relu_Z=True
 timeout=$time
 "
 
@@ -45,16 +47,15 @@ optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,1e-5))
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(4,8))
 scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.3)
 seed=1,2,3,4,5,6,7,8,9
-encoder.z_shape=512,1024,2048
+encoder.z_shape=512,1024
 regularizer=huber,none,cosine
-representor.loss.beta=tag(log,interval(1e-7,1e-4))
+representor.loss.beta=tag(log,interval(5e-7,3e-5))
 decodability.kwargs.predecode_n_Mx=tag(log,int(interval(200,10000)))
 encoder.is_normalize_Z=True,False
-encoder.is_relu_Z=True,False
-encoder.batchnorm_mode=pre,pred,null
 data_repr.kwargs.batch_size=128,256
 trainer.max_epochs=300
 "
+# try encoder.kwargs.arch_kwargs.is_no_linear=True
 
 
 if [ "$is_plot_only" = false ] ; then

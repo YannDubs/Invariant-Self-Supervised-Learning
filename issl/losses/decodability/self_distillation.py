@@ -426,6 +426,7 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
         self.reset_parameters()
 
     def loss(self, z, z_a):
+
         # shape: [batch_size, M_shape]
         z_proj = self.projector(z)
         z_a_proj = self.projector(z_a)
@@ -440,6 +441,7 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
     def asymmetric_loss(
         self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
+
         p = self.predictor(z)
         z_a = z_a.detach()
 

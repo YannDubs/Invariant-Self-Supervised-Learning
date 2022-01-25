@@ -27,6 +27,8 @@ data@data_repr=tinyimagenet
 ++data_repr.kwargs.val_size=2
 optimizer@optimizer_issl=AdamW
 data_repr.kwargs.batch_size=256
+encoder.is_relu_Z=True
+encoder.batchnorm_mode=pred
 timeout=$time
 "
 
@@ -38,8 +40,8 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=30
-hydra.sweeper.n_jobs=30
+hydra.sweeper.n_trials=20
+hydra.sweeper.n_jobs=20
 hydra.sweeper.study_name=v2
 optimizer_issl.kwargs.lr=tag(log,interval(1e-3,4e-3))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(5e-7,5e-6))
@@ -53,12 +55,11 @@ decodability.kwargs.out_dim=tag(log,int(interval(500,3000)))
 decodability.kwargs.beta_pM_unif=tag(log,interval(1.5,3))
 decodability.kwargs.freeze_predproj_epochs=0,1
 decodability.kwargs.projector_kwargs.architecture=linear,cosine
-decodability.kwargs.temperature=0.07,0.1,0.3
+decodability.kwargs.temperature=0.001,0.005,0.01,0.05
 encoder.is_normalize_Z=True,False
-encoder.is_relu_Z=True,False
-encoder.batchnorm_mode=pre,pred,null
 trainer.max_epochs=300
 "
+# try encoder.kwargs.arch_kwargs.is_no_linear=True
 
 
 if [ "$is_plot_only" = false ] ; then

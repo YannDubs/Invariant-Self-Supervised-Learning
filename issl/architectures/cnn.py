@@ -62,6 +62,10 @@ class ResNet(nn.Module):
     bottleneck : int, optional
         Optional bottleneck. If given then the real output of the resnet will be `bottleneck`, but then this
         will be followed by a a linear predictor to get to out_shape.
+
+    is_no_linear : bool, optional
+        Whether or not to remove the last linear layer. This is typical in self supervised learning but
+        has the disadvantage that you cannot chose the dimensionality of Z.
     """
 
     def __init__(
@@ -72,6 +76,7 @@ class ResNet(nn.Module):
         is_pretrained: bool = False,
         norm_layer: str = "batchnorm",
         bottleneck: Optional[int] = None,
+        is_no_linear: bool= False
     ):
         super().__init__()
         kwargs = {}
@@ -81,6 +86,7 @@ class ResNet(nn.Module):
         self.is_pretrained = is_pretrained
         self.bottleneck = bottleneck
         self.tmp_out_dim = self.out_dim if self.bottleneck is None else self.bottleneck
+        self.is_no_linear = is_no_linear
 
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
@@ -95,9 +101,9 @@ class ResNet(nn.Module):
             **kwargs,
         )
 
-        if self.is_pretrained:
-            assert self.tmp_out_dim == self.resnet.fc.in_features
+        if self.is_no_linear or self.is_pretrained:
             # when pretrained has to remove last layer
+            assert self.tmp_out_dim == self.resnet.fc.in_features
             self.resnet.fc = nn.Identity()
 
         if self.in_shape[1] < 100:

@@ -22,6 +22,7 @@ representor=slfdstl_swav
 data_repr.kwargs.batch_size=512
 scheduler_issl.kwargs.base.is_warmup_lr=True
 encoder.z_shape=512
+encoder.kwargs.arch_kwargs.is_no_linear=True
 data@data_repr=tinyimagenet
 data_repr.kwargs.is_force_all_train=True
 checkpoint@checkpoint_repr=bestTrainLoss

@@ -127,7 +127,6 @@ class ReconstructImages(PlottingCallback):
                 # undo normalization for plotting
                 unnormalizer = UnNormalizer(cfg.data.normalized)
                 x = unnormalizer(x)
-                a = unnormalizer(a)
 
         yield a_hat, dict(name="rec_img")
 

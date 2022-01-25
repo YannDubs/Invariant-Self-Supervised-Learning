@@ -6,3 +6,4 @@ kwargs:
   architecture: resnet
   arch_kwargs:
     base: resnet18
+    is_no_linear: False
