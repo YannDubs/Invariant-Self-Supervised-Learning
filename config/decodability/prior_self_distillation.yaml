@@ -6,7 +6,5 @@ kwargs:
   beta_pM_unif: 1.0 # TODO: tune
   ema_weight_prior: null
   out_dim: 1000
-  freeze_predproj_epochs: 0
-  temperature: 0.1
   projector_kwargs:
     architecture:  "linear"

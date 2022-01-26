@@ -140,9 +140,6 @@ add_doc_prior = """
         Weight of the exponential moving average for estimating the marginal distribution p(M). Larger means more weight 
         to the current estimate. Note that previous estimate will only be used to compute a better estimate but will not 
         be backpropagation through to avoid large memory usage for the backprop. If `None` does not use ema. 
-        
-    freeze_predproj_epochs : int, optional
-        Freeze the projector / predictor that many epochs from the start.  
     """
 
 class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
@@ -153,7 +150,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         *args,
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
-        freeze_predproj_epochs: int = 0,  # TODO rm if worst
         **kwargs,
     ) -> None:
 
@@ -162,8 +158,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         super().__init__(*args,  **kwargs)
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
-        self.freeze_predproj_epochs = freeze_predproj_epochs # will be frozen in ISSL
-        self.temperature = temperature
 
         # use same arch as projector
         Predictor = get_Architecture(**self.projector_kwargs)

@@ -30,6 +30,8 @@ data_repr.kwargs.is_force_all_train=True
 optimizer@optimizer_issl=AdamW
 optimizer_issl.kwargs.lr=2e-3
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5
+data_repr.kwargs.batch_size=256
+scheduler_issl.kwargs.base.warmup_epochs=0.1
 timeout=$time
 "
 
@@ -44,10 +46,8 @@ monitor_return=[test/pred/data_repr/accuracy_score]
 hydra.sweeper.n_trials=15
 hydra.sweeper.n_jobs=15
 hydra.sweeper.study_name=v1
-optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-6,1e-5))
-scheduler_issl.kwargs.base.warmup_epochs=interval(0,0.2)
+optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-6,5e-6))
 seed=1,2,3,4,5,6,7,8,9
-data_repr.kwargs.batch_size=128,256
 trainer.max_epochs=300
 "
 

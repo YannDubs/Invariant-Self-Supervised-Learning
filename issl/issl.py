@@ -330,12 +330,3 @@ class ISSLModule(pl.LightningModule):
             for name, p in dec.named_parameters():
                 if "prototypes" in name:
                     p.grad = None
-
-        is_prior_slfdstl = isinstance(dec, PriorSelfDistillationISSL)
-        if is_prior_slfdstl and self.current_epoch < dec.freeze_predproj_epochs:
-            for name, p in dec.named_parameters():
-                if "predictor" in name:
-                    p.grad = None
-
-                if "projector" in name:
-                    p.grad = None

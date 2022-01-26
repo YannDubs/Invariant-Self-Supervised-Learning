@@ -31,6 +31,8 @@ checkpoint@checkpoint_repr=bestTrainLoss
 optimizer@optimizer_issl=AdamW
 scheduler@scheduler_issl=warm_unifmultistep
 optimizer_issl.kwargs.lr=2e-3
+optimizer_issl.kwargs.weight_decay=1e-4
+scheduler_issl.kwargs.base.warmup_epochs=0.1
 timeout=$time
 "
 
@@ -44,15 +46,11 @@ monitor_return=[test/pred/data_repr/accuracy_score]
 hydra.sweeper.n_trials=10
 hydra.sweeper.n_jobs=10
 hydra.sweeper.study_name=v1
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(4,8))
-scheduler_issl.kwargs.base.warmup_epochs=interval(0.,0.2)
-optimizer_issl.kwargs.weight_decay=tag(log,interval(7e-5,7e-4))
+scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(5,8))
 seed=1,2,3,4,5,6,7,8,9
 trainer.max_epochs=300
 "
-
-
-# difference for gen: linear resnet / augmentations / larger dim
+# decay per step seems better when larger
 
 
 if [ "$is_plot_only" = false ] ; then

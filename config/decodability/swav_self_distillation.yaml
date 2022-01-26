@@ -7,7 +7,7 @@ kwargs:
   temperature:  0.1
   queue_size:  15
   out_dim: 128
-  epoch_queue_starts: 15
+  epoch_queue_starts: 5
   projector_kwargs:
     architecture: "mlp"
     hid_dim: 2048
