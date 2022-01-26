@@ -45,20 +45,12 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=1
-hydra.sweeper.n_jobs=1
-hydra.sweeper.study_name=v2
-seed=1,2,3,4,5,6,7,8,9
-trainer.max_epochs=300
+seed=1,2,3
+trainer.max_epochs=300,1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "trainer.max_epochs=300" "trainer.max_epochs=1000"
+  for kwargs_dep in ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

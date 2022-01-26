@@ -37,18 +37,10 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
-hydra.sweeper.study_name=v1
 optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-6,5e-6))
 representor.loss.beta=tag(log,interval(1e-5,1e-4))
-seed=1,2,3,4,5,6,7,8,9
-trainer.max_epochs=300
+seed=1,2,3
+trainer.max_epochs=300,1000
 "
 
 

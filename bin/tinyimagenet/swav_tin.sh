@@ -42,22 +42,14 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=5
-hydra.sweeper.n_jobs=5
-hydra.sweeper.study_name=v2
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(5,7))
 decodability.kwargs.temperature=0.01,0.03,0.07
-seed=1,2,3,4,5,6,7,8,9
-trainer.max_epochs=300
+seed=1,2,3
+trainer.max_epochs=300,1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in ""
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
