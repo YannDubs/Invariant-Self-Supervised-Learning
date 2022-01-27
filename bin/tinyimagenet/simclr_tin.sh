@@ -8,6 +8,8 @@ notes="
 # parses special mode for running the script
 source `dirname $0`/../utils.sh
 
+time=5760
+
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
@@ -39,8 +41,6 @@ scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=4
 scheduler_issl.kwargs.base.warmup_epochs=0.1
 timeout=$time
 "
-
-# 3 for decay also works
 
 
 # every arguments that you are sweeping over

@@ -8,6 +8,7 @@ notes="
 # parses special mode for running the script
 source `dirname $0`/../utils.sh
 
+time=5760
 
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
@@ -35,6 +36,8 @@ optimizer_issl.kwargs.lr=2e-3
 scheduler_issl.kwargs.base.warmup_epochs=0.1
 decodability.kwargs.epoch_queue_starts=5
 decodability.kwargs.n_Mx=500
+decodability.kwargs.temperature=0.07
+scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5
 timeout=$time
 "
 
@@ -42,8 +45,6 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=shuffle(range(5,7))
-decodability.kwargs.temperature=0.01,0.03,0.07
 seed=1,2,3
 trainer.max_epochs=300,1000
 "

@@ -17,7 +17,8 @@ def get_nlp_path(cfg: Container) -> Path:
 
     user_paths = list(machine_path.glob(f"*/{cfg.user}"))
     if len(user_paths) == 0:
-        user_path = list(machine_path.iterdir())[-1] / str(cfg.user)
+        possible_paths = [p for p in machine_path.iterdir() if "scr" in str(p)]
+        user_path = possible_paths[-1] / str(cfg.user)
         user_path.mkdir()
     else:
         user_path = user_paths[-1]

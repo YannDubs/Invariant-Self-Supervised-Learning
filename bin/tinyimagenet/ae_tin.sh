@@ -32,13 +32,13 @@ optimizer_issl.kwargs.lr=2e-3
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5
 data_repr.kwargs.batch_size=256
 scheduler_issl.kwargs.base.warmup_epochs=0.1
+optimizer_issl.kwargs.weight_decay=2e-6
 timeout=$time
 "
 
 
 # every arguments that you are sweeping over
 kwargs_multi="
-optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-6,5e-6))
 seed=1,2,3
 trainer.max_epochs=300,1000
 "
