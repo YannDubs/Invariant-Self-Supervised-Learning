@@ -165,8 +165,8 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
 
         if self.ema_weight_prior is not None:
             # moving average should depend on predictor or projector => do not share
-            self.ema_marginal = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
-            self.ema_marginal_a = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha=self.ema_weight_prior)
+            self.ema_marginal = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha_use=self.ema_weight_prior)
+            self.ema_marginal_a = RunningMean(torch.ones(self.out_dim) / self.out_dim, alpha_use=self.ema_weight_prior)
         else:
             self.ema_marginal = None
             self.ema_marginal_a = None
@@ -209,6 +209,9 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         # D[\hat{p}(M) || Unif(\calM)]. shape: []
         # for unif prior same as maximizing entropy
         fit_pM_Unif = kl_divergence(p_M, prior)
+        if self.ema_weight_prior is not None:
+            # try to balance the decrease in gradients due to ema
+            fit_pM_Unif = fit_pM_Unif / self.ema_weight_prior
 
         # D[p(M | Z) || q(M | Z)]. shape: [batch_size]
         # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic

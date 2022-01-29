@@ -39,11 +39,13 @@ def is_pow_of_k(n, k):
 
 class RunningMean(nn.Module):
     """Keep track of an exponentially moving average"""
-    def __init__(self, init: torch.tensor, alpha: float=0.9):
+    def __init__(self, init: torch.tensor, alpha_use: float=0.5, alpha_store: float=0.1):
         super().__init__()
 
-        assert 0.0 <= alpha <= 1.0
-        self.alpha = alpha
+        assert 0.0 <= alpha_use <= 1.0
+        assert 0.0 <= alpha_store <= 1.0
+        self.alpha_use = alpha_use
+        self.alpha_store = alpha_store
         self.init = init
         self.register_buffer('running_mean', init)
 
@@ -51,10 +53,9 @@ class RunningMean(nn.Module):
         self.running_mean = self.init
 
     def forward(self, x):
-
-        out = self.alpha * x + (1 - self.alpha) * self.running_mean
+        out = self.alpha_use * x + (1 - self.alpha_use) * self.running_mean
         # don't keep all the computational graph to avoid memory++
-        self.running_mean = out.detach().float()
+        self.running_mean = (self.alpha_store * x + (1 - self.alpha_store) * self.running_mean).detach().float()
         return out
 
 
@@ -678,9 +679,9 @@ def get_lr_scheduler(
         Additional arguments to any `torch.optim.lr_scheduler`.
     """
     if is_warmup_lr:
+        warmup_epochs = int_or_ratio(warmup_epochs, epochs)
         # remove the warmup
         epochs = epochs - warmup_epochs
-        raw_epochs = epochs
 
     if "milestones" in kwargs:
         # allow negative milestones which are subtracted to the last epoch
@@ -715,7 +716,6 @@ def get_lr_scheduler(
     # TODO: test plateau
 
     if is_warmup_lr:
-        warmup_epochs = int_or_ratio(warmup_epochs, raw_epochs)
         if scheduler_type == "CosineAnnealingLR":
             # TODO: test
             assert warmup_multiplier == 1.0

@@ -33,27 +33,19 @@ data_repr.kwargs.batch_size=256
 scheduler_issl.kwargs.base.warmup_epochs=0.1
 optimizer_issl.kwargs.lr=2e-3
 optimizer_issl.kwargs.weight_decay=2e-6
+encoder.batchnorm_mode=pred
+encoder.is_relu_Z=True
+decodability.kwargs.predecode_n_Mx=3000
+representor.loss.beta=2e-6
+regularizer=huber
 timeout=$time
 "
-
+# for some reason extremely slow
 
 # every arguments that you are sweeping over
 kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=15
-hydra.sweeper.n_jobs=15
-hydra.sweeper.study_name=v2
-seed=1,2,3,4,5,6,7,8,9
-regularizer=huber,none,cosine
-representor.loss.beta=tag(log,interval(1e-6,3e-6))
-decodability.kwargs.predecode_n_Mx=1000,3000,5000
-encoder.batchnorm_mode=pred,null
-encoder.is_relu_Z=True,False
-trainer.max_epochs=300
+seed=1,2,3
+trainer.max_epochs=300,1000
 "
 
 

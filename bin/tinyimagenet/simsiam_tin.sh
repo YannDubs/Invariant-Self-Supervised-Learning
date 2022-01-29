@@ -40,8 +40,8 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=1,2
-trainer.max_epochs=300
+seed=1,2,3
+trainer.max_epochs=300,1000
 "
 # decay per step seems better when larger
 
