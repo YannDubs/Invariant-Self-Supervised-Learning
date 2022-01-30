@@ -210,34 +210,51 @@ def tmp_seed(seed: Optional[int], is_cuda: bool = torch.cuda.is_available()):
             if is_cuda:
                 torch.cuda.set_rng_state(torch_cuda_state)
 
+# taken from https://github.com/rwightman/pytorch-image-models/blob/d5ed58d623be27aada78035d2a19e2854f8b6437/timm/models/layers/weight_init.py
+def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='truncated_normal'):
+    """Initialization by scaling the variance."""
+    fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(tensor)
+    if mode == 'fan_in':
+        denom = fan_in
+    elif mode == 'fan_out':
+        denom = fan_out
+    elif mode == 'fan_avg':
+        denom = (fan_in + fan_out) / 2
+
+    variance = scale / denom
+
+    if distribution == "truncated_normal":
+        # constant is stddev of standard normal truncated to (-2, 2)
+        nn.init.trunc_normal_(tensor, std=math.sqrt(variance) / .87962566103423978)
+    elif distribution == "normal":
+        tensor.normal_(std=math.sqrt(variance))
+    elif distribution == "uniform":
+        bound = math.sqrt(3 * variance)
+        tensor.uniform_(-bound, bound)
+    else:
+        raise ValueError(f"invalid distribution {distribution}")
 
 def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
-    """Initialize standard layers and return whether was intitialized."""
+    """Initialize standard layers and return whether was initialized."""
     # all standard layers
     if isinstance(module, nn.modules.conv._ConvNd):
-        # used in https://github.com/brain-research/realistic-ssl-evaluation/
-        nn.init.kaiming_normal_(
-            module.weight, mode="fan_out", nonlinearity=nonlinearity
-        )
+        variance_scaling_(module.weight)
         try:
             nn.init.zeros_(module.bias)
         except AttributeError:
             pass
 
     elif isinstance(module, nn.Linear):
-        nn.init.kaiming_uniform_(module.weight, nonlinearity=nonlinearity)
+        nn.init.trunc_normal_(module.weight, std=0.02)
         try:
             nn.init.zeros_(module.bias)
         except AttributeError:
             pass
 
-    elif isinstance(module, nn.BatchNorm2d):
-        try:
-            module.weight.data.fill_(1)
-            module.bias.data.zero_()
-        except AttributeError:
-            # if affine = False
-            pass
+    elif isinstance(module, nn.modules.batchnorm._NormBase):
+        if module.affine:
+            nn.init.ones_(module.weight)
+            nn.init.zeros_(module.bias)
 
     else:
         return False
@@ -300,62 +317,6 @@ def aggregate_dicts(dicts, operation=mean):
     """
     all_keys = set().union(*[el.keys() for el in dicts])
     return {k: operation([dic.get(k, None) for dic in dicts]) for k in all_keys}
-
-
-class GrammRBF(nn.Module):
-    """Compute a gramm matrix using gaussian RBF.
-
-    Parameters
-    ----------
-    is_normalize : bool, optional
-        Whether to row normalize the output gram matrix.
-
-    pre_gamma_init : float, optional
-        Initialization of the gamma parameter.
-
-    p : int, optional
-        Which norm to use.
-
-    is_linear : bool, optional
-        Whether to pointwise tranform each element of the gram matrix.
-    """
-
-    def __init__(
-        self, is_normalize=False, pre_gamma_init=0.0, p=2, is_linear=True, **kwargs
-    ):
-        super().__init__()
-        self.is_normalize = is_normalize
-        self.pre_gamma_init = pre_gamma_init
-        self.p = p
-        self.is_linear = is_linear
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        self.pre_gamma = nn.Parameter(torch.tensor([self.pre_gamma_init]).float())
-
-        if self.is_linear:
-            self.scale = nn.Parameter(torch.tensor([1.0]))
-            self.bias = nn.Parameter(torch.tensor([0.0]))
-
-    def forward(self, x1, x2):
-
-        # shape : [x1_dim, x2_dim]
-        dist = torch.cdist(x1, x2, p=self.p) ** self.p
-
-        gamma = 1e-5 + F.softplus(self.pre_gamma)
-        inp = -gamma * dist
-
-        if self.is_normalize:
-            # numerically stable normalization of the weights by density
-            out = inp.softmax(-1)
-        else:
-            out = inp.exp()
-
-        if self.is_linear:
-            out = self.scale * out + self.bias
-
-        return out
 
 
 def kl_divergence(p, q, z_samples=None, is_lower_var=False):

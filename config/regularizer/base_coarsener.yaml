@@ -3,4 +3,3 @@ factor_beta: 1
 kwargs:
   loss: ???
   mode: coarsener
-  is_aux_already_represented: ${data.is_aux_already_represented}

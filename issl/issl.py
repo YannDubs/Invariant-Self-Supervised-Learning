@@ -106,15 +106,12 @@ class ISSLModule(pl.LightningModule):
         else:
             z = p_Zlx.mean
 
-        mode_bn = self.hparams.encoder.batchnorm_mode
-
-        if mode_bn == "pre":
-            z = self.batchnorm_Z(z)
-
         # one difference compared to standard implementation is that our representation does not go through a relu
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
+        # need to clean and just decide whether or not to use batchnorm
+        mode_bn = self.hparams.encoder.batchnorm_mode
         if mode_bn == "pred" and is_process:
             # doesn't do that when goes to predictor
             z = self.batchnorm_Z(z)

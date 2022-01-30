@@ -61,8 +61,6 @@ class ISSLDataset(abc.ABC):
     seed : int, optional
         Pseudo random seed.
     """
-
-    is_aux_already_represented = False
     attr_data_memory = ""  # set following if data already precomputed to avoid duplication when caching
 
     def __init__(
@@ -399,7 +397,6 @@ class ISSLDataModule(LightningDataModule):
         self.shape = dataset.shapes["input"]
         self.aux_target = dataset.aux_target
         self.normalized = dataset.normalization if dataset.is_normalize else None
-        self.is_aux_already_represented = dataset.is_aux_already_represented
 
     @property
     def balancing_weights(self) -> dict[str, float]:

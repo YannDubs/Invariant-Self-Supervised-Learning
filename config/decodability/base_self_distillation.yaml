@@ -5,7 +5,6 @@ factor_beta: 10
 kwargs:
   mode: self_distillation
   z_shape: ${encoder.z_shape}
-  is_aux_already_represented: ${data.is_aux_already_represented}
   out_dim: 1000
   projector_kwargs:
     architecture: "mlp"

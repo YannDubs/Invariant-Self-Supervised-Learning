@@ -368,7 +368,6 @@ def instantiate_datamodule_(
     cfgd.mode = datamodule.mode
     cfgd.aux_target = datamodule.aux_target
     cfgd.normalized = datamodule.normalized
-    cfgd.is_aux_already_represented = datamodule.is_aux_already_represented
     if pre_representor is not None:
         datamodule = apply_representor(
             datamodule,
@@ -418,7 +417,6 @@ def get_callbacks(
         aux_target = cfg.data.kwargs.dataset_kwargs.aux_target
         is_img_aux_target = cfg.data.mode == "image"
         is_img_aux_target &= aux_target in ["representative", "input", "augmentation"]
-        is_img_aux_target &= not cfg.data.is_aux_already_represented
 
         if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval:
             # can only plot if you have labels

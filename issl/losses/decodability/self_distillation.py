@@ -32,11 +32,6 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
     out_dim : float, optional
         Size of the output of the projector. Note that if  <= 1 it will be a percentage of z_dim.
 
-    is_aux_already_represented : bool, optional
-        Whether the positive examples are already represented => no need to use p_ZlX again.
-        In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
-        for clip, where the positive examples are text sentences that are already represented.
-
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`.
     """
@@ -45,13 +40,12 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             self,
             z_shape: Sequence[int],
             out_dim: float = 512,
-            is_aux_already_represented: bool = False,
             projector_kwargs: dict[str, Any] = {"architecture": "linear"},
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
-        self.out_dim = out_dim if out_dim > 1 else max(10, int(prod(self.z_shape) * out_dim))
-        self.is_aux_already_represented = is_aux_already_represented
+        self.z_dim = prod(self.z_shape)
+        self.out_dim = out_dim if out_dim > 1 else max(10, int(self.z_dim * out_dim))
 
         self.projector_kwargs = self.process_shapes(projector_kwargs)
         Projector = get_Architecture(**self.projector_kwargs)
@@ -107,11 +101,7 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             )
 
         # shape: [batch_size, z_dim]
-        if self.is_aux_already_represented:
-            # sometimes already represented, e.g., for CLIP the sentences are pre represented.
-            z_a = a
-        else:
-            z_a = parent(a, is_sample=False, is_process=True)
+        z_a = parent(a, is_sample=False, is_process=True)
 
         loss, logs, other = self.loss(z, z_a)
 
@@ -140,6 +130,9 @@ add_doc_prior = """
         Weight of the exponential moving average for estimating the marginal distribution p(M). Larger means more weight 
         to the current estimate. Note that previous estimate will only be used to compute a better estimate but will not 
         be backpropagation through to avoid large memory usage for the backprop. If `None` does not use ema. 
+    
+    is_batchnorm_pre : bool, optional
+        Whether to add a batchnorm layer before the projector / predictor.
     """
 
 class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
@@ -150,18 +143,22 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         *args,
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
+        is_batchnorm_pre: bool=False,
         **kwargs,
     ) -> None:
-
-        # TODO add normalization of the predictor and the weights and representation like swav
 
         super().__init__(*args,  **kwargs)
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
+        self.is_batchnorm_pre = is_batchnorm_pre
 
         # use same arch as projector
         Predictor = get_Architecture(**self.projector_kwargs)
         self.predictor = Predictor()
+
+        if self.is_batchnorm_pre:
+            self.predictor = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.predictor)
+            self.projector = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.projector)
 
         if self.ema_weight_prior is not None:
             # moving average should depend on predictor or projector => do not share
@@ -386,7 +383,7 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
                 "hid_dim": 2048,
                 "n_hid_layers": 2,
                 "norm_layer": "batch",
-                "is_bias": False},  # will be followed by batchnorm so drop bias
+                "bias": False},  # will be followed by batchnorm so drop bias
             predictor_kwargs: dict[str, Any] = {
                 "architecture": "mlp",
                 "hid_dim": 512,

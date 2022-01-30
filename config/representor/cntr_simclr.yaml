@@ -23,7 +23,7 @@ decodability:
       hid_dim: 1024
       n_hid_layers: 1
       norm_layer: "batch"
-      out_shape: 64
+      out_shape: 128
 
 encoder:
   z_shape: 512

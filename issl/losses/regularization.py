@@ -37,22 +37,15 @@ class CoarseningRegularizer(nn.Module):
 
     is_distributions : bool, optional
         Whether the loss should take in the distributions. Only used if the loss is callable.
-
-    is_aux_already_represented : bool, optional
-        Whether the positive examples are already represented => no need to use p_ZlX again.
-        In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
-        for clip, where the positive examples are text sentences that are already represented.
     """
 
     def __init__(
         self,
         loss: Any,
         is_distributions: bool = False,
-        is_aux_already_represented: bool = False,
     ) -> None:
         super().__init__()
         self.is_distributions = is_distributions
-        self.is_aux_already_represented = is_aux_already_represented
 
         if loss == "kl":
             # use symmetric kl divergence
@@ -109,19 +102,11 @@ class CoarseningRegularizer(nn.Module):
             Additional values to return.
         """
         if self.is_distributions:
-            assert not self.is_aux_already_represented
             in_x = p_Zlx
             in_a = parent.p_ZlX(a)
         else:
-            # shape: [batch_size, z_dim]
-            if self.is_aux_already_represented:
-                # sometimes already represented, e.g., for CLIP the sentences are pre represented.
-                z_a = a
-            else:
-                z_a = parent(a, is_sample=True, is_process=True)
-
             in_x = z
-            in_a = z_a
+            in_a = parent(a, is_sample=True, is_process=True)
 
         # shape : [batch]
         loss = self.loss_f(in_x, in_a)

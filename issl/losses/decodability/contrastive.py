@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 import math
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 import torch
 import torch.distributed as dist
@@ -12,7 +12,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from issl.architectures import get_Architecture
-from issl.helpers import gather_from_gpus, prod, weights_init, GrammRBF
+from issl.helpers import gather_from_gpus, prod, weights_init
 
 __all__ = ["ContrastiveISSL"]
 
@@ -40,25 +40,19 @@ class ContrastiveISSL(nn.Module):
     min_temperature : float, optional
         Lower bound on the temperature. Only if `is_train_temperature`.
 
-    is_normalize_proj : bool, optional
-        Whether to use cosine similarity instead of dot products fot the logits of deterministic functions.
-        This seems necessary for training, probably because if not norm of Z matters++ and then
-        large loss in entropy bottleneck. Recommended True.
-
-    is_aux_already_represented : bool, optional
-        Whether the positive examples are already represented => no need to use p_ZlX again.
-        In this case `p_ZlX` will be replaced by a placeholder distribution. Useful
-        for clip, where the positive examples are text sentences that are already represented.
-
-    src_tgt_comparison : {"all","symmetric","single"}, optional
-        Which source and target pairs to compare. If `"all"` then compare both X and A against both X and A (besides
-        current), this is standard. If `"symmetric"` then compare X - A and A - X (as in clip), this makes more sense
-        if the representations p(Z|A) are not from the same distribution as p(Z|X). If `"single"` then only compares
-        X to A, This makes the most sense if A is not equivalent to X.
-
     is_pred_proj_same : bool, optional
         Whether to use the projector for the predictor. Typically, True in SSL, but our theory says that it should be
         False.
+
+    is_self_contrastive : bool, optional
+        Whether to keep current example in batch when performing contrastive learning and then have to predict
+        proba 0.5 to current and positive.
+
+    is_batchnorm_post : bool, optional
+        Whether to add a batchnorm layer after the predictor / projector.
+
+    is_batchnorm_pre : bool, optional
+        Whether to add a batchnorm layer pre the predictor / projector.
 
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
@@ -80,11 +74,10 @@ class ContrastiveISSL(nn.Module):
         temperature: float = 0.07,
         is_train_temperature: bool = False,
         min_temperature: float = 0.01,
-        is_normalize_proj: bool = True,
-        is_aux_already_represented: bool = False,
-        src_tgt_comparison: str = "all",
-        is_pred_proj_same: bool = True,
-        is_self_contrastive = "yes", # TODO document if useful (can be "yes", "no", or "symmetric")
+        is_pred_proj_same: bool = False,
+        is_self_contrastive: bool = False,
+        is_batchnorm_pre: bool = False,
+        is_batchnorm_post: bool = False,
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -95,36 +88,44 @@ class ContrastiveISSL(nn.Module):
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
-        self.temperature = temperature
+        self.z_dim = prod(self.z_shape)
         self.is_train_temperature = is_train_temperature
         self.min_temperature = min_temperature
-        self.src_tgt_comparison = src_tgt_comparison
-        self.is_normalize_proj = is_normalize_proj
-        self.is_aux_already_represented = is_aux_already_represented
         self.is_pred_proj_same = is_pred_proj_same
-        self.predictor_kwargs = self.process_shapes(predictor_kwargs)
-        self.projector_kwargs = self.process_shapes(projector_kwargs)
+        self.is_batchnorm_pre = is_batchnorm_pre
+        self.is_batchnorm_post = is_batchnorm_post
+        self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
+        self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
 
         if self.is_pred_proj_same:
-            self.is_self_contrastive = "no"
+            self.is_self_contrastive = False
 
         Projector = get_Architecture(**self.projector_kwargs)
-        self.projector = Projector()
+        self.projector = self.add_batchnorms(Projector())
 
         if self.is_pred_proj_same:
             self.predictor = self.projector
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
-            self.predictor = Predictor()
+            self.predictor = self.add_batchnorms(Predictor())
 
         if self.is_train_temperature:
             self.init_temperature = temperature
             self.log_temperature = nn.Parameter(
                 torch.log(torch.tensor(self.init_temperature))
             )
+        else:
+            self._temperature = temperature
 
         self.reset_parameters()
+
+    def add_batchnorms(self, head):
+        if self.is_batchnorm_pre:
+            head = nn.Sequential(nn.BatchNorm1d(self.z_dim), head)
+        if self.is_batchnorm_post:
+            head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
+        return head
 
     def reset_parameters(self) -> None:
         weights_init(self)
@@ -134,14 +135,19 @@ class ContrastiveISSL(nn.Module):
                 torch.log(torch.tensor(self.init_temperature))
             )
 
-    def process_shapes(self, kwargs: dict) -> dict:
+    def process_kwargs(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
         kwargs["in_shape"] = self.z_shape
 
         if "out_shape" not in kwargs:
             kwargs["out_shape"] = prod(self.z_shape)
         elif kwargs["out_shape"] <= 1:
-            kwargs["out_shape"] = max(10, int(prod(self.z_shape) * kwargs["out_shape"]))
+            kwargs["out_shape"] = max(10, int(self.z_dim * kwargs["out_shape"]))
+
+        self.out_dim = prod(kwargs["out_shape"])
+
+        if self.is_batchnorm_post and kwargs["architecture"] in ["mlp","linear"]:
+                kwargs["bias"] = False # no bias when batchorm
 
         return kwargs
 
@@ -181,14 +187,7 @@ class ContrastiveISSL(nn.Module):
         batch_size, z_dim = z.shape
 
         # shape: [batch_size, z_dim]
-        if self.is_aux_already_represented:
-            # sometimes already represented, e.g., for CLIP the sentences are pre represented.
-            z_a = a
-        else:
-            # this should actually be different for the source (sample) and the target (no sampling)
-            # to be exact. i.e. should depend on `src_tgt_comparison`. But that complicated the code
-            # and usually deterministic in any case
-            z_a = parent(a, is_sample=False, is_process=True)
+        z_a = parent(a, is_sample=False, is_process=True)
 
         # shape: [(2) * batch_size, (2) * batch_size * world_size]
         logits = self.compute_logits_p_Alz(z, z_a)
@@ -196,9 +195,8 @@ class ContrastiveISSL(nn.Module):
         # shape: [(2 *) batch_size]
         hat_H_mlz, logs = self.compute_loss(logits)
 
-        if self.src_tgt_comparison in ["all", "symmetric"]:
-            # shape: [batch_size]
-            hat_H_mlz = (hat_H_mlz[:batch_size] + hat_H_mlz[batch_size:]) / 2
+        # shape: [batch_size]
+        hat_H_mlz = (hat_H_mlz[:batch_size] + hat_H_mlz[batch_size:]) / 2
 
         other = dict()
 
@@ -208,26 +206,18 @@ class ContrastiveISSL(nn.Module):
         self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> torch.Tensor:
         """Compute the logits for the contrastive predictor p(A|Z)."""
-        batch_size = z.size(0)
 
-        if self.src_tgt_comparison in ["all", "symmetric"]:
-            # shape: [2*batch_size, z_dim]
-            z_src = torch.cat([z, z_a], dim=0)
-            z_tgt = torch.cat([z, z_a], dim=0)
-        elif self.src_tgt_comparison == "single":
-            # shape: [batch_size, z_dim]
-            z_src = z
-            z_tgt = z_a
-        else:
-            raise ValueError(f"Unknown src_tgt_comparison={self.src_tgt_comparison}.")
+        # shape: [2*batch_size, z_dim]
+        z_src = torch.cat([z, z_a], dim=0)
+        z_tgt = torch.cat([z, z_a], dim=0)
 
         # shape: [(2*)batch_size, out_shape]
         z_src = self.predictor(z_src)
         z_tgt = self.projector(z_tgt)
 
-        if self.is_normalize_proj:
-            z_src = F.normalize(z_src, dim=1, p=2)
-            z_tgt = F.normalize(z_tgt, dim=1, p=2)
+        # will use cosine similarity
+        z_src = F.normalize(z_src, dim=1, p=2)
+        z_tgt = F.normalize(z_tgt, dim=1, p=2)
 
         # TODO test multi device
         if dist.is_available() and dist.is_initialized():
@@ -237,40 +227,33 @@ class ContrastiveISSL(nn.Module):
             other_z_t = torch.cat(list_z_t[:curr_gpu] + list_z_t[curr_gpu + 1 :], dim=0)
             z_tgt = torch.cat([z_tgt, other_z_t], dim=0)
 
-        if self.src_tgt_comparison in ["all", "single"]:
-            # shape: [(2*)batch_size, (2*)batch_size * world_size]
-            logits = z_src @ z_tgt.T
-
-        elif self.src_tgt_comparison == "symmetric":
-            list_z_tgt = z_tgt.split(batch_size, dim=0)
-
-            # shape: [batch_size * world_size, out_dim]
-            z_tgt = torch.cat(list_z_tgt[::2], dim=0)
-            z_a_tgt = torch.cat(list_z_tgt[1::2], dim=0)
-
-            # shape: [batch_size * world_size, out_dim]
-            z_src, z_a_src = z_src.chunk(2, dim=0)
-
-            # shape: [batch_size, batch_size * world_size]
-            logits_tgt_aug = z_src @ z_a_tgt.T
-            logits_src_aug = z_a_src @ z_tgt.T
-
-            # shape: [2*batch_size, batch_size * world_size,]
-            logits = torch.cat([logits_tgt_aug, logits_src_aug])
+        # shape: [(2*)batch_size, (2*)batch_size * world_size]
+        logits = z_src @ z_tgt.T
 
         return logits
+
+    @property
+    def temperature(self):
+        if self.is_train_temperature:
+            temperature = torch.clamp(
+                self.log_temperature.exp(), min=self.min_temperature
+            )
+        else:
+            temperature = self._temperature
+        return temperature
 
     def compute_loss(self, logits: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Computes the upper bound H_q[A|Z]."""
         n_classes = logits.size(1)  # (2*)batch_size * world_size
         new_batch_size = logits.size(0)  # (2*)batch_size
-        batch_size = new_batch_size
-        if self.src_tgt_comparison in ["all", "symmetric"]:
-            batch_size = batch_size // 2
+        batch_size = new_batch_size // 2
         device = logits.device
         arange = torch.arange(batch_size, device=device)
 
-        if self.src_tgt_comparison == "all":
+        # make sure 32 bits
+        logits = logits.float() / self.temperature
+
+        if not self.is_self_contrastive:
             # select all but current example.
             mask = ~torch.eye(new_batch_size, device=device).bool()
             n_to_add = n_classes - new_batch_size  # 2*batch_size * (world_size-1)
@@ -286,62 +269,31 @@ class ContrastiveISSL(nn.Module):
             # you masked select all but the current z. arange takes care of idx of z which increases
             pos_idx = torch.cat([arange + batch_size - 1, arange], dim=0)
 
-        elif self.src_tgt_comparison == "symmetric":
-            # TODO test if correct
-            # when both batches are only compared with the ones from other batch then you don't drop anything
-            # so positives are twice on the diagonal
-            pos_idx = torch.cat([arange, arange], dim=0)
-            mask = torch.ones_like(logits).bool()
+            # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
+            # = log(N-1) + E[ log softmax(z^Tz_p) ]
+            # = log(N-1) - E[ crossentropy(z^Tz, p) ]
+            # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
+            hat_H_mlz = F.cross_entropy(logits[mask].view(new_batch_size, n_classes),
+                                        pos_idx,
+                                        reduction="none")
 
-        elif self.src_tgt_comparison == "single":
-            # TODO test if correct
-            # if you do not treat z and z_a as positives then you simply have's nothing to drop:positives are
-            # the ones from the same index
-            pos_idx = arange
-            mask = torch.ones_like(logits).bool()
-
-        effective_n_classes = n_classes
-
-        if self.is_train_temperature:
-            temperature = torch.clamp(
-                self.log_temperature.exp(), min=self.min_temperature
-            )
         else:
-            temperature = self.temperature
+            # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
+            # all the add examples have 0 probability under p
+            log_q = logits.log_softmax(-1)[:, :new_batch_size]
+            # only keep the probability you assign to the 2 positives then sum and divide by 2
+            # essentially multiply and sum by p giving mass 0.5 to each
+            mask = torch.eye(batch_size, device=device).bool().repeat(2, 2)
+            log_q = log_q[mask].view(new_batch_size, 2)
+            hat_H_mlz = - log_q.sum(1) / 2
 
-        # make sure 32 bits
-        logits = logits.float() / temperature
-
-        # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-        # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-        # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-        # = log(N-1) + E[ log softmax(z^Tz_p) ]
-        # = log(N-1) - E[ crossentropy(z^Tz, p) ]
-        # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
-        hat_H_m = math.log(effective_n_classes)
-        hat_H_mlz = F.cross_entropy(logits[mask].view(new_batch_size, n_classes), # select the logits
-                                    pos_idx,
-                                    reduction="none")
-
+        hat_H_m = math.log(n_classes)
         logs = dict(
             I_q_zm=(hat_H_m - hat_H_mlz.mean()),
             hat_H_m=hat_H_m,
             n_negatives=n_classes,
         )
-
-
-        # TODO clean once you decided your best
-        if self.is_self_contrastive == "symmetric":
-            # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
-            assert self.src_tgt_comparison == "all"
-            # all the add examples have 0 probability under p
-            log_q = logits.log_softmax(-1)[:, :new_batch_size]
-            # only keep the probability you assign to the 2 positives then sum and divide by 2
-            # essentially multiply and sum by p giving mass 0.5 to each
-            mask = torch.eye(batch_size, device=device).bool()
-            mask = torch.cat([mask, mask], dim=1)
-            mask = torch.cat([mask, mask], dim=0)
-            log_q = log_q[mask].view(new_batch_size, 2)
-            hat_H_mlz = - log_q.sum(1) / 2
 
         return hat_H_mlz, logs

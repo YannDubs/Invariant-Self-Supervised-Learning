@@ -6,5 +6,6 @@ kwargs:
   beta_pM_unif: 1.0 # TODO: tune
   ema_weight_prior: null
   out_dim: 1000
+  is_batchnorm_pre: False
   projector_kwargs:
     architecture:  "linear"

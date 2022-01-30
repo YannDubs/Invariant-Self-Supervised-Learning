@@ -39,7 +39,7 @@ class MLP(nn.Module):
     is_skip_hidden : bool, optional
         Whether to skip all the hidden layers with a residual connection.
 
-    is_bias : bool, optional
+    bias : bool, optional
         Whether the last layer should have a bias.
 
     is_cosine_last : bool, optional
@@ -56,7 +56,7 @@ class MLP(nn.Module):
         activation: str = "ReLU",
         dropout_p: float = 0,
         is_skip_hidden: bool = False,
-        is_bias: bool=True,
+        bias: bool=True,
         is_cosine_last: bool=False,
     ) -> None:
         super().__init__()
@@ -70,7 +70,7 @@ class MLP(nn.Module):
         Norm = get_Normalization(norm_layer, dim=1)
         # don't use bias with batch_norm https://twitter.com/karpathy/status/1013245864570073090?l...
         bias_hidden = Norm == nn.Identity
-        bias_last = is_bias
+        bias_last = bias
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine_last = is_cosine_last
 
