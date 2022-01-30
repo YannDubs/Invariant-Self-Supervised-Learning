@@ -45,7 +45,7 @@ regularizer=huber
 representor.loss.beta=1e-6
 decodability.kwargs.beta_pM_unif=1.7
 encoder.is_relu_Z=True
-encoder.batchnorm_mode=pred
+encoder.is_batchnorm_Z=True
 trainer.max_epochs=300
 "
 
@@ -64,7 +64,7 @@ regularizer=huber,none,cosine
 representor.loss.beta=tag(log,interval(1e-6,4e-6))
 decodability.kwargs.beta_pM_unif=interval(1.5,2)
 encoder.is_relu_Z=False,True
-encoder.batchnorm_mode=null,pred
+encoder.is_batchnorm_Z=True
 trainer.max_epochs=300
 "
 
@@ -82,17 +82,25 @@ seed=1,2,3,4,5,6,7,8,9
 regularizer=none
 decodability.kwargs.beta_pM_unif=interval(1.5,2.5)
 encoder.is_relu_Z=True
-encoder.batchnorm_mode=pred
+encoder.is_batchnorm_Z=True
 decodability.kwargs.ema_weight_prior=0.5
+trainer.max_epochs=300
+"
+
+kwargs_multi="
+seed=2
+regularizer=none
+representor.loss.beta=1e-6
+decodability.kwargs.beta_pM_unif=1.7
+encoder.is_relu_Z=True
+encoder.is_batchnorm_Z=True
 trainer.max_epochs=300
 "
 
 
 
-
-
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in  "encoder.is_batchnorm_Z=True" "encoder.is_batchnorm_Z=False decodability.kwargs.is_batchnorm_pre=True"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

@@ -104,7 +104,6 @@ __all__ = [
     "MnistDataModule",
     "ImagenetDataModule",
     "TinyImagenetDataModule",
-    "CocoClipDataModule",
 ]
 
 

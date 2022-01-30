@@ -20,8 +20,6 @@ def get_Datamodule(datamodule: str) -> type:
         return STL10DataModule
     elif datamodule == "stl10_unlabeled":
         return STL10UnlabeledDataModule
-    elif datamodule == "coco":
-        return CocoClipDataModule
     elif datamodule == "food101":
         return Food101DataModule
     elif datamodule == "cars196":

@@ -144,10 +144,10 @@ class ContrastiveISSL(nn.Module):
         elif kwargs["out_shape"] <= 1:
             kwargs["out_shape"] = max(10, int(self.z_dim * kwargs["out_shape"]))
 
-        self.out_dim = prod(kwargs["out_shape"])
+        self.out_dim = kwargs["out_shape"]
 
-        if self.is_batchnorm_post and kwargs["architecture"] in ["mlp","linear"]:
-                kwargs["bias"] = False # no bias when batchorm
+        if self.is_batchnorm_post and kwargs["architecture"] in ["mlp", "linear"]:
+            kwargs["bias"] = False  # no bias when batchorm
 
         return kwargs
 

@@ -35,7 +35,7 @@ scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5
 decodability.kwargs.temperature=0.07
 encoder.is_relu_Z=True
 optimizer_issl.kwargs.weight_decay=5e-6
-encoder.batchnorm_mode=pred
+encoder.is_batchnorm_Z=True
 decodability.kwargs.is_self_contrastive=True
 regularizer=none
 timeout=$time
@@ -44,13 +44,13 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=1,2,3
-trainer.max_epochs=300,1000
+seed=2
+trainer.max_epochs=300
 "
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" # "decodability.kwargs.is_self_contrastive=False" "regularizer=none"
+  for kwargs_dep in "encoder.is_batchnorm_Z=False decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=True" "encoder.is_batchnorm_Z=False decodability.kwargs.is_batchnorm_post=True" "encoder.is_batchnorm_Z=False decodability.kwargs.is_batchnorm_pre=True"  "" "decodability.kwargs.is_self_contrastive=False"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
