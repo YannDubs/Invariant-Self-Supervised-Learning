@@ -7,6 +7,7 @@ kwargs:
   mode: generative
   z_shape: ${encoder.z_shape}
   a_shape: ${data.aux_shape}
+  is_batchnorm_pre: False
   decoder_kwargs:
     architecture: linear
   predecode_n_Mx: null

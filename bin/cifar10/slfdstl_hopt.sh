@@ -53,7 +53,6 @@ decodability.kwargs.beta_pM_unif=tag(log,interval(1,3))
 decodability.kwargs.projector_kwargs.architecture=linear,mlp
 data_repr.kwargs.batch_size=128,256,512
 encoder.is_relu_Z=True,False
-encoder.is_batchnorm_Z=True,False
 trainer.max_epochs=200
 "
 

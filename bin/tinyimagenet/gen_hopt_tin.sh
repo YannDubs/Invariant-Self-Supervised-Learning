@@ -33,7 +33,6 @@ data_repr.kwargs.batch_size=256
 scheduler_issl.kwargs.base.warmup_epochs=0.1
 optimizer_issl.kwargs.lr=2e-3
 optimizer_issl.kwargs.weight_decay=2e-6
-encoder.is_batchnorm_Z=True
 encoder.is_relu_Z=True
 decodability.kwargs.predecode_n_Mx=3000
 representor.loss.beta=2e-6

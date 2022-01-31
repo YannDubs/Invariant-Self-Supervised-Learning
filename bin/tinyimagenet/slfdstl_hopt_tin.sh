@@ -35,72 +35,24 @@ scheduler_issl.kwargs.base.warmup_epochs=0.1
 decodability.kwargs.out_dim=500
 optimizer_issl.kwargs.lr=2e-3
 optimizer_issl.kwargs.weight_decay=1e-6
+representor.loss.beta=1e-6
+encoder.is_relu_Z=True
+decodability.kwargs.beta_pM_unif=1.7
 timeout=$time
 "
 
 
 kwargs_multi="
-seed=1,2,3
-regularizer=huber
-representor.loss.beta=1e-6
-decodability.kwargs.beta_pM_unif=1.7
-encoder.is_relu_Z=True
-encoder.is_batchnorm_Z=True
-trainer.max_epochs=300
-"
-
-# every arguments that you are sweeping over
-kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=5
-hydra.sweeper.n_jobs=5
-hydra.sweeper.study_name=v7
-seed=1,2,3,4,5,6,7,8,9
-regularizer=huber,none,cosine
-representor.loss.beta=tag(log,interval(1e-6,4e-6))
-decodability.kwargs.beta_pM_unif=interval(1.5,2)
-encoder.is_relu_Z=False,True
-encoder.is_batchnorm_Z=True
-trainer.max_epochs=300
-"
-
-# every arguments that you are sweeping over
-kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[test/pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=5
-hydra.sweeper.n_jobs=5
-hydra.sweeper.study_name=v8
-seed=1,2,3,4,5,6,7,8,9
-regularizer=none
-decodability.kwargs.beta_pM_unif=interval(1.5,2.5)
-encoder.is_relu_Z=True
-encoder.is_batchnorm_Z=True
-decodability.kwargs.ema_weight_prior=0.5
-trainer.max_epochs=300
-"
-
-kwargs_multi="
 seed=2
-regularizer=none
-representor.loss.beta=1e-6
-decodability.kwargs.beta_pM_unif=1.7
-encoder.is_relu_Z=True
-encoder.is_batchnorm_Z=True
+regularizer=huber,none
 trainer.max_epochs=300
+decodability.kwargs.ema_weight_prior=0.5,null
 "
 
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "encoder.is_batchnorm_Z=True" "encoder.is_batchnorm_Z=False decodability.kwargs.is_batchnorm_pre=True"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

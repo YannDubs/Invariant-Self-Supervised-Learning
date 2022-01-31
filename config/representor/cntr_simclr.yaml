@@ -18,6 +18,7 @@ decodability:
   kwargs:
     is_train_temperature: False
     is_pred_proj_same: True
+    is_batchnorm_pre: False
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 1024

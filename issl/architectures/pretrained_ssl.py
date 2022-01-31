@@ -101,7 +101,7 @@ class PretrainedSSL(nn.Module):
         elif "dino" in self.model:
             model = self.model.replace("rn50", "resnet50")
             self.encoder = torch.hub.load("facebookresearch/dino:main", model)
-
+            torch.hub.list("facebookresearch/dino")
         else:
             raise ValueError(f"Unknown model={self.model}.")
 

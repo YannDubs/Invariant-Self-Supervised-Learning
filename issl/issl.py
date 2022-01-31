@@ -43,8 +43,6 @@ class ISSLModule(pl.LightningModule):
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
-        self.batchnorm_Z = nn.BatchNorm1d(prod(self.p_ZlX.out_shape))
-
     @property
     def final_beta(self):
         """Return the final beta to use."""
@@ -80,7 +78,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False, is_process: bool=True
+        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False
     ):
         """Represents the data `x`.
 
@@ -110,11 +108,6 @@ class ISSLModule(pl.LightningModule):
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
-        # need to clean and just decide whether or not to use batchnorm
-        if self.hparams.encoder.is_batchnorm_Z and is_process:
-            # doesn't do that when goes to predictor
-            z = self.batchnorm_Z(z)
-
         if is_return_p_ZlX:
             return z, p_Zlx
 
@@ -130,7 +123,7 @@ class ISSLModule(pl.LightningModule):
 
         # z shape: [batch_size, *z_shape]
         # p_Zlx batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True, is_process=True)
+        z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
 
         if self.loss_regularizer is not None:
             # `sample_eff` is proxy to ensure supp(p(Z|M(X))) = supp(p(Z|X)). shape: [batch_size]

@@ -18,6 +18,7 @@ data_repr:
 decodability:
   kwargs:
     predecode_n_Mx: 100
+    is_batchnorm_pre: True
     decoder_kwargs:
       architecture: resnet_transpose
       base: resnet18

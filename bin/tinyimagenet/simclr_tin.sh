@@ -50,7 +50,7 @@ trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "decodability.kwargs.temperature=0.5 scheduler@scheduler_issl=whitening" " scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5 scheduler_issl.kwargs.UniformMultiStepLR.k_steps=2" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5"
+  for kwargs_dep in "scheduler@scheduler_issl=whitening" "decodability.kwargs.temperature=0.5 scheduler@scheduler_issl=whitening" " scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5 scheduler_issl.kwargs.UniformMultiStepLR.k_steps=2" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

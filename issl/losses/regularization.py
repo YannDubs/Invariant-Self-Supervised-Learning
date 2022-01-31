@@ -106,7 +106,7 @@ class CoarseningRegularizer(nn.Module):
             in_a = parent.p_ZlX(a)
         else:
             in_x = z
-            in_a = parent(a, is_sample=True, is_process=True)
+            in_a = parent(a, is_sample=True)
 
         # shape : [batch]
         loss = self.loss_f(in_x, in_a)

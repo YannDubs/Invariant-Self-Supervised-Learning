@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from issl.helpers import LearnedSoftmax
+from issl.helpers import LearnedSoftmax, prod
 
 __all__ = ["GenerativeISSL"]
 
@@ -48,6 +48,9 @@ class GenerativeISSL(nn.Module):
         unnormalized when comparing in case you are reconstructing the input. Currently only works for colored
         images.
 
+    is_batchnorm_pre : bool, optional
+        Whether to add a batchnorm on the representation before the (pre)decoder.
+
     pred_loss_kwargs : dict, optional
         Additional arguments to `prediction_loss`.
     """
@@ -60,15 +63,19 @@ class GenerativeISSL(nn.Module):
         predecoder_kwargs: dict = {"architecture": "linear"},
         predecode_n_Mx: Optional[int] = None,
         normalized=None,
+        is_batchnorm_pre: bool= False,
         pred_loss_kwargs: dict = {},
         softmax_kwargs: dict = {"is_gumbel": True},
     ) -> None:
         super().__init__()
 
+        self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
+        self.z_dim = prod(self.z_shape)
         self.normalized = normalized
         self.is_img_out = is_img_shape(a_shape)
         self.pred_loss_kwargs = pred_loss_kwargs
         self.predecode_n_Mx = predecode_n_Mx
+        self.is_batchnorm_pre = is_batchnorm_pre
 
         # map Z -> \hat{M}(X)
         if self.predecode_n_Mx is not None:
@@ -79,6 +86,9 @@ class GenerativeISSL(nn.Module):
             self.f_ZhatlZ = nn.Sequential(self.f_MlZ, self.softmax, self.f_ZhatlM)
         else:
             self.f_ZhatlZ = nn.Identity()
+
+        if self.is_batchnorm_pre:
+            self.f_ZhatlZ = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.f_ZhatlZ)
 
         # map Z -> sufficient statistics for q(A|Z)
         Decoder = get_Architecture(**decoder_kwargs)

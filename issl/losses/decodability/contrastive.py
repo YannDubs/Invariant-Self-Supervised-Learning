@@ -77,7 +77,7 @@ class ContrastiveISSL(nn.Module):
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
         is_batchnorm_pre: bool = False,
-        is_batchnorm_post: bool = False,
+        is_batchnorm_post: bool = True,
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -187,7 +187,7 @@ class ContrastiveISSL(nn.Module):
         batch_size, z_dim = z.shape
 
         # shape: [batch_size, z_dim]
-        z_a = parent(a, is_sample=False, is_process=True)
+        z_a = parent(a, is_sample=False)
 
         # shape: [(2) * batch_size, (2) * batch_size * world_size]
         logits = self.compute_logits_p_Alz(z, z_a)

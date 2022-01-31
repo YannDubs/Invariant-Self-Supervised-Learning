@@ -101,7 +101,7 @@ class BaseSelfDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             )
 
         # shape: [batch_size, z_dim]
-        z_a = parent(a, is_sample=False, is_process=True)
+        z_a = parent(a, is_sample=False)
 
         loss, logs, other = self.loss(z, z_a)
 
@@ -143,7 +143,7 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         *args,
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
-        is_batchnorm_pre: bool=False,
+        is_batchnorm_pre: bool=True,
         **kwargs,
     ) -> None:
 

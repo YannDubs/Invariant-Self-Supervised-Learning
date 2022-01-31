@@ -18,6 +18,7 @@ decodability:
   kwargs:
     is_train_temperature: False
     is_pred_proj_same: False
+    is_batchnorm_pre: True
     predictor_kwargs: # will be replaced by projector when `is_pred_proj_same`
       architecture: "flatten"
       out_shape: ${encoder.z_shape}
