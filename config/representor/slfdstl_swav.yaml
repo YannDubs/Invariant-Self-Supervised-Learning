@@ -13,12 +13,3 @@ data_repr:
       aux_target:  "augmentation"
       a_augmentations: ["data-standard"]
       train_x_augmentations: "a_augmentations"
-
-decodability:
-  kwargs:
-    n_Mx: 3000
-    queue_size: 15
-    temperature: 0.1
-
-encoder:
-  z_shape: 1024

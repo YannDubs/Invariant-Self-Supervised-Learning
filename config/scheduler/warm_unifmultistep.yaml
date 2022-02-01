@@ -7,7 +7,7 @@ kwargs:
   # all kwargs
   UniformMultiStepLR:
     decay_per_step: 5
-    k_steps: null
+    k_steps: 2
 
   base:
     is_warmup_lr: True

@@ -19,10 +19,6 @@ decodability:
   kwargs:
     predecode_n_Mx: 100
     is_batchnorm_pre: True
-    decoder_kwargs:
-      architecture: resnet_transpose
-      base: resnet18
-      activation: ReLU
 
 encoder:
-  z_shape: 1024
+  is_relu_Z: True

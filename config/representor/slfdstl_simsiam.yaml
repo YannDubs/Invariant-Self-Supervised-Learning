@@ -13,6 +13,3 @@ data_repr:
       aux_target:  "augmentation"
       a_augmentations: ["data-standard"]
       train_x_augmentations: "a_augmentations"
-
-encoder:
-  z_shape: 2048

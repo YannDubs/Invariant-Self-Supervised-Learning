@@ -146,7 +146,6 @@ data_repr:
 encoder:
   name: ???
   z_shape: 1024
-  encoder:
   is_relu_Z: False
   kwargs:
     in_shape: ${data.shape}

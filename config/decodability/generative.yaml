@@ -9,7 +9,9 @@ kwargs:
   a_shape: ${data.aux_shape}
   is_batchnorm_pre: False
   decoder_kwargs:
-    architecture: linear
+    architecture: resnet_transpose
+    base: resnet18
+    activation: ReLU
   predecode_n_Mx: null
   predecoder_kwargs:
     architecture: linear

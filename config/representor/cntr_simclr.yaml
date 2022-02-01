@@ -16,15 +16,12 @@ data_repr:
 
 decodability:
   kwargs:
-    is_train_temperature: False
     is_pred_proj_same: True
     is_batchnorm_pre: False
+    is_batchnorm_post: True
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 1024
       n_hid_layers: 1
       norm_layer: "batch"
       out_shape: 128
-
-encoder:
-  z_shape: 512

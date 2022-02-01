@@ -14,13 +14,5 @@ data_repr:
       a_augmentations: ["data-standard"]
       train_x_augmentations: "a_augmentations"
 
-decodability:
-  kwargs:
-    beta_pM_unif: 1.0 # TODO: tune
-    ema_weight_prior: null
-    out_dim: 1000
-    projector_kwargs:
-      architecture: "linear"
-
 encoder:
-  z_shape: 1024
+  is_relu_Z: True

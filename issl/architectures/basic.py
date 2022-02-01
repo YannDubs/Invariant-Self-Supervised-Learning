@@ -41,9 +41,6 @@ class MLP(nn.Module):
 
     bias : bool, optional
         Whether the last layer should have a bias.
-
-    is_cosine_last : bool, optional
-        Whether the last layer should be a cosine instead of linear.
     """
 
     def __init__(
@@ -57,7 +54,6 @@ class MLP(nn.Module):
         dropout_p: float = 0,
         is_skip_hidden: bool = False,
         bias: bool=True,
-        is_cosine_last: bool=False,
     ) -> None:
         super().__init__()
 
@@ -72,7 +68,6 @@ class MLP(nn.Module):
         bias_hidden = Norm == nn.Identity
         bias_last = bias
         self.is_skip_hidden = is_skip_hidden
-        self.is_cosine_last = is_cosine_last
 
         self.pre_block = nn.Sequential(
             nn.Linear(in_dim, hid_dim, bias=bias_hidden),
@@ -90,11 +85,7 @@ class MLP(nn.Module):
                 Dropout(p=dropout_p),
             ]
         self.hidden_block = nn.Sequential(*layers)
-
-        if self.is_cosine_last:
-            self.post_block = FlattenCosine(hid_dim, out_dim)
-        else:
-            self.post_block = nn.Linear(hid_dim, out_dim, bias=bias_last)
+        self.post_block = nn.Linear(hid_dim, out_dim, bias=bias_last)
 
         self.reset_parameters()
 

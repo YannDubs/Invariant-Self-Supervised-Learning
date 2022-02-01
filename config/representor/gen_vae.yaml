@@ -14,15 +14,6 @@ data_repr:
       a_augmentations: []
       train_x_augmentations: []
 
-
-decodability:
-  kwargs:
-    decoder_kwargs:
-      architecture: resnet_transpose
-      base: resnet18
-      activation: ReLU
-
 encoder:
-  z_shape: 512
   kwargs:
     family: diag_gaussian

@@ -7,22 +7,9 @@ defaults:
 representor:
   name: exact
 
-
 data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "Mx"
       a_augmentations: ["label"]
       train_x_augmentations: []
-
-decodability:
-  kwargs:
-    mode: exact
-    z_shape: ${encoder.z_shape}
-    m_shape: ${data.aux_shape}
-    loss:  CrossEntropyLoss
-    predictor_kwargs: 
-      architecture: linear
-
-encoder:
-  z_shape: 1024
