@@ -21,7 +21,7 @@ timeout=$time
 "
 
 kwargs_multi="
-seed=2
+seed=3
 trainer.max_epochs=1000
 "
 

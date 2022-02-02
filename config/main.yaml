@@ -57,7 +57,7 @@ paths: #! the best practice is not to modify those paths but to symlink them to 
 
   data: ${paths.tmp_dir}/data
   logs: ${paths.tmp_dir}/logs/${long_name}/jid_${job_id}
-  checkpoint: ${paths.tmp_dir}/${paths.relative_checkpoint} # checkpoint to use during training
+  checkpoint: ${paths.base_dir}/${paths.relative_checkpoint} # checkpoint to use during training
 
   exit_checkpoint: ${paths.base_dir}/${paths.relative_checkpoint} # checkpoint to use in case you get preempted
   results: ${paths.base_dir}/results/${long_name}/jid_${job_id}

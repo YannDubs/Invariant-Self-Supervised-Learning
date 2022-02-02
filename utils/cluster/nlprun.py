@@ -33,7 +33,7 @@ def nlp_cluster(cfg: Container):
     user_path = get_nlp_path(cfg)
 
     # project path on current machine
-    proj_path = user_path / "Invariant-Self-Supervised-Learning"
+    proj_path = user_path / cfg.project_name
     proj_path.mkdir(exist_ok=True)
     cfg.paths.tmp_dir = str(proj_path)
     logger.info(f"TMP dir: {cfg.paths.tmp_dir}.")
