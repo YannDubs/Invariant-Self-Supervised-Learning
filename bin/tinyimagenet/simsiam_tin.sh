@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"simsiam_tin"
+experiment="simsiam_tin"
 notes="
 **Goal**: ensure that you can replicate simsiam on tinyimagenet.
 "
+
 
 # parses special mode for running the script
 source `dirname $0`/../utils.sh

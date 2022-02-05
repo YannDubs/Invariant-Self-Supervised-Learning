@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"gen_hopt_tin"
+experiment="gen_hopt_tin"
 notes="
 **Goal**: hyperparameter tuning for generative on tinyimagenet.
 "

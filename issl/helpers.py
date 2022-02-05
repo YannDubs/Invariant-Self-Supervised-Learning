@@ -30,7 +30,7 @@ from torch.nn.utils.rnn import PackedSequence
 
 try:
     from pl_bolts.optimizers import LinearWarmupCosineAnnealingLR
-except ImportError:
+except:
     pass
 
 def is_pow_of_k(n, k):
@@ -46,16 +46,16 @@ class RunningMean(nn.Module):
         assert 0.0 <= alpha_store <= 1.0
         self.alpha_use = alpha_use
         self.alpha_store = alpha_store
-        self.init = init
+        self.init = init.double()
         self.register_buffer('running_mean', init)
 
     def reset_parameters(self) -> None:
         self.running_mean = self.init
 
     def forward(self, x):
-        out = self.alpha_use * x + (1 - self.alpha_use) * self.running_mean
+        out = self.alpha_use * x + (1 - self.alpha_use) * self.running_mean.float()
         # don't keep all the computational graph to avoid memory++
-        self.running_mean = (self.alpha_store * x + (1 - self.alpha_store) * self.running_mean).detach().float()
+        self.running_mean = (self.alpha_store * x.detach().double() + (1 - self.alpha_store) * self.running_mean).detach().double()
         return out
 
 

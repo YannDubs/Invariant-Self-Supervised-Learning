@@ -132,7 +132,7 @@ add_doc_prior = """
         be backpropagation through to avoid large memory usage for the backprop. If `None` does not use ema. 
     
     is_batchnorm_pre : bool, optional
-        Whether to add a batchnorm layer before the projector / predictor.
+        Whether to add a batchnorm layer before the projector / predictor. Strongly recommended.
     """
 
 class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
@@ -174,9 +174,9 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         self, z: torch.Tensor, z_a: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
-        # shape: [batch_size, M_shape]
-        M = self.predictor(z)
-        M_a = self.projector(z_a)
+        # shape: [batch_size, M_shape]. Make sure not half prec
+        M = self.predictor(z).float()
+        M_a = self.projector(z_a).float()
 
         # shape: [batch_size, M_shape]
         loss1, logs, other = self.compare_branches(M, M_a, self.ema_marginal)
@@ -201,11 +201,12 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         p_M = Categorical(probs=mean_p_M)
 
         # Unif(calM). batch shape: [] ; event shape: []
-        prior = Categorical(logits=torch.ones_like(hat_p_M.probs))
-
+        #prior = Categorical(logits=torch.ones_like(hat_p_M.probs))
         # D[\hat{p}(M) || Unif(\calM)]. shape: []
         # for unif prior same as maximizing entropy
-        fit_pM_Unif = kl_divergence(p_M, prior)
+        #fit_pM_Unif = kl_divergence(p_M, prior)
+        fit_pM_Unif = - p_M.entropy()
+
         if self.ema_weight_prior is not None:
             # try to balance the decrease in gradients due to ema
             fit_pM_Unif = fit_pM_Unif / self.ema_weight_prior

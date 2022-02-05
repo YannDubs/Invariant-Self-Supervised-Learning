@@ -1,0 +1,8 @@
+defaults:
+  - base
+
+name: last
+kwargs:
+  monitor: null
+  mode: "min" # placeholder
+  every_n_epochs: 1

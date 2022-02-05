@@ -349,7 +349,6 @@ class ResNetTranspose(nn.Module):
     ) -> None:
         super().__init__()
 
-        check_import("pl_bolts", "ResNetTranspose")
         self.out_shape = out_shape
         self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
         self.in_dim = prod(self.in_shape)

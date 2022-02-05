@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"swav_tin"
+experiment="swav_tin"
 notes="
 **Goal**: ensure that you can replicate simsiam on tinyimagenet.
 "
-
 # parses special mode for running the script
 source `dirname $0`/../utils.sh
 source `dirname $0`/base_tin.sh
+
 
 time=10080
 

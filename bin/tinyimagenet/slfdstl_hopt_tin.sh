@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"slfdst_hopt_tin"
+experiment="slfdst_hopt_tin"
 notes="
 **Goal**: hyperparameter tuning for selfdistillation on tinyimagenet.
 "
@@ -8,6 +8,8 @@ notes="
 # parses special mode for running the script
 source `dirname $0`/../utils.sh
 source `dirname $0`/base_tin.sh
+
+
 
 time=10080
 
@@ -20,7 +22,6 @@ data_repr.kwargs.batch_size=256
 representor.loss.beta=1e-6
 decodability.kwargs.beta_pM_unif=1.7
 decodability.kwargs.ema_weight_prior=null
-decodability.kwargs.out_dim=500
 timeout=$time
 "
 
@@ -30,7 +31,7 @@ trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in  "" "decodability.kwargs.out_dim=5000,7000" "decodability.kwargs.ema_weight_prior=0.5" "regularizer=huber" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=2" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "decodability.kwargs.beta_pM_unif=1.3,2.3" "checkpoint@checkpoint_repr=last"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

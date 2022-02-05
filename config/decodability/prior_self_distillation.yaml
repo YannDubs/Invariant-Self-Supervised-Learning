@@ -5,7 +5,6 @@ kwargs:
   mode: prior_self_distillation
   beta_pM_unif: 1.0 # TODO: tune
   ema_weight_prior: null
-  out_dim: 1000
-  is_batchnorm_pre: True
+  out_dim: 3000
   projector_kwargs:
     architecture:  "linear"

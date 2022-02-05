@@ -21,7 +21,7 @@ try:
     # TODO: use something else because bolts SSL is depreciated
     from pl_bolts.models.self_supervised import SimCLR
     from pl_bolts.models.self_supervised import SwAV
-except ImportError:
+except:
     pass
 
 

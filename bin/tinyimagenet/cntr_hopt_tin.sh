@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"cntr_hopt_tin"
+experiment="cntr_hopt_tin"
 notes="
 **Goal**: hyperparameter tuning for contrastive on tinyimagenet.
 "
-
 
 # parses special mode for running the script
 source `dirname $0`/../utils.sh
@@ -17,7 +16,6 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 representor=cntr
-optimizer_issl.kwargs.weight_decay=5e-6
 decodability.kwargs.temperature=0.07
 timeout=$time
 "
@@ -29,7 +27,7 @@ trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=5 scheduler_issl.kwargs.UniformMultiStepLR.k_steps=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3 scheduler_issl.kwargs.UniformMultiStepLR.k_steps=3"
+  for kwargs_dep in "" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=False" "decodability.kwargs.is_batchnorm_post=False" "checkpoint@checkpoint_repr=last"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

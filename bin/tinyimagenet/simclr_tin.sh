@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"simclr_tin"
+
+experiment="simclr_tin"
 notes="
 **Goal**: ensure that you can replicate the whitening paper for tinyimagenet with simclr.
 "

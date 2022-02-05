@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"ae_tin"
+experiment="ae_tin"
 notes="
 **Goal**: hyperparameter tuning for autoencoder on tinyimagenet.
 "

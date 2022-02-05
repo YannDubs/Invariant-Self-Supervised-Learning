@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment=$prfx"table_main"
+experiment="table_main"
 notes="
 **Goal**: run the main part of the tinyimagenet table.
 "
