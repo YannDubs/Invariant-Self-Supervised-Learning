@@ -24,10 +24,13 @@ timeout=$time
 kwargs_multi="
 seed=3
 trainer.max_epochs=1000
+decodability.kwargs.is_batchnorm_post=False
+decodability.kwargs.is_batchnorm_pre=False
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=4" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=4 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=False" "decodability.kwargs.is_batchnorm_post=False" "checkpoint@checkpoint_repr=last"
+  for kwargs_dep in "" "decodability.kwargs.is_batchnorm_post=True" "decodability.kwargs.is_batchnorm_pre=True" "scheduler@scheduler_issl=warm_unifmultistep" "scheduler_is
+sl.kwargs.UniformMultiStepLR.k_steps=5,7 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
