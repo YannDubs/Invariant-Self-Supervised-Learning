@@ -1,0 +1,7 @@
+defaults:
+  - torch_logistic
+
+name: torch_bn_logistic
+kwargs:
+  arch_kwargs:
+    is_batchnorm: True

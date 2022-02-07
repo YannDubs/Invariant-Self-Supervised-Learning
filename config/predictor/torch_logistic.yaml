@@ -1,9 +1,7 @@
-defaults:
-  - /architecture@_here_: linear
-
 is_sklearn: False
+name: torch_logistic
 kwargs:
-  architecture: ???
+  architecture: linear
   arch_kwargs:
     out_shape: ${data.target_shape}
     # in shape automatic

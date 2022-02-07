@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="cntr_hopt_tin"
+experiment="test"
 notes="
 **Goal**: hyperparameter tuning for contrastive on tinyimagenet.
 "
@@ -15,22 +15,29 @@ time=10080
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
+++logger.wandb_kwargs.project=dev
 representor=cntr
+++trainer.limit_predict_batches=3
+++trainer.limit_train_batches=3
+++trainer.limit_test_batches=3
+++trainer.limit_test_batches=3
+data@data_repr=mnist
 decodability.kwargs.temperature=0.07
+downstream_task.all_tasks=[pytorch_datarepr01test,pytorch_datarepr,pytorch_bn_datarepr]
 timeout=$time
 "
 
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=3
-trainer.max_epochs=1000
+trainer.max_epochs=1
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=4" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=4 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=False" "decodability.kwargs.is_batchnorm_post=False" "checkpoint@checkpoint_repr=last"
+  for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs
 
     sleep 10
 

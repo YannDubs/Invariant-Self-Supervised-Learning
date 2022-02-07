@@ -24,9 +24,9 @@ defaults:
   - representor: base
 
   # downstream task #
-  - checkpoint@checkpoint_pred: bestTrainLoss # by default no validation set for predictors
-  - optimizer@optimizer_pred: Adam_lr3e-4_w0
-  - scheduler@scheduler_pred: unifmultistep100
+  - checkpoint@checkpoint_pred: last # by default no validation set for predictors
+  - optimizer@optimizer_pred: SGD
+  - scheduler@scheduler_pred: cosine_nowarm
 
   # OVERRIDES #
   - override hydra/job_logging: colorlog
@@ -199,6 +199,7 @@ data_pred: {}
 dflt_data_pred:
   is_copy_repr: False
   kwargs:
+    batch_size: 256
     dataset_kwargs:
       aux_target: null
 
@@ -220,7 +221,8 @@ scheduler_pred: {}
 ### RUNNING ###
 checkpoint_pred: {}
 # dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
-update_trainer_pred: {}
+update_trainer_pred:
+  max_epochs: 100
 
 ########## HYDRA ##########
 hydra:

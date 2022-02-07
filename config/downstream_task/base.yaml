@@ -1,3 +1,4 @@
 name: ${predictor.name}_${data_pred.name}
 data: ???
 predictor: ???
+epochs_mult_factor: 1 # increase epochs if datasize is small

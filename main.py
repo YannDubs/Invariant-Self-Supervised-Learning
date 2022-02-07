@@ -13,8 +13,10 @@ import math
 import os
 import shutil
 import subprocess
+import traceback
 from pathlib import Path
 from typing import Any, Optional, Type
+import sys
 
 import hydra
 import matplotlib.pyplot as plt
@@ -258,11 +260,11 @@ def set_downstream_task(cfg: Container, task: str):
 
     cfg = copy.deepcopy(cfg)  # not inplace
     with omegaconf.open_dict(cfg):
-        cfg.downstream_task = compose(
-            config_name="main", overrides=[f"+downstream_task={task}"]
-        ).downstream_task
+        cfg.downstream_task = compose(  config_name="main", overrides=[f"+downstream_task={task}"] ).downstream_task
         data = cfg.downstream_task.data
         pred = cfg.downstream_task.predictor
+
+        cfg.update_trainer_pred.max_epochs = int(cfg.update_trainer_pred.max_epochs * cfg.downstream_task.epochs_mult_factor)
 
         # TODO should clean that but not sure how. Currently:
         # 1/ reload hydra config with the current data as dflt config
@@ -359,7 +361,12 @@ def instantiate_datamodule_(
 
     cfgd.aux_is_clf = datamodule.aux_is_clf
     limit_train_batches = cfgt.get("limit_train_batches", 1)
-    cfgd.length = int(len(datamodule.train_dataset) * limit_train_batches)
+    if limit_train_batches > 1:
+        # if limit_train_batches is in number of batches
+        cfgd.length = cfgd.kwargs.batch_size * limit_train_batches
+    else:
+        # if limit_train_batches is in percentage
+        cfgd.length = int(len(datamodule.train_dataset) * limit_train_batches)
     cfgd.shape = datamodule.shape
     cfgd.target_is_clf = datamodule.target_is_clf
     cfgd.target_shape = datamodule.target_shape
@@ -817,4 +824,10 @@ def smooth_exit(cfg: NamespaceMap) -> None:
 if __name__ == "__main__":
     OmegaConf.register_new_resolver("format", format_resolver)
     OmegaConf.register_new_resolver("list2str", list2str_resolver)
-    main_except()
+
+    try:
+        main_except()
+    except Exception as e:
+        # exit gracefully, so wandb logs the problem
+        print(traceback.print_exc(), file=sys.stderr)
+        exit(1)

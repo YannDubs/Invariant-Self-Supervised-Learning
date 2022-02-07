@@ -2,4 +2,4 @@ defaults:
   - base
 
 data: data_repr
-predictor: torch_logistic
+predictor: torch_bn_logistic

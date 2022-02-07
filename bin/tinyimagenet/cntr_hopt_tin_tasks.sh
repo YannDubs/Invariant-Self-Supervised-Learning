@@ -9,8 +9,6 @@ notes="
 source `dirname $0`/../utils.sh
 source `dirname $0`/base_tin.sh
 
-time=10080
-
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
@@ -23,11 +21,11 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=3
-trainer.max_epochs=1000
+trainer.max_epochs=300
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=4" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=4 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=False" "decodability.kwargs.is_batchnorm_post=False" "checkpoint@checkpoint_repr=last"
+  for kwargs_dep in ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -38,8 +36,3 @@ if [ "$is_plot_only" = false ] ; then
 fi
 
 wait
-
-# for representor
-python utils/aggregate.py \
-       experiment=$experiment  \
-       agg_mode=[summarize_metrics]

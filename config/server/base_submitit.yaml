@@ -26,6 +26,5 @@ hydra:
     nodes: ${trainer.num_nodes}
     # name of the job
     name: ${experiment}
-    # uncomment following once https://github.com/facebookresearch/hydra/pull/1968
     # log errors and output together
-    #stderr_to_stdout: True
+    stderr_to_stdout: True

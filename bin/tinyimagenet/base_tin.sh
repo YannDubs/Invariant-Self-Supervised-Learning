@@ -2,7 +2,7 @@ base_kwargs_tin="
 ++logger.wandb_kwargs.project=tinyimagenet
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
-downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_encgen,sklogistic_predgen]
+downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_datarepr001test,sklogistic_datarepr01test,pytorch_datarepr,pytorch_datarepr001test,pytorch_bn_datarepr]
 ++data_pred.kwargs.val_size=2
 ++trainer.num_sanity_val_steps=0
 data_repr.kwargs.batch_size=512
@@ -19,3 +19,6 @@ optimizer_issl.kwargs.weight_decay=1e-6
 optimizer_issl.kwargs.lr=2e-3
 regularizer=none
 "
+
+# only chose one between bn and not
+# only chose one for subset

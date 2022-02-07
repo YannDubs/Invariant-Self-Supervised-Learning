@@ -159,12 +159,15 @@ class FlattenLinear(nn.Linear):
 
     out_shape : tuple or int
 
+    is_batchnorm : bool, optional
+        Whether to use a batchnorm layer at input.
+
     kwargs :
         Additional arguments to `torch.nn.Linear`.
     """
 
     def __init__(
-        self, in_shape: Sequence[int], out_shape: Sequence[int], **kwargs
+        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm: bool=False, **kwargs
     ) -> None:
         self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
@@ -173,13 +176,21 @@ class FlattenLinear(nn.Linear):
         out_dim = prod(self.out_shape)
         super().__init__(in_features=in_dim, out_features=out_dim, **kwargs)
 
+        self.is_batchnorm = is_batchnorm
+        if self.is_batchnorm:
+            self.normalizer = nn.BatchNorm1d(in_dim)
+
         self.reset_parameters()
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         # flattens in_shape
         X = X.flatten(start_dim=X.ndim - len(self.in_shape))
+
+        if self.is_batchnorm:
+            X = self.normalizer(X)
+
         out = super().forward(X)
-        # unflattens out_shape
+        # unflattened out_shape
         out = out.unflatten(dim=-1, sizes=self.out_shape)
         return out
 
