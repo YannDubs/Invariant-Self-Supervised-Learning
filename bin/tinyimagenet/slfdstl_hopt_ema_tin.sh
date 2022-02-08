@@ -11,7 +11,7 @@ source `dirname $0`/base_tin.sh
 
 
 
-time=10080
+time=4000
 
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
