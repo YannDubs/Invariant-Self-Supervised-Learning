@@ -16,12 +16,26 @@ time=4000
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
-$base_kwargs_tin
-representor=slfdstl
+++logger.wandb_kwargs.project=tinyimagenet
+architecture@encoder=resnet18
+architecture@online_evaluator=linear
+downstream_task.all_tasks=[sklogistic_datarepr,sklogistic_datarepr001test,sklogistic_datarepr01test,pytorch_bn_datarepr,pytorch_bn_datarepr001test,pytorch_datarepr]
+++data_pred.kwargs.val_size=2
+++trainer.num_sanity_val_steps=0
+encoder.z_shape=512
+encoder.kwargs.arch_kwargs.is_no_linear=True
+data@data_repr=tinyimagenet
+data_repr.kwargs.is_force_all_train=True
+checkpoint@checkpoint_repr=bestTrainLoss
+++trainer.limit_val_batches=0
+++data_repr.kwargs.val_size=2
+optimizer@optimizer_issl=AdamW
+scheduler@scheduler_issl=warm_unifmultistep
+optimizer_issl.kwargs.lr=2e-3
 data_repr.kwargs.batch_size=256
-decodability.kwargs.ema_weight_prior=0.5
 scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3
+decodability.kwargs.ema_weight_prior=0.5
 timeout=$time
 "
 
@@ -31,16 +45,17 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=10
-hydra.sweeper.n_jobs=10
+hydra.sweeper.n_trials=20
+hydra.sweeper.n_jobs=20
 hydra.sweeper.study_name=v0
 seed=3
 trainer.max_epochs=500
-decodability.kwargs.out_dim=500,3000,7000,10000,15000
+decodability.kwargs.out_dim=5000,7000,10000
 representor.loss.beta=1e-6,5e-6,1e-5
-decodability.kwargs.beta_pM_unif=1.7,2,2.5,4
+decodability.kwargs.beta_pM_unif=1.7,1.5,2
 regularizer=none,huber,cosine
-optimizer_issl.kwargs.weight_decay=1e-6,1e-5,1e-4
+optimizer_issl.kwargs.weight_decay=1e-6,5e-6,1e-5,1e-4
+representor=slfdstl_augIN,slfdstl
 "
 
 if [ "$is_plot_only" = false ] ; then

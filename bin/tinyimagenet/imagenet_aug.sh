@@ -24,7 +24,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-data_repr.kwargs.dataset_kwargs.a_augmentations=\['simclr-imagenet'\]
+data_repr.kwargs.dataset_kwargs.a_augmentations=[simclr-imagenet]
 "
 
 
@@ -41,8 +41,8 @@ if [ "$is_plot_only" = false ] ; then
 fi
 
 wait
-
-# for representor
-python utils/aggregate.py \
-       experiment=$experiment  \
-       agg_mode=[summarize_metrics]
+#
+## for representor
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       agg_mode=[summarize_metrics]
