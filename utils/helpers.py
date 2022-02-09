@@ -382,21 +382,24 @@ class SklearnTrainer:
         dump(self.model, ckpt_path)
 
     def test(
-        self, dataloaders: DataLoader, ckpt_path: Union[str, Path]
+        self, dataloaders: DataLoader, ckpt_path: Union[str, Path], model: torch.nn.Module=None
     ) -> list[dict[str, float]]:
         data = dataloaders.dataset
+
+        if model is not  None:
+            model = self.model
+
         if ckpt_path is not None and ckpt_path != "best":
-            self.model = load(ckpt_path)
+            model = load(ckpt_path)
 
         if self.is_agg_target:
             y_agg = data.Y[:, 1:]
             y = data.Y[:, 0]
 
-            model_agg = deepcopy(self.model)
+            model_agg = deepcopy(model)
             model = model_agg.estimators_.pop(0)  # first is not aggregated over
         else:
             y = data.Y
-            model = self.model
 
         results = {
             f"test/{self.stage}/{self.hparams.data.name}/{name}": score(

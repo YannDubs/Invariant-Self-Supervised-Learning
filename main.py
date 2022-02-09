@@ -136,7 +136,7 @@ def main(cfg):
         logger.info("Evaluate representor ...")
         is_eval_train = repr_cfg.evaluation.representor.is_eval_train
         repr_res = evaluate(
-            repr_trainer, repr_datamodule, repr_cfg, stage, is_eval_train=is_eval_train
+            repr_trainer, repr_datamodule, repr_cfg, stage, is_eval_train=is_eval_train, model=representor
         )
     else:
         repr_res = load_results(repr_cfg, stage)
@@ -211,6 +211,7 @@ def main(cfg):
                 stage,
                 is_eval_train=is_eval_train,
                 is_sklearn=is_sklearn,
+                model=predictor
             )
         else:
             pred_res = load_results(pred_cfg, stage)
@@ -625,6 +626,7 @@ def evaluate(
     stage: str,
     is_eval_train: bool = False,
     is_sklearn: bool = False,
+    model: torch.nn.Module=None
 ) -> dict:
     """Evaluate the trainer by logging all the metrics from the test set from the best model."""
     test_res = dict()
@@ -647,7 +649,7 @@ def evaluate(
                 # also evaluate training set
                 train_dataloader = datamodule.train_dataloader()
                 train_res = trainer.test(
-                    dataloaders=train_dataloader, ckpt_path=ckpt_path
+                    dataloaders=train_dataloader, ckpt_path=ckpt_path, model=model
                 )[0]
                 train_res = {
                     k: v for k, v in train_res.items() if f"/{train_stage}/" in k
@@ -669,7 +671,7 @@ def evaluate(
         else:
             trainer.lightning_module.stage = cfg.stage
 
-        test_res = trainer.test(dataloaders=eval_dataloader, ckpt_path=ckpt_path)[0]
+        test_res = trainer.test(dataloaders=eval_dataloader, ckpt_path=ckpt_path, model=model)[0]
 
         # ensure that select only correct stage
         test_res = {k: v for k, v in test_res.items() if f"/{cfg.stage}/" in k}
