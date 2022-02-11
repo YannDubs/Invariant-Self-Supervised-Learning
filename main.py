@@ -248,6 +248,7 @@ def begin(cfg: Container) -> None:
     cfg.other.git_hash = GIT_HASH
 
     logger.info(f"Workdir : {cfg.paths.work}.")
+    logger.info(f"Job id : {cfg.job_id}.")
 
 
 def get_stage_name(stage: str) -> str:

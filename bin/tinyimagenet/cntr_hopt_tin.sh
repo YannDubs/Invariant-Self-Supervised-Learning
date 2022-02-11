@@ -17,6 +17,7 @@ experiment=$experiment
 $base_kwargs_tin
 representor=cntr
 decodability.kwargs.temperature=0.07
+downstream_task.all_tasks=[pytorch_bn_datarepr,pytorch_datarepr,sklogistic_datarepr,sklogistic_datarepr001test,sklogistic_datarepr01test,pytorch_bn_datarepr001test]
 timeout=$time
 "
 

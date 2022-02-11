@@ -35,7 +35,7 @@ optimizer_issl.kwargs.lr=2e-3
 data_repr.kwargs.batch_size=256
 scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5
 scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3
-decodability.kwargs.ema_weight_prior=0.5
+representor=slfdstl
 timeout=$time
 "
 
@@ -45,16 +45,17 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=20
-hydra.sweeper.n_jobs=20
+hydra.sweeper.n_trials=10
+hydra.sweeper.n_jobs=10
 hydra.sweeper.study_name=v0
 seed=3
-trainer.max_epochs=500
-decodability.kwargs.out_dim=5000,7000,10000
-representor.loss.beta=1e-6,5e-6,1e-5
-decodability.kwargs.beta_pM_unif=1.7,1.5,2
-regularizer=none,huber,cosine
-optimizer_issl.kwargs.weight_decay=1e-6,5e-6,1e-5,1e-4
+trainer.max_epochs=1000
+decodability.kwargs.out_dim=7000,10000,15000
+representor.loss.beta=1e-6,5e-6
+decodability.kwargs.beta_pM_unif=1.7,2
+regularizer=huber,cosine
+optimizer_issl.kwargs.weight_decay=5e-6,1e-5
+decodability.kwargs.ema_weight_prior=0.3,0.5,0.7
 representor=slfdstl_augIN,slfdstl
 "
 
