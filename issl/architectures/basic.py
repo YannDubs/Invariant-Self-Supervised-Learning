@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -148,7 +149,7 @@ class FlattenMLP(MLP):
         weights_init(self)
 
 
-class FlattenLinear(nn.Linear):
+class FlattenLinear(nn.Module):
     """
     Linear that can take a multi dimensional array as input and output . E.g. for predicting an image use
     `out_shape=(32,32,3)` and this will predict 32*32*3 and then reshape.
@@ -160,25 +161,39 @@ class FlattenLinear(nn.Linear):
     out_shape : tuple or int
 
     is_batchnorm : bool, optional
-        Whether to use a batchnorm layer at input.
+        Whether to use a batchnorm layer at input. Note that this is simply a reparametrization
+        of the following layer and is still linear.
+
+    bottleneck_size : int, optional
+        Whether to add a in the linear layer, this is equivalent to constraining the linear layer to be
+        low rank. The result will still be linear (no non linearity) but more efficient if input and
+        output is very large.
 
     kwargs :
         Additional arguments to `torch.nn.Linear`.
     """
 
     def __init__(
-        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm: bool=False, **kwargs
+        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm: bool=False, bottleneck_size : Optional[int]=None, **kwargs
     ) -> None:
+        super().__init__()
+
         self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
+        self.bottleneck_size = bottleneck_size
+        self.is_batchnorm = is_batchnorm
 
         in_dim = prod(self.in_shape)
         out_dim = prod(self.out_shape)
-        super().__init__(in_features=in_dim, out_features=out_dim, **kwargs)
 
-        self.is_batchnorm = is_batchnorm
+        if self.bottleneck_size is not None:
+            self.bottleneck = nn.Linear(in_dim, self.bottleneck_size, bias=False)
+            in_dim = self.bottleneck_size
+
         if self.is_batchnorm:
             self.normalizer = nn.BatchNorm1d(in_dim)
+
+        self.linear = nn.Linear(in_dim, out_dim, **kwargs)
 
         self.reset_parameters()
 
@@ -186,10 +201,14 @@ class FlattenLinear(nn.Linear):
         # flattens in_shape
         X = X.flatten(start_dim=X.ndim - len(self.in_shape))
 
+        if self.bottleneck_size is not None:
+            X = self.bottleneck(X)
+
         if self.is_batchnorm:
             X = self.normalizer(X)
 
-        out = super().forward(X)
+        out = self.linear(X)
+
         # unflattened out_shape
         out = out.unflatten(dim=-1, sizes=self.out_shape)
         return out

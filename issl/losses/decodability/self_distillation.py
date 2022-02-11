@@ -438,3 +438,4 @@ class SimSiamSelfDistillationISSL(BaseSelfDistillationISSL):
         other = dict()
 
         return loss, logs, other
+
