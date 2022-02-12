@@ -22,7 +22,7 @@ data_repr.kwargs.batch_size=256
 representor.loss.beta=1e-6
 decodability.kwargs.beta_pM_unif=1.7
 decodability.kwargs.ema_weight_prior=null
-trainer.max_epochs=1000
+trainer.max_epochs=500
 decodability.kwargs.out_dim=10000
 regularizer=huber
 timeout=$time
@@ -30,11 +30,10 @@ timeout=$time
 
 kwargs_multi="
 seed=3
-decodability.kwargs.temperature=1,0.1
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in  "decodability.kwargs.ema_weight_prior=null,0.5 decodability.kwargs.projector_kwargs.architecture=cosine" "decodability.kwargs.temperature=1,0.1"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

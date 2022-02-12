@@ -403,8 +403,8 @@ def instantiate_datamodule_(
 
     n_devices = max(cfgt.gpus * cfgt.num_nodes, 1)
     eff_batch_size = n_devices * cfgd.kwargs.batch_size * cfgt.accumulate_grad_batches
-    train_batches = 1 + cfgd.length // eff_batch_size
-    cfgd.max_steps = cfgt.max_epochs * train_batches
+    cfgd.n_train_batches = 1 + cfgd.length // eff_batch_size
+    cfgd.max_steps = cfgt.max_epochs * cfgd.n_train_batches
 
     return datamodule
 

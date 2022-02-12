@@ -293,6 +293,10 @@ class ISSLDataModule(LightningDataModule):
         Whether to use the test set as the training set. Useful to evaluate the generalization
         of the encoder without taking into account that of the predictor.
 
+    is_val_on_test : bool, optional
+        Whether to validate on test. This can be used for very long runs to get results even
+        if you get preempted around the end. Should only use once you performed all validation / tuning.
+
     is_force_all_train : bool, optional
         Whether to force using all the training set, even if no validation is present.
         I.e. no splitting and use part of train as valid.
@@ -316,6 +320,7 @@ class ISSLDataModule(LightningDataModule):
         is_shuffle_train: bool = True,
         is_data_in_memory: bool=False,
         is_train_on_test : bool = False,
+        is_val_on_test: bool = False,
         is_force_all_train: bool=False
     ) -> None:
         super().__init__()
@@ -332,6 +337,7 @@ class ISSLDataModule(LightningDataModule):
         self.is_shuffle_train = is_shuffle_train
         self.is_data_in_memory = is_data_in_memory
         self.is_train_on_test = is_train_on_test
+        self.is_val_on_test = is_val_on_test
         self.is_force_all_train = is_force_all_train
 
     @classmethod
@@ -414,7 +420,11 @@ class ISSLDataModule(LightningDataModule):
                 self.train_dataset = self.get_train_dataset_subset(**self.dataset_kwargs)
 
             self.set_info_()
-            self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
+
+            if self.is_val_on_test:
+                self.val_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
+            else:
+                self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
 
             if self.is_data_in_memory:
                 self.val_dataset.cache_data_()

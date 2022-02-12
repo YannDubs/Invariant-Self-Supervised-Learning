@@ -11,7 +11,8 @@ kwargs:
   num_workers: 8
   subset_train_size: null
   is_train_on_test: False
-  is_force_all_train: False
+  is_force_all_train: True
+  is_val_on_test: True # this is a trick to get results even when preempted. Should only use once you performed all validation / tuning.
   dataset_kwargs:
     seed: ${seed}
     is_normalize: True
