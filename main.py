@@ -318,14 +318,15 @@ def set_cfg(cfg: Container, stage: str) -> Container:
             # not yet instantiated because doesn't know the data and predictor yet
             del cfg[f"long_name_pred"]
             del cfg.evaluation[f"predictor"]
-            cfg.task = cfg.data.name
-
-        elif stage == "predictor":
-            cfg.task = cfg.downstream_task.name
 
         cfg.data = OmegaConf.merge(cfg.data, cfg[f"data_{cfg.stage}"])
         cfg.trainer = OmegaConf.merge(cfg.trainer, cfg[f"update_trainer_{cfg.stage}"])
         cfg.checkpoint = OmegaConf.merge(cfg.checkpoint, cfg[f"checkpoint_{cfg.stage}"])
+
+        if stage == "representor":
+            cfg.task = cfg.data.name
+        elif stage == "predictor":
+            cfg.task = cfg.downstream_task.name
 
         logger.info(f"Name : {cfg.long_name}.")
 
