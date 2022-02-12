@@ -17,10 +17,10 @@ experiment=$experiment
 $base_kwargs_tin
 ++logger.wandb_kwargs.project=dev
 representor=cntr
-++trainer.limit_predict_batches=3
-++trainer.limit_train_batches=3
-++trainer.limit_test_batches=3
-++trainer.limit_test_batches=3
+++trainer.limit_predict_batches=10
+++trainer.limit_train_batches=10
+++trainer.limit_test_batches=10
+++trainer.limit_test_batches=10
 data@data_repr=mnist
 decodability.kwargs.temperature=0.07
 downstream_task.all_tasks=[pytorch_datarepr01test,pytorch_datarepr,pytorch_bn_datarepr]
@@ -30,7 +30,8 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=3
-trainer.max_epochs=1
+trainer.max_epochs=2
+update_trainer_pred.max_epochs=2
 "
 
 if [ "$is_plot_only" = false ] ; then
