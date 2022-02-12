@@ -66,6 +66,7 @@ class GenerativeISSL(nn.Module):
         is_batchnorm_pre: bool= False,
         pred_loss_kwargs: dict = {},
         softmax_kwargs: dict = {"is_gumbel": True},
+        p_ZlX: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
 

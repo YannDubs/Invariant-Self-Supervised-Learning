@@ -33,8 +33,6 @@ optimizer@optimizer_issl=AdamW
 scheduler@scheduler_issl=warm_unifmultistep
 optimizer_issl.kwargs.lr=2e-3
 data_repr.kwargs.batch_size=256
-scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3
 representor=slfdstl
 timeout=$time
 "

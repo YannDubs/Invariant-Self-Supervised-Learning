@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional, Sequence, Union
 
 import einops
 import matplotlib.pyplot as plt
@@ -13,6 +13,9 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities import rank_zero_only
 import numpy as np
 import seaborn as sns
+import math
+
+from torch import nn
 
 from .helpers import (
     UnNormalizer,
@@ -402,3 +405,71 @@ class Freezer(BaseFinetuning):
 
     def finetune_function(self, pl_module, current_epoch, optimizer, optimizer_idx):
         pass
+
+# modified from https://github.com/PyTorchLightning/lightning-bolts/blob/ad771c615284816ecadad11f3172459afdef28e3/pl_bolts/callbacks/byol_updates.py
+class MAWeightUpdate(pl.Callback):
+    """EMA Weight update rule for DINO.
+
+    Notes
+    -----
+    - BYOL/DINO/... claims this keeps the online_network from collapsing.
+    - Automatically increases tau from ``initial_tau`` to 1.0 with every training step
+    """
+
+    def __init__(self, initial_tau: float = 0.996):
+        """
+        Args:
+            initial_tau: starting tau. Auto-updates with every training step
+        """
+        super().__init__()
+        self.initial_tau = initial_tau
+        self.current_tau = initial_tau
+
+    def on_train_batch_end(
+        self,
+        trainer: Any,
+        pl_module: pl.LightningModule,
+        outputs: Sequence,
+        batch: Sequence,
+        batch_idx: int,
+        dataloader_idx: int,
+    ) -> None:
+
+        # get networks
+        student_enc = pl_module.p_ZlX
+        teacher_enc = pl_module.loss_decodability.teacher_p_ZlX
+
+        student_proj = pl_module.loss_decodability.projector
+        teacher_proj = pl_module.loss_decodability.teacher_proj
+
+        # update weights
+        with torch.no_grad():  # not needed
+            self.update_weights(student_enc, teacher_enc)
+            self.update_weights(student_proj, teacher_proj)
+
+        # update tau after
+        self.current_tau = self.update_tau(pl_module, trainer)
+
+    def update_tau(self, pl_module: pl.LightningModule, trainer: pl.Trainer) -> float:
+        max_steps = len(trainer.train_dataloader) * trainer.max_epochs
+        tau = (
+            1
+            - (1 - self.initial_tau)
+            * (math.cos(math.pi * pl_module.global_step / max_steps) + 1)
+            / 2
+        )
+        return tau
+
+    def update_weights(
+        self,
+        online_net: Union[nn.Module, torch.Tensor],
+        target_net: Union[nn.Module, torch.Tensor],
+    ) -> None:
+        # apply MA weight update
+        for (name, online_p), (_, target_p) in zip(
+            online_net.named_parameters(), target_net.named_parameters(),
+        ):
+            target_p.data = (
+                self.current_tau * target_p.data
+                + (1 - self.current_tau) * online_p.detach().data
+            )

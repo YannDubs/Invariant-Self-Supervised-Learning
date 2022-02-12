@@ -218,7 +218,7 @@ class Predictor(pl.LightningModule):
         loss, logs = self.step(batch)
         self.log_dict(
             {
-                f"train/{self.stage}/{self.hparams.data.name}/{k}": v
+                f"train/{self.stage}/{self.hparams.task}/{k}": v
                 for k, v in logs.items()
             },
             sync_dist=True,
@@ -232,7 +232,7 @@ class Predictor(pl.LightningModule):
 
         self.log_dict(
             {
-                f"{mode}/{self.stage}/{self.hparams.data.name}/{k}": v
+                f"{mode}/{self.stage}/{self.hparams.task}/{k}": v
                 for k, v in logs.items()
             },
             sync_dist=True,

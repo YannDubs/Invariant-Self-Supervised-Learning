@@ -43,6 +43,9 @@ def get_Architecture(architecture: Any, **kwargs) -> Any:
     elif architecture == "linear":
         return partial(FlattenLinear, **kwargs)
 
+    elif architecture == "cosine":
+        return partial(FlattenCosine, **kwargs)
+
     elif architecture == "resnet":
         return partial(ResNet, **kwargs)
 

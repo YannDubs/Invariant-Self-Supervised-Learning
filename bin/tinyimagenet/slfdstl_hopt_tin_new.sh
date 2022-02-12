@@ -28,9 +28,9 @@ timeout=$time
 kwargs_multi="
 seed=3
 trainer.max_epochs=500
-decodability.kwargs.out_dim=10000,25000,50000
+decodability.kwargs.out_dim=10000
 decodability.kwargs.ema_weight_prior=null,0.5
-decodability.kwargs.projector_kwargs.bottleneck_size=100
+decodability.kwargs.projector_kwargs.architecture=cosine
 "
 
 if [ "$is_plot_only" = false ] ; then

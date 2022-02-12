@@ -21,6 +21,8 @@ def get_loss_decodability(mode: str, **kwargs) -> torch.nn.Module:
         return PriorSelfDistillationISSL(**kwargs)
     elif mode == "swav_self_distillation":
         return SwavSelfDistillationISSL(**kwargs)
+    elif mode == "dino_self_distillation":
+        return DinoSelfDistillationISSL(**kwargs)
     elif mode == "exact":
         return ExactISSL(**kwargs)
     else:

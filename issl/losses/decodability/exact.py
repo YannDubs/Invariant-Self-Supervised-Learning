@@ -52,6 +52,7 @@ class ExactISSL(nn.Module):
         is_to_one_hot: bool = False,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
         is_classification: bool = True,
+        p_ZlX: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = z_shape

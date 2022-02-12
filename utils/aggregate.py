@@ -262,7 +262,7 @@ class ResultAggregator(PostPlotter):
             dicts = {k: replace_keys(v, "_train", "") for k, v in dicts.items()}
 
             dicts = {
-                k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
+                k: replace_keys(v, f"{cfg.task}/", "") for k, v in dicts.items()
             }
 
             # flattens dicts and make dataframe :

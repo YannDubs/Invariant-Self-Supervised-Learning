@@ -7,12 +7,11 @@ from collections.abc import Sequence
 from typing import Any
 
 import torch
-import torch.distributed as dist
 import torch.nn as nn
 from torch.nn import functional as F
 
 from issl.architectures import get_Architecture
-from issl.helpers import gather_from_gpus, prod, weights_init
+from issl.helpers import prod, weights_init
 
 __all__ = ["ContrastiveISSL"]
 
@@ -85,6 +84,7 @@ class ContrastiveISSL(nn.Module):
             "norm_layer": "batch",
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
+        p_ZlX: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
@@ -152,7 +152,7 @@ class ContrastiveISSL(nn.Module):
         return kwargs
 
     def forward(
-        self, z: torch.Tensor, a: torch.Tensor, parent: Any
+        self, z: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
     
@@ -163,6 +163,9 @@ class ContrastiveISSL(nn.Module):
 
         a : Tensor shape=[batch_size, *x_shape]
             Augmented sample.
+
+        x : Tensor shape=[batch_size, *x_shape]
+            Source sample.
 
         parent : ISSLModule, optional
             Parent module. Should have attribute `parent.p_ZlX`.
@@ -189,7 +192,7 @@ class ContrastiveISSL(nn.Module):
         # shape: [batch_size, z_dim]
         z_a = parent(a, is_sample=False)
 
-        # shape: [(2) * batch_size, (2) * batch_size * world_size]
+        # shape: [(2) * batch_size, (2) * batch_size]
         logits = self.compute_logits_p_Alz(z, z_a)
 
         # shape: [(2 *) batch_size]
@@ -219,15 +222,7 @@ class ContrastiveISSL(nn.Module):
         z_src = F.normalize(z_src, dim=1, p=2)
         z_tgt = F.normalize(z_tgt, dim=1, p=2)
 
-        # TODO test multi device
-        if dist.is_available() and dist.is_initialized():
-            # shape: [(2*)batch_size * world_size, out_shape]
-            list_z_t = gather_from_gpus(z_tgt)
-            curr_gpu = dist.get_rank()
-            other_z_t = torch.cat(list_z_t[:curr_gpu] + list_z_t[curr_gpu + 1 :], dim=0)
-            z_tgt = torch.cat([z_tgt, other_z_t], dim=0)
-
-        # shape: [(2*)batch_size, (2*)batch_size * world_size]
+        # shape: [(2*)batch_size, (2*)batch_size]
         logits = z_src @ z_tgt.T
 
         return logits
@@ -244,7 +239,7 @@ class ContrastiveISSL(nn.Module):
 
     def compute_loss(self, logits: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Computes the upper bound H_q[A|Z]."""
-        n_classes = logits.size(1)  # (2*)batch_size * world_size
+        n_classes = logits.size(1)  # (2*)batch_size
         new_batch_size = logits.size(0)  # (2*)batch_size
         batch_size = new_batch_size // 2
         device = logits.device
@@ -256,11 +251,6 @@ class ContrastiveISSL(nn.Module):
         if not self.is_self_contrastive:
             # select all but current example.
             mask = ~torch.eye(new_batch_size, device=device).bool()
-            n_to_add = n_classes - new_batch_size  # 2*batch_size * (world_size-1)
-            # select all examples that are from different GPU as negatives
-            ones = torch.ones(new_batch_size, n_to_add, device=device).bool()
-            # shape: [2*batch_size, 2*batch_size * world_size]
-            mask = torch.cat([mask, ones], dim=1)
             n_classes -= 1  # remove the current example due to masking
 
             # infoNCE is essentially the same as a softmax (where weights are other z => try to predict

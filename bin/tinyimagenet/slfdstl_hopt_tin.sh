@@ -24,15 +24,13 @@ decodability.kwargs.beta_pM_unif=1.7
 decodability.kwargs.ema_weight_prior=null
 trainer.max_epochs=1000
 decodability.kwargs.out_dim=10000
-scheduler_issl.kwargs.UniformMultiStepLR.k_steps=5
-scheduler_issl.kwargs.UniformMultiStepLR.decay_per_step=3
 regularizer=huber
 timeout=$time
 "
 
 kwargs_multi="
 seed=3
-representor.loss.beta=1e-6,5e-6
+decodability.kwargs.temperature=1,0.1
 "
 
 if [ "$is_plot_only" = false ] ; then

@@ -36,7 +36,7 @@ import issl
 from issl import ISSLModule, Predictor
 from issl.callbacks import (
     LatentDimInterpolator,
-    ReconstructImages, ReconstructMx,RepresentationUMAP
+    MAWeightUpdate, ReconstructImages, ReconstructMx, RepresentationUMAP
 )
 from issl.helpers import check_import, prod
 from issl.predictors import SklearnPredictor, get_representor_predictor
@@ -262,6 +262,7 @@ def set_downstream_task(cfg: Container, task: str):
 
     cfg = copy.deepcopy(cfg)  # not inplace
     with omegaconf.open_dict(cfg):
+
         cfg.downstream_task = compose(  config_name="main", overrides=[f"+downstream_task={task}"] ).downstream_task
         data = cfg.downstream_task.data
         pred = cfg.downstream_task.predictor
@@ -294,10 +295,13 @@ def set_downstream_task(cfg: Container, task: str):
             cfg.data_pred.name = cfg.data_pred.name.format(name=name)
             cfg.data_pred = OmegaConf.merge(cfg.data_repr, cfg.data_pred)
 
+        cfg.downstream_task.name = task
+
     if cfg.predictor.is_sklearn:
         # don't cache if will only see once
         with omegaconf.open_dict(cfg):
             cfg.data_pred.kwargs.is_data_in_memory = False
+
 
     return cfg
 
@@ -314,6 +318,10 @@ def set_cfg(cfg: Container, stage: str) -> Container:
             # not yet instantiated because doesn't know the data and predictor yet
             del cfg[f"long_name_pred"]
             del cfg.evaluation[f"predictor"]
+            cfg.task = cfg.data.name
+
+        elif stage == "predictor":
+            cfg.task = cfg.downstream_task.name
 
         cfg.data = OmegaConf.merge(cfg.data, cfg[f"data_{cfg.stage}"])
         cfg.trainer = OmegaConf.merge(cfg.trainer, cfg[f"update_trainer_{cfg.stage}"])
@@ -445,6 +453,10 @@ def get_callbacks(
 
             if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
                 callbacks += [ReconstructMx()]
+
+    if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
+        # use momentum contrastive teacher, e.g. DINO
+        callbacks += [MAWeightUpdate()]
 
     callbacks += [ModelCheckpoint(**cfg.checkpoint.kwargs)]
 

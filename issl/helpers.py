@@ -23,7 +23,6 @@ from torchvision import transforms as transform_lib
 
 import pytorch_lightning as pl
 import torch
-import torch.distributed as dist
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
@@ -47,7 +46,7 @@ class RunningMean(nn.Module):
         self.alpha_use = alpha_use
         self.alpha_store = alpha_store
         self.init = init.double()
-        self.register_buffer('running_mean', init)
+        self.register_buffer('running_mean', self.init)
 
     def reset_parameters(self) -> None:
         self.running_mean = self.init
@@ -248,7 +247,7 @@ def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
         nn.init.trunc_normal_(module.weight, std=0.02)
         try:
             nn.init.zeros_(module.bias)
-        except AttributeError:
+        except AttributeError: # no bias
             pass
 
     elif isinstance(module, nn.modules.batchnorm._NormBase):
@@ -308,6 +307,15 @@ def mean(array):
     """Take mean of array like."""
     return sum(array) / len(array)
 
+def average_dict(*dicts):
+    """Return a dictionary, where every value is avg over the dicts."""
+    keys = set(k for d in dicts for k in d.keys() )
+    return {k: mean([d[k] for d in dicts if k in d]) for k in keys}
+
+def freeze_module_(model):
+    """"Freeze the module."""
+    for p in model.parameters():
+        p.requires_grad = False
 
 def aggregate_dicts(dicts, operation=mean):
     """
@@ -660,7 +668,7 @@ def get_lr_scheduler(
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma)
     elif scheduler_type == "UniformMultiStepLR":
         if k_steps is None:
-            k_steps = 3 if epochs > 300 else 2
+            k_steps = 5 if epochs > 300 else 3
         delta_epochs = epochs // (k_steps + 1)
         milestones = [delta_epochs * i for i in range(1, k_steps + 1)]
         if decay_per_step is not None:
@@ -1124,13 +1132,15 @@ class Annealer:
 
 
 
+
+
+
 # modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11
 def sinkhorn_knopp(
     logits: torch.Tensor,
     eps: float = 0.05,
     n_iter: int = 3,
     is_hard_assignment: bool = False,
-    world_size: int = 1,
     is_double_prec: bool = True,
     is_force_no_gpu: bool = False,
 ):
@@ -1151,9 +1161,6 @@ def sinkhorn_knopp(
 
     is_hard_assignment : bool, optional
         Whether to use hard assignements rather than soft ones.
-
-    world_size : int, optional
-        Number of GPUs.
     
     is_double_prec : bool, optional
         Whether to use double precision to ensure that no instabilities.
@@ -1175,7 +1182,6 @@ def sinkhorn_knopp(
     # log sum exp trick for stability
     logits = logits / eps
     M = torch.max(logits)
-    if world_size > 1: dist.all_reduce(M, op=dist.ReduceOp.MAX)
     Q = (logits - M).exp().T
 
     # remove potential infs in Q. Replace by max non inf.
@@ -1183,16 +1189,14 @@ def sinkhorn_knopp(
 
     # make the matrix sum to 1
     sum_Q = torch.sum(Q, dtype=Q.dtype)
-    if world_size > 1: dist.all_reduce(sum_Q, op=dist.ReduceOp.SUM)
     Q /= sum_Q
 
     # number of clusters, and examples to be clustered
     n_Mx, n_samples = Q.shape
-    n_samples_world = n_samples * world_size
 
     # Shape: [n_Mx]
     r = torch.ones(n_Mx) / n_Mx
-    c = torch.ones(n_samples) / n_samples_world
+    c = torch.ones(n_samples) / n_samples
     if is_double_prec:
         r, c = r.double(), c.double()
 
@@ -1203,13 +1207,11 @@ def sinkhorn_knopp(
     for _ in range(n_iter):
         # normalize each row: total weight per prototype must be 1/K. Shape : [n_Mx]
         sum_rows = torch.sum(Q, dim=1, dtype=Q.dtype)
-        if world_size > 1: dist.all_reduce(sum_rows, op=dist.ReduceOp.SUM)
 
         # for numerical stability, add a small epsilon value for zeros
         if len(torch.nonzero(sum_rows == 0)) > 0:
             Q += 1e-12
             sum_rows = torch.sum(Q, dim=1, dtype=Q.dtype)
-            if world_size > 1: dist.all_reduce(sum_rows, op=dist.ReduceOp.SUM)
 
         #  Shape : [n_Mx]
         u = r / sum_rows
@@ -1232,32 +1234,6 @@ def sinkhorn_knopp(
         Q.scatter_(1, index_max.unsqueeze(1), 1)
 
     return Q
-
-
-# from : https://github.com/open-mmlab/OpenSelfSup/blob/696d04950e55d504cf33bc83cfadbb4ece10fbae/openselfsup/models/utils/gather_layer.py
-class GatherFromGpus(torch.autograd.Function):
-    """Gather tensors from all process, supporting backward propagation."""
-
-    @staticmethod
-    def forward(ctx, tensor):
-        ctx.save_for_backward(tensor)
-        gathered_tensor = [
-            torch.zeros_like(tensor) for _ in range(dist.get_world_size())
-        ]
-        dist.all_gather(gathered_tensor, tensor)
-        return tuple(gathered_tensor)
-
-    @staticmethod
-    def backward(ctx, *grads):
-        (tensor,) = ctx.saved_tensors
-        grad_out = torch.zeros_like(tensor)
-        grad_out[:] = grads[dist.get_rank()]
-        return grad_out
-
-
-gather_from_gpus = GatherFromGpus.apply
-
-
 
 class LearnedSoftmax(nn.Module):
     """Softmax with learned temperature.

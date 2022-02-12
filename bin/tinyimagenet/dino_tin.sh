@@ -1,33 +1,32 @@
 #!/usr/bin/env bash
 
-experiment="cntr_hopt_tin"
+experiment="dino_tin"
 notes="
-**Goal**: hyperparameter tuning for contrastive on tinyimagenet.
+**Goal**: ensure that you can replicate dino on tinyimagenet.
 "
-
 # parses special mode for running the script
 source `dirname $0`/../utils.sh
 source `dirname $0`/base_tin.sh
 
-time=3000
+
+time=10080
+time=5080
 
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
-representor=cntr
-decodability.kwargs.temperature=0.07
+representor=slfdstl_dino
 timeout=$time
 "
 
-# every arguments that you are sweeping over
 kwargs_multi="
 seed=3
-trainer.max_epochs=500
+trainer.max_epochs=300,1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "decodability.kwargs.is_self_contrastive=True" "decodability.kwargs.is_relu_Z=False"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
@@ -36,10 +35,3 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
-
-wait
-
-# for representor
-python utils/aggregate.py \
-       experiment=$experiment  \
-       agg_mode=[summarize_metrics]

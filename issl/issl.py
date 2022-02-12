@@ -11,7 +11,6 @@ import torch.nn as nn
 from issl.distributions import CondDist
 from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod
 from issl.losses import get_loss_decodability, get_regularizer
-from issl.losses.decodability import PriorSelfDistillationISSL, SwavSelfDistillationISSL
 from issl.predictors import OnlineEvaluator
 from torch.nn import functional as F
 
@@ -26,7 +25,7 @@ class ISSLModule(pl.LightningModule):
         self.save_hyperparameters(hparams)
 
         self.p_ZlX = CondDist(**self.hparams.encoder.kwargs)
-        self.loss_decodability = get_loss_decodability(
+        self.loss_decodability = get_loss_decodability(p_ZlX=self.p_ZlX,
             **self.hparams.decodability.kwargs
         )
         self.loss_regularizer = get_regularizer(**self.hparams.regularizer.kwargs)
@@ -78,7 +77,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False
+        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False, p_ZlX=None
     ):
         """Represents the data `x`.
 
@@ -90,13 +89,23 @@ class ISSLModule(pl.LightningModule):
         is_sample : bool, optional
             Whether to sample the representation rather than return expected representation.
 
+        is_return_p_ZlX : bool, optional
+            Whether to return the encoder in addition to the representation.
+
+        p_ZlX : CondDist, optional
+            Encoder to use instead of the default `self.p_ZlX`. Useful to use an EMA encoder.
+
         Returns
         -------
         z : torch.Tensor of shape=[batch_size, z_dim]
             Represented data.
         """
+
+        if p_ZlX is None:
+            p_ZlX = self.p_ZlX
+
         # batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        p_Zlx = self.p_ZlX(x)
+        p_Zlx = p_ZlX(x)
 
         # shape: [batch_size, *z_shape]
         if is_sample:
@@ -105,6 +114,7 @@ class ISSLModule(pl.LightningModule):
             z = p_Zlx.mean
 
         # one difference compared to standard implementation is that our representation does not go through a relu
+        # if it goes through linear after resnet
         if self.hparams.encoder.is_relu_Z:
             z = F.relu(z)
 
@@ -134,7 +144,7 @@ class ISSLModule(pl.LightningModule):
             regularize, s_logs, s_other = None, dict(), dict()
 
         # `decodability` is proxy for R_f[A|Z]. shape: [batch_size]
-        decodability, d_logs, d_other = self.loss_decodability(z, aux_target, self)
+        decodability, d_logs, d_other = self.loss_decodability(z, aux_target,  x, self)
         loss, logs, other = self.loss(decodability, regularize)
 
         # to log (dict)
@@ -209,7 +219,7 @@ class ISSLModule(pl.LightningModule):
 
         self.log_dict(
             {
-                f"train/{self.stage}/{self.hparams.data.name}/{k}": v
+                f"train/{self.stage}/{self.hparams.task}/{k}": v
                 for k, v in logs.items()
             },
             sync_dist=True,
@@ -228,7 +238,7 @@ class ISSLModule(pl.LightningModule):
 
         self.log_dict(
             {
-                f"{step}/{self.stage}/{self.hparams.data.name}/{k}": v
+                f"{step}/{self.stage}/{self.hparams.task}/{k}": v
                 for k, v in logs.items()
             },
             sync_dist=True,
@@ -314,8 +324,6 @@ class ISSLModule(pl.LightningModule):
 
     def on_after_backward(self):
         dec = self.loss_decodability
-        is_swav_slfdstl = isinstance(dec, SwavSelfDistillationISSL)
-        if is_swav_slfdstl and self.current_epoch < dec.freeze_Mx_epochs:
-            for name, p in dec.named_parameters():
-                if "prototypes" in name:
-                    p.grad = None
+        if hasattr(dec, "to_freeze") and self.current_epoch < dec.freeze_Mx_epochs:
+            for name, p in dec.to_freeze.named_parameters():
+                p.grad = None

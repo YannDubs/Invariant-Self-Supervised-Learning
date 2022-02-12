@@ -402,7 +402,7 @@ class SklearnTrainer:
             y = data.Y
 
         results = {
-            f"test/{self.stage}/{self.hparams.data.name}/{name}": score(
+            f"test/{self.stage}/{self.hparams.task}/{name}": score(
                 model, data.X, y
             )
             for name, score in self.scores.items()
@@ -412,7 +412,7 @@ class SklearnTrainer:
             for name, agg_score in self.agg_scores.items():
                 aggregated = agg_score(model_agg, data.X, y_agg)
                 for agg, sffx in zip(aggregated, self.agg_txt_fun.keys()):
-                    key = f"test/{self.stage}/{self.hparams.data.name}/{name}_agg{sffx}"
+                    key = f"test/{self.stage}/{self.hparams.task}/{name}_agg{sffx}"
                     results[key] = agg
 
         logger.info(results)

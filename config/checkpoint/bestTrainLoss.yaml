@@ -3,5 +3,5 @@ defaults:
 
 name: bestTrainLoss
 kwargs:
-  monitor: train/${stage}/${data.name}/loss
+  monitor: train/${stage}/${task}/loss
   mode: "min"

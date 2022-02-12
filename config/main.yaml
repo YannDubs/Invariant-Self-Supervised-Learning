@@ -76,6 +76,7 @@ other: # some meta information that can be useful for internal stuff (usually di
 ### STAGE SPECIFIC ###
 stage: ???
 long_name: ???
+task: ??? # what to use for monitor in wandb. data.name during rep, task during pred
 checkpoint: {}
 data: {}
 

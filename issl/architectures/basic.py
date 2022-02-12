@@ -40,8 +40,11 @@ class MLP(nn.Module):
     is_skip_hidden : bool, optional
         Whether to skip all the hidden layers with a residual connection.
 
-    bias : bool, optional
-        Whether the last layer should have a bias.
+    is_cosine : bool, optional
+        Whether the last layer should be cosine similarity instead of linear.
+
+    kwargs:
+        Additional arguments of the last linear layer which is a `FlattenLinear`.
     """
 
     def __init__(
@@ -54,7 +57,8 @@ class MLP(nn.Module):
         activation: str = "ReLU",
         dropout_p: float = 0,
         is_skip_hidden: bool = False,
-        bias: bool=True,
+        is_cosine: bool= False,
+        **kwargs
     ) -> None:
         super().__init__()
 
@@ -67,8 +71,8 @@ class MLP(nn.Module):
         Norm = get_Normalization(norm_layer, dim=1)
         # don't use bias with batch_norm https://twitter.com/karpathy/status/1013245864570073090?l...
         bias_hidden = Norm == nn.Identity
-        bias_last = bias
         self.is_skip_hidden = is_skip_hidden
+        self.is_cosine = is_cosine
 
         self.pre_block = nn.Sequential(
             nn.Linear(in_dim, hid_dim, bias=bias_hidden),
@@ -86,7 +90,10 @@ class MLP(nn.Module):
                 Dropout(p=dropout_p),
             ]
         self.hidden_block = nn.Sequential(*layers)
-        self.post_block = nn.Linear(hid_dim, out_dim, bias=bias_last)
+
+        # suing flatten linear to have bottleneck size
+        PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
+        self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
 
         self.reset_parameters()
 
@@ -165,7 +172,7 @@ class FlattenLinear(nn.Module):
         of the following layer and is still linear.
 
     bottleneck_size : int, optional
-        Whether to add a in the linear layer, this is equivalent to constraining the linear layer to be
+        Whether to add a bottleneck in the linear layer, this is equivalent to constraining the linear layer to be
         low rank. The result will still be linear (no non linearity) but more efficient if input and
         output is very large.
 
@@ -174,7 +181,8 @@ class FlattenLinear(nn.Module):
     """
 
     def __init__(
-        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm: bool=False, bottleneck_size : Optional[int]=None, **kwargs
+        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm: bool=False,
+            bottleneck_size : Optional[int]=None, **kwargs
     ) -> None:
         super().__init__()
 
@@ -197,10 +205,10 @@ class FlattenLinear(nn.Module):
 
         self.reset_parameters()
 
-    def forward(self, X: torch.Tensor) -> torch.Tensor:
-        # flattens in_shape
-        X = X.flatten(start_dim=X.ndim - len(self.in_shape))
+    def reset_parameters(self):
+        weights_init(self)
 
+    def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:
         if self.bottleneck_size is not None:
             X = self.bottleneck(X)
 
@@ -209,62 +217,45 @@ class FlattenLinear(nn.Module):
 
         out = self.linear(X)
 
+        return out
+
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        # flattens in_shape
+        X = X.flatten(start_dim=X.ndim - len(self.in_shape))
+
+        out = self.forward_flatten(X)
+
         # unflattened out_shape
         out = out.unflatten(dim=-1, sizes=self.out_shape)
         return out
 
+class FlattenCosine(FlattenLinear):
+    """Cosine similarity between inputs and weights."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, bias=False, **kwargs)
+        self.linear = nn.utils.weight_norm(self.linear)
+        self.linear.weight_g.data.fill_(1)  # unit norm
+        self.linear.weight_g.requires_grad = False  # don't optimize norm
+
     def reset_parameters(self):
         weights_init(self)
 
-class FlattenCosine(FlattenLinear):
-    """
-    Flatten linear layer where the weight matrix is normalized and no bias by default => useful for cosine.
+        try:
+            self.linear.weight_g.data.fill_(1)
+        except AttributeError:
+            pass  # make sure ok  if call reset_param before weight_norm
 
-    Parameters
-    ----------
-    in_shape : tuple or int
-
-    out_shape : tuple or int
-
-    kwargs :
-        Additional arguments to `torch.nn.Linear`.
-    """
-
-    def __init__(
-        self, *args,  bias=False, **kwargs
-    ) -> None:
-
-        # do not use any bias when performing cosine similarity
-        super().__init__(*args, bias=bias, **kwargs)
-
-        self.reset_parameters()
-
-    def forward(self, X: torch.Tensor) -> torch.Tensor:
-
-        # flattens in_shape
-        X = X.flatten(start_dim=X.ndim - len(self.in_shape))
-
-        unit_X = F.normalize(X, dim=1, p=2)
-
-        with torch.no_grad():
-            # could simply normalize the weight before linear, but then actual norm could explode
-            # because does not matter => could be instable
-            unit_weight = F.normalize(self.weight.data.clone(), dim=1, p=2)
-            self.weight.copy_(unit_weight)
-
-        out = nn.Linear.forward(self, unit_X)
-
-        # unflattens out_shape
-        out = out.unflatten(dim=-1, sizes=self.out_shape)
-
-        return out
+    def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:
+        unit_X = F.normalize(X, dim=-1, p=2)
+        return super().forward_flatten(unit_X)
 
 
 class Flatten(nn.Flatten):
     """Flatten a representation."""
 
     def __init__(self, **kwargs) -> None:
-        super().__init__(start_dim=1, end_dim=-1)
+        super().__init__(start_dim=1, end_dim=-1, **kwargs)
 
 
 class Resizer(nn.Module):
