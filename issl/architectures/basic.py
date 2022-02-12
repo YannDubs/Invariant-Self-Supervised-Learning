@@ -255,7 +255,7 @@ class Flatten(nn.Flatten):
     """Flatten a representation."""
 
     def __init__(self, **kwargs) -> None:
-        super().__init__(start_dim=1, end_dim=-1, **kwargs)
+        super().__init__(start_dim=1, end_dim=-1)
 
 
 class Resizer(nn.Module):
