@@ -17,13 +17,12 @@ experiment=$experiment
 $base_kwargs_tin
 ++logger.wandb_kwargs.project=dev
 representor=cntr
-++trainer.limit_predict_batches=10
+++trainer.limit_predict_batches=20
 ++trainer.limit_train_batches=10
-++trainer.limit_test_batches=10
 ++trainer.limit_test_batches=10
 data@data_repr=mnist
 decodability.kwargs.temperature=0.07
-downstream_task.all_tasks=[pytorch_datarepr01test,pytorch_datarepr,pytorch_bn_datarepr]
+downstream_task.all_tasks=[pytorch_bn_datarepr,pytorch_bn_datarepr01test]
 timeout=$time
 "
 

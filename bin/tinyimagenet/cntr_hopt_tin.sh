@@ -20,6 +20,7 @@ decodability.kwargs.temperature=0.07
 timeout=$time
 "
 
+
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=3
@@ -27,7 +28,7 @@ trainer.max_epochs=500
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "decodability.kwargs.is_self_contrastive=True" "decodability.kwargs.is_relu_Z=False"
+  for kwargs_dep in "" "decodability.kwargs.is_self_contrastive=True" "decodability.kwargs.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=False"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

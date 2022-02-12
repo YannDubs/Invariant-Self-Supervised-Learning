@@ -248,11 +248,6 @@ class ResultAggregator(PostPlotter):
             # looks like : dict(train={metric1:..., metric2:...}, test={metric1:..., metric2:...})
             dicts = pd.read_csv(path, index_col=0).to_dict()
 
-            # # TODO remove. This is just temporary to work with previous runs.
-            # if "datapred" in params.keys() and "_test" in params["datapred"]:
-            #     corr = params["datapred"]
-            #     curr = corr.replace("test", "")
-            #     dicts = {k: replace_keys(v, curr, corr + "/") for k, v in dicts.items()}
 
             # TODO remove. This is just temporary to work with previous runs.
             dicts = {
@@ -262,8 +257,13 @@ class ResultAggregator(PostPlotter):
             dicts = {k: replace_keys(v, "_train", "") for k, v in dicts.items()}
 
             dicts = {
-                k: replace_keys(v, f"{cfg.task}/", "") for k, v in dicts.items()
+                k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
             }
+
+            for task in cfg.downstream_tasks.all_tasks:
+                dicts = {
+                    k: replace_keys(v, f"{task}/", "") for k, v in dicts.items()
+                }
 
             # flattens dicts and make dataframe :
             # DataFrame(train/metric1:...,train/metric2:..., test/metric1:..., test/metric2:...)
