@@ -45,7 +45,6 @@ monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
 hydra.sweeper.n_trials=5
 hydra.sweeper.n_jobs=5
-hydra.sweeper.study_name=v0
 seed=3
 trainer.max_epochs=1000
 representor.loss.beta=3e-6,5e-6,1e-5
@@ -57,7 +56,7 @@ representor=slfdstl
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "regularizer=cosine" "decodability.kwargs.out_dim=7000,10000,15000" "decodability.kwargs.out_dim=30000,50000,80000 decodability.kwargs.projector_kwargs.bottleneck_size=30,50,100" "decodability.kwargs.out_dim=15000,30000 decodability.kwargs.projector_kwargs.bottleneck_size=100,200"
+  for kwargs_dep in "regularizer=cosine hydra.sweeper.study_name=v0" "decodability.kwargs.out_dim=7000,10000,15000 hydra.sweeper.study_name=v1" "decodability.kwargs.out_dim=30000,50000,80000 decodability.kwargs.projector_kwargs.bottleneck_size=30,50,100 hydra.sweeper.study_name=v2" "decodability.kwargs.out_dim=15000,30000 decodability.kwargs.projector_kwargs.bottleneck_size=100,200 hydra.sweeper.study_name=v3"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &
