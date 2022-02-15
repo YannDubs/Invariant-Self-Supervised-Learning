@@ -43,22 +43,21 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=10
-hydra.sweeper.n_jobs=10
+hydra.sweeper.n_trials=5
+hydra.sweeper.n_jobs=5
 hydra.sweeper.study_name=v0
 seed=3
 trainer.max_epochs=1000
-decodability.kwargs.out_dim=7000,10000,15000
-representor.loss.beta=1e-6,5e-6
-decodability.kwargs.beta_pM_unif=1.7,2
-regularizer=huber,cosine
-optimizer_issl.kwargs.weight_decay=5e-6,1e-5
+representor.loss.beta=3e-6,5e-6,1e-5
+decodability.kwargs.beta_pM_unif=1.3,1.7,2.5
+regularizer=huber
+optimizer_issl.kwargs.weight_decay=3e-6,5e-6,1e-5
 decodability.kwargs.ema_weight_prior=0.3,0.5,0.7
-representor=slfdstl_augIN,slfdstl
+representor=slfdstl
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in "regularizer=cosine" "decodability.kwargs.out_dim=7000,10000,15000" "decodability.kwargs.out_dim=30000,50000,80000 decodability.kwargs.projector_kwargs.bottleneck_size=30,50,100" "decodability.kwargs.out_dim=15000,30000 decodability.kwargs.projector_kwargs.bottleneck_size=100,200"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

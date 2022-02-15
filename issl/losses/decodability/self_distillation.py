@@ -156,7 +156,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         beta_pM_unif: float = None,
         ema_weight_prior: Optional[float] = None,
         is_batchnorm_pre: bool=True,
-        temperature: float = 1,
         **kwargs,
     ) -> None:
 

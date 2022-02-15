@@ -33,7 +33,7 @@ seed=3
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "decodability.kwargs.ema_weight_prior=null,0.5 decodability.kwargs.projector_kwargs.architecture=cosine" "decodability.kwargs.temperature=1,0.1"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

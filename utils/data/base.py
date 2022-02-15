@@ -422,6 +422,7 @@ class ISSLDataModule(LightningDataModule):
             self.set_info_()
 
             if self.is_val_on_test:
+                logger.info("Validate on the test set.")
                 self.val_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
             else:
                 self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)

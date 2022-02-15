@@ -6,7 +6,6 @@ kwargs:
   beta_pM_unif: 1.0 # TODO: tune
   ema_weight_prior: null
   out_dim: 3000
-  temperature: 1 # try 0.1
   projector_kwargs:
     architecture:  "linear"
     bottleneck_size: null # bottleneck for the last layer, ie, low rank approx
