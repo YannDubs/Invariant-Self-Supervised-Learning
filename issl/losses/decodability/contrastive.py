@@ -102,13 +102,13 @@ class ContrastiveISSL(nn.Module):
             self.is_self_contrastive = False
 
         Projector = get_Architecture(**self.projector_kwargs)
-        self.projector = self.add_batchnorms(Projector())
+        self.projector = self.add_batchnorms(Projector(), projector_kwargs["architecture"])
 
         if self.is_pred_proj_same:
             self.predictor = self.projector
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
-            self.predictor = self.add_batchnorms(Predictor())
+            self.predictor = self.add_batchnorms(Predictor(), predictor_kwargs["architecture"])
 
         if self.is_train_temperature:
             self.init_temperature = temperature
@@ -120,11 +120,14 @@ class ContrastiveISSL(nn.Module):
 
         self.reset_parameters()
 
-    def add_batchnorms(self, head):
+    def add_batchnorms(self, head, arch):
         if self.is_batchnorm_pre:
             head = nn.Sequential(nn.BatchNorm1d(self.z_dim), head)
+
         if self.is_batchnorm_post:
-            head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
+            if not (arch.lower() in ["identity", "flatten"]):
+                head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
+
         return head
 
     def reset_parameters(self) -> None:

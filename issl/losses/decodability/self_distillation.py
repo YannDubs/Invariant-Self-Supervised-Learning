@@ -142,9 +142,6 @@ add_doc_prior = """
     
     is_batchnorm_pre : bool, optional
         Whether to add a batchnorm layer before the projector / predictor. Strongly recommended.
-        
-    temperature : float, optional
-        Temperature for the softmax of the linear layer.
     """
 
 class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
@@ -163,7 +160,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         self.beta_pM_unif = beta_pM_unif
         self.ema_weight_prior = ema_weight_prior
         self.is_batchnorm_pre = is_batchnorm_pre
-        self.temperature = temperature
 
         # use same arch as projector
         Predictor = get_Architecture(**self.projector_kwargs)
@@ -201,9 +197,6 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         return loss, logs, other
 
     def compare_branches(self, M, M_a, run_marginal):
-        M = M / self.temperature
-        M_a = M_a / self.temperature
-
         # p(M|Z). batch shape: [batch_size] ; event shape: []
         p_Mlz = F.softmax(M_a, dim=-1)
 

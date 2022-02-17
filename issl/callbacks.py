@@ -159,7 +159,7 @@ class ReconstructMx(PlottingCallback):
         with torch.no_grad():
             pl_module.eval()
             with plot_config(**self.plot_config_kwargs, font_scale=2):
-                Ms = torch.eye(n_Mx, device=pl_module.device)[:self.max_Mx_plot, :]
+                Ms = torch.eye(n_Mx, device=pl_module.device)[:self.max_Mx_plot, :self.max_Mx_plot]
                 Zhat = pl_module.loss_decodability.f_ZhatlM(Ms)
                 img = pl_module.loss_decodability.suff_stat_AlZhat(Zhat)
                 img = torch.sigmoid(img) # put back on [0,1]

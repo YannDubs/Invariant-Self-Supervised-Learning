@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="vae_tin"
+experiment="vae_tin_final"
 notes="
 **Goal**: hyperparameter tuning for variational autoencoder on tinyimagenet.
 "
@@ -26,7 +26,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=3
+seed=1,2,3
 trainer.max_epochs=1000
 "
 

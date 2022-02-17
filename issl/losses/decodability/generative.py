@@ -82,7 +82,7 @@ class GenerativeISSL(nn.Module):
         if self.predecode_n_Mx is not None:
             Predecoder = get_Architecture(**predecoder_kwargs)
             self.f_MlZ = Predecoder(z_shape, predecode_n_Mx)
-            self.f_ZhatlM = get_Architecture(architecture="linear")(predecode_n_Mx, z_shape)
+            self.f_ZhatlM = get_Architecture(**predecoder_kwargs)(predecode_n_Mx, z_shape)
             self.softmax =  LearnedSoftmax(**softmax_kwargs)
             self.f_ZhatlZ = nn.Sequential(self.f_MlZ, self.softmax, self.f_ZhatlM)
         else:
@@ -105,7 +105,7 @@ class GenerativeISSL(nn.Module):
         weights_init(self)
 
     def forward(
-        self, z: torch.Tensor, aux_target: torch.Tensor, _
+        self, z: torch.Tensor, aux_target: torch.Tensor, _, __
     ) -> tuple[torch.Tensor, dict, dict]:
         """Generate A and compute the upper bound on R[A|Z].
 

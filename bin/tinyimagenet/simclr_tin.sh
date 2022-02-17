@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-experiment="simclr_tin"
+experiment="simclr_tin_final"
 notes="
 **Goal**: ensure that you can replicate the whitening paper for tinyimagenet with simclr.
 "
@@ -22,9 +22,9 @@ timeout=$time
 "
 
 kwargs_multi="
-seed=3
+seed=1,2,3
 trainer.max_epochs=1000
-"
+" # RUNNING STANFORD
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""

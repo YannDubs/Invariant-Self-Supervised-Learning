@@ -9,7 +9,7 @@ notes="
 source `dirname $0`/../utils.sh
 source `dirname $0`/base_tin.sh
 
-time=3000
+time=10000
 
 # define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
@@ -28,7 +28,7 @@ trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "decodability.kwargs.is_self_contrastive=False" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=False"
+  for kwargs_dep in  "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=True encoder.is_relu_Z=False,True" "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=False" #  "" "decodability.kwargs.is_self_contrastive=False" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=False"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

@@ -15,6 +15,7 @@ kwargs:
   predecode_n_Mx: null
   predecoder_kwargs:
     architecture: linear
+    bottleneck_size: null
   normalized: ${data.normalized}
   softmax_kwargs:
     n_steps: ${data.max_steps}

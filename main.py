@@ -452,8 +452,9 @@ def get_callbacks(
                 # TODO does not work (D)DP because of self.store
                 callbacks += [ReconstructImages()]
 
-            if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
-                callbacks += [ReconstructMx()]
+            # todo: Removing for now because memory issue if huge n_Mx
+            # if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
+            #     callbacks += [ReconstructMx()]
 
     if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
         # use momentum contrastive teacher, e.g. DINO

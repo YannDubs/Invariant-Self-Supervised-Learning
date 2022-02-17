@@ -22,7 +22,7 @@ data_repr.kwargs.batch_size=256
 representor.loss.beta=1e-6
 decodability.kwargs.beta_pM_unif=1.7
 decodability.kwargs.ema_weight_prior=null
-trainer.max_epochs=500
+trainer.max_epochs=1000
 decodability.kwargs.out_dim=10000
 regularizer=huber
 timeout=$time
@@ -30,6 +30,13 @@ timeout=$time
 
 kwargs_multi="
 seed=3
+"
+
+kwargs_multi="
+seed=3
+trainer.max_epochs=1000
+decodability.kwargs.out_dim=10000,25000,50000
+decodability.kwargs.projector_kwargs.bottleneck_size=100
 "
 
 if [ "$is_plot_only" = false ] ; then
