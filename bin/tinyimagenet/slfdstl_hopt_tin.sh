@@ -19,7 +19,7 @@ experiment=$experiment
 $base_kwargs_tin
 representor=slfdstl
 data_repr.kwargs.batch_size=256
-representor.loss.beta=1e-6
+representor.loss.beta=3e-6
 decodability.kwargs.beta_pM_unif=1.7
 decodability.kwargs.ema_weight_prior=null
 trainer.max_epochs=1000

@@ -47,10 +47,10 @@ trainer.max_epochs=1000
 representor.loss.beta=3e-6,5e-6
 decodability.kwargs.beta_pM_unif=1.7
 regularizer=huber
-optimizer_issl.kwargs.weight_decay=3e-6,5e-6
-decodability.kwargs.ema_weight_prior=0.5,0.7,0.9,null
-decodability.kwargs.out_dim=10000,20000,30000
-decodability.kwargs.projector_kwargs.bottleneck_size=100,200
+optimizer_issl.kwargs.weight_decay=1e-6,3e-6
+decodability.kwargs.ema_weight_prior=0.5,0.8,null
+decodability.kwargs.out_dim=10000,20000,30000,50000
+decodability.kwargs.projector_kwargs.bottleneck_size=100
 representor=slfdstl
 "
 
