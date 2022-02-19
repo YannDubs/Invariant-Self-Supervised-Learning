@@ -19,7 +19,7 @@ experiment=$experiment
 ++logger.wandb_kwargs.project=tinyimagenet
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
-downstream_task.all_tasks=[pytorch_datarepr,pytorch_datarepr001test,pytorch_datarepr01test,pytorch_bn_datarepr,sklogistic_datarepr]
+downstream_task.all_tasks=[pytorch_datarepr,pytorch_datarepr001test,pytorch_datarepr01test,pytorch_bn_datarepr,pytorch_bn_datarepr01test,pytorch_bn_datarepr001test,sklogistic_datarepr,sklogistic_datarepr01test,sklogistic_datarepr001test]
 data_repr.kwargs.batch_size=512
 encoder.z_shape=512
 encoder.kwargs.arch_kwargs.is_no_linear=True
@@ -39,20 +39,23 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=5
-hydra.sweeper.n_jobs=5
+hydra.sweeper.n_trials=20
+hydra.sweeper.n_jobs=20
 seed=3
+hydra.sweeper.study_name=v6
 trainer.max_epochs=1000
-representor.loss.beta=3e-6,5e-6,1e-5
-decodability.kwargs.beta_pM_unif=1.3,1.7,2.5
+representor.loss.beta=3e-6,5e-6
+decodability.kwargs.beta_pM_unif=1.7
 regularizer=huber
-optimizer_issl.kwargs.weight_decay=3e-6,5e-6,1e-5
-decodability.kwargs.ema_weight_prior=0.3,0.5,0.7
+optimizer_issl.kwargs.weight_decay=3e-6,5e-6
+decodability.kwargs.ema_weight_prior=0.5,0.7,0.9,null
+decodability.kwargs.out_dim=10000,20000,30000
+decodability.kwargs.projector_kwargs.bottleneck_size=100,200
 representor=slfdstl
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "regularizer=cosine hydra.sweeper.study_name=v0" "decodability.kwargs.out_dim=7000,10000,15000 hydra.sweeper.study_name=v1" "decodability.kwargs.out_dim=30000,50000,80000 decodability.kwargs.projector_kwargs.bottleneck_size=30,50,100 hydra.sweeper.study_name=v2" "decodability.kwargs.out_dim=15000,30000 decodability.kwargs.projector_kwargs.bottleneck_size=100,200 hydra.sweeper.study_name=v3"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &

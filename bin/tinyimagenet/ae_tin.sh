@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="ae_tin"
+experiment="ae_tin_final"
 notes="
 **Goal**: hyperparameter tuning for autoencoder on tinyimagenet.
 "
@@ -23,7 +23,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=3
+seed=1,2,3
 trainer.max_epochs=1000
 "
 

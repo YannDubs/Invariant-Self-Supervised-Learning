@@ -36,7 +36,7 @@ trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "decodability.kwargs.predecode_n_Mx=3000 decodability.kwargs.predecoder_kwargs.bottleneck_size=null" "decodability.kwargs.predecode_n_Mx=10000 decodability.kwargs.predecoder_kwargs.bottleneck_size=100" "decodability.kwargs.predecode_n_Mx=30000 decodability.kwargs.predecoder_kwargs.bottleneck_size=50" "decodability.kwargs.predecode_n_Mx=90000 decodability.kwargs.predecoder_kwargs.bottleneck_size=30"
+  for kwargs_dep in "decodability.kwargs.predecode_n_Mx=3000,10000,30000 decodability.kwargs.predecoder_kwargs.bottleneck_size=100" "decodability.kwargs.predecode_n_Mx=10000,30000 decodability.kwargs.predecoder_kwargs.bottleneck_size=50"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
