@@ -29,6 +29,3 @@ decodability:
       n_hid_layers: 2
       norm_layer: "batch"
       out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
-
-encoder:
-  is_relu_Z: True

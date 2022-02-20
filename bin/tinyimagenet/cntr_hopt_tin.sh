@@ -17,6 +17,7 @@ experiment=$experiment
 $base_kwargs_tin
 representor=cntr
 decodability.kwargs.temperature=0.07
+trainer.max_epochs=500
 timeout=$time
 "
 
@@ -24,8 +25,6 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=1,2,3
-encoder.is_relu_Z=True,False
-trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
@@ -38,10 +37,3 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
-
-wait
-
-# for representor
-python utils/aggregate.py \
-       experiment=$experiment  \
-       agg_mode=[summarize_metrics]

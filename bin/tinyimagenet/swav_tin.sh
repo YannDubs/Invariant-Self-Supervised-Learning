@@ -24,7 +24,7 @@ timeout=$time
 
 kwargs_multi="
 seed=1,2,3
-trainer.max_epochs=1000
+trainer.max_epochs=500
 " # RUNNING STANFORD
 
 if [ "$is_plot_only" = false ] ; then

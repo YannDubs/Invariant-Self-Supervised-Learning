@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="slfdst_hopt_tin"
+experiment="slfdst_hopt_tin_final"
 notes="
 **Goal**: hyperparameter tuning for selfdistillation on tinyimagenet.
 "
@@ -21,22 +21,16 @@ representor=slfdstl
 data_repr.kwargs.batch_size=256
 representor.loss.beta=3e-6
 decodability.kwargs.beta_pM_unif=1.7
-decodability.kwargs.ema_weight_prior=null
-trainer.max_epochs=1000
-decodability.kwargs.out_dim=10000
+trainer.max_epochs=500
 regularizer=huber
+decodability.kwargs.projector_kwargs.bottleneck_size=100
+decodability.kwargs.out_dim=50000
+decodability.kwargs.ema_weight_prior=0.9
 timeout=$time
 "
 
 kwargs_multi="
-seed=3
-"
-
-kwargs_multi="
-seed=3
-trainer.max_epochs=1000
-decodability.kwargs.out_dim=10000,25000,50000
-decodability.kwargs.projector_kwargs.bottleneck_size=100
+seed=1,2,3
 "
 
 if [ "$is_plot_only" = false ] ; then
