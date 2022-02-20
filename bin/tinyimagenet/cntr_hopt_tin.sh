@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="cntr_hopt_tin"
+experiment="cntr_hopt_tin_final"
 notes="
 **Goal**: hyperparameter tuning for contrastive on tinyimagenet.
 "
@@ -23,12 +23,13 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=3
+seed=1,2,3
+encoder.is_relu_Z=True,False
 trainer.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=True encoder.is_relu_Z=False,True" "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=False" #  "" "decodability.kwargs.is_self_contrastive=False" "encoder.is_relu_Z=False" "decodability.kwargs.is_batchnorm_pre=True decodability.kwargs.is_batchnorm_post=False"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &

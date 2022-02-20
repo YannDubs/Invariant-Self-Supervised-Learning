@@ -30,6 +30,9 @@ checkpoint@checkpoint_repr=bestTrainLoss
 optimizer@optimizer_issl=AdamW
 scheduler@scheduler_issl=warm_unifmultistep
 optimizer_issl.kwargs.lr=2e-3
+representor.loss.beta=3e-6
+optimizer_issl.kwargs.weight_decay=1e-6
+representor=slfdstl
 timeout=$time
 "
 
@@ -39,20 +42,20 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=5
-hydra.sweeper.n_jobs=5
+hydra.sweeper.n_trials=7
+hydra.sweeper.n_jobs=7
 seed=3
 trainer.max_epochs=1000
-representor.loss.beta=3e-6,5e-6
 decodability.kwargs.beta_pM_unif=1.7
-regularizer=huber
-optimizer_issl.kwargs.weight_decay=1e-6,3e-6
-decodability.kwargs.ema_weight_prior=0.5,0.8,null
-representor=slfdstl
+regularizer=huber,none
+decodability.kwargs.ema_weight_prior=0.9,null
+decodability.kwargs.projector_kwargs.bottleneck_size=100,200
+decodability.kwargs.out_dim=20000,30000,50000,70000
+hydra.sweeper.study_name=v11
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "decodability.kwargs.projector_kwargs.bottleneck_size=200 decodability.kwargs.out_dim=10000,20000 hydra.sweeper.study_name=v10" "decodability.kwargs.projector_kwargs.bottleneck_size=100 decodability.kwargs.out_dim=10000,20000 hydra.sweeper.study_name=v9"  "decodability.kwargs.projector_kwargs.bottleneck_size=100 decodability.kwargs.out_dim=30000,50000 hydra.sweeper.study_name=v8" "decodability.kwargs.projector_kwargs.bottleneck_size=null decodability.kwargs.out_dim=10000 hydra.sweeper.study_name=v7"
+  for kwargs_dep in  ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m &
