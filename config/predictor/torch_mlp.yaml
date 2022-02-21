@@ -1,0 +1,8 @@
+is_sklearn: False
+name: torch_mlp
+kwargs:
+  architecture: mlp
+  arch_kwargs:
+    hid_dim: 1024
+    out_shape: ${data.target_shape}
+    # in shape automatic

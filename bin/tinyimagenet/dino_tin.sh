@@ -16,13 +16,14 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 representor=slfdstl_dino
+data_repr.kwargs.batch_size=256
 timeout=$time
 "
 
 kwargs_multi="
 seed=1,2,3
 trainer.max_epochs=500
-" # RUNNING STANFORD
+"
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

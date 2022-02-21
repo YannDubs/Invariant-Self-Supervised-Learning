@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+data: data_repr_01_test
+predictor: torch_mlp
+epochs_mult_factor: 3 # 100 -> 300 epochs because 10x smaller data

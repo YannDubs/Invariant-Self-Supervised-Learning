@@ -844,7 +844,9 @@ if __name__ == "__main__":
 
     try:
         main_except()
-    except Exception as e:
+    except:
         # exit gracefully, so wandb logs the problem
         print(traceback.print_exc(), file=sys.stderr)
         exit(1)
+    finally:
+        wandb.finish()

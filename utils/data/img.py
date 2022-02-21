@@ -5,6 +5,9 @@ import copy
 import logging
 import os
 from collections.abc import Callable, Sequence
+import time
+from functools import partial
+from multiprocessing import Pool
 from os import path
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -45,14 +48,14 @@ from torchvision.transforms import (
 )
 from tqdm import tqdm
 
-from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy, int_or_ratio
+from issl.helpers import Normalizer, check_import, file_cache, tmp_seed, to_numpy, int_or_ratio
 from .augmentations import get_simclr_augmentations
 from .base import ISSLDataModule, ISSLDataset
 from .helpers import (
     Caltech101BalancingWeights,
     ImgAugmentor,
     Pets37BalancingWeights,
-    download_url,
+    _get_img_pool, download_url,
     image_loader,
     np_img_resize,
     unzip,
@@ -256,11 +259,15 @@ class ISSLImgDataset(ISSLDataset):
 
     def cache_targets_(self):
         """Cache the targets as numpy array."""
+
+        # NOTE : this should be overriden if targets already precomputed, because slow for large datasets
+        # eg Imagenet
+        logger.info("Caching targets.")
         self.cached_targets = np.stack(
             [to_numpy(self.get_img_target(i)[1]) for i in range(self._tmp_len)]
         )
 
-    def cache_data_(self, idcs : Sequence[int]=None):
+    def cache_data_(self, idcs : Sequence[int]=None, num_workers : int=0):
         """Cache the images as list of PIL."""
         all_idcs = np.arange(self._tmp_len, dtype=object)
         if idcs is not None:
@@ -268,8 +275,15 @@ class ISSLImgDataset(ISSLDataset):
             mask[to_numpy(idcs)] = False
             all_idcs[mask] = None
 
-        cached_data = [self.get_img_target(i)[0] if i is not None else None
-                       for i in all_idcs ]
+        # pool.map doesn't allow local functions
+        get_img = partial(_get_img_pool, loader=self.get_img_target)
+
+        if num_workers > 0:
+            with Pool(num_workers) as pool:
+                cached_data = pool.map(get_img, all_idcs)
+        else:
+            cached_data = [get_img(i) for i in all_idcs ]
+
         assert _is_pil_image(next(img for img in cached_data if img is not None)) # all PIL
         self.del_cached_data_()  # delete previous cached data before assigning
         self.cached_data = cached_data
@@ -627,6 +641,7 @@ class ISSLImgDataModule(ISSLDataModule):
 
     def prepare_data(self) -> None:
         for split in self.Dataset.get_available_splits():
+            logger.info(f"Preparing data {split}.")
             self.Dataset(
                 self.data_dir, curr_split=split, download=True, **self.dataset_kwargs
             )
@@ -667,6 +682,9 @@ class MnistDataset(ISSLImgDataset, MNIST):
     def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = MNIST.__getitem__(self, index)
         return img, target
+
+    def cache_targets_(self):
+        self.cached_targets = to_numpy(self.targets)
 
     @classmethod
     @property
@@ -713,6 +731,9 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
         img, target = CIFAR10.__getitem__(self, index)
         return img, target
 
+    def cache_targets_(self):
+        self.cached_targets = to_numpy(self.targets)
+
     @classmethod
     @property
     def dataset_name(cls) -> str:
@@ -747,6 +768,9 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
         shapes["input"] = shapes.get("input", (3, 32, 32))
         shapes["target"] = (100,)
         return shapes
+
+    def cache_targets_(self):
+        self.cached_targets = to_numpy(self.targets)
 
     def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = CIFAR100.__getitem__(self, index)
@@ -791,6 +815,9 @@ class STL10Dataset(ISSLImgDataset, STL10):
         img, target = STL10.__getitem__(self, index)
         return img, target
 
+    def cache_targets_(self):
+        self.cached_targets = to_numpy(self.labels)
+
     @classmethod
     @property
     def dataset_name(cls) -> str:
@@ -833,10 +860,12 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
         *args,
         curr_split: str = "train",
         base_resize: str = "upscale_crop_eval",
+        is_save_folder_structure: bool = True,  # avoid recomputing folder structure everytime
         download=None,  # for compatibility
         **kwargs,
     ) -> None:
 
+        self.is_save_folder_structure = is_save_folder_structure
         if os.path.isdir(path.join(root, "imagenet256")):
             # use 256 if already resized
             data_dir = path.join(root, "imagenet256")
@@ -859,6 +888,19 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
             base_resize=base_resize,
             **kwargs,
         )
+
+    def cache_targets_(self):
+        self.cached_targets = np.array(self.targets)
+
+    @file_cache(filename="cached_classes.json")
+    def find_classes(self, directory: str, *args, **kwargs) -> tuple[list[str], dict[str, int]]:
+        classes = super().find_classes(directory, *args, **kwargs)
+        return classes
+
+    @file_cache(filename="cached_structure.json")
+    def make_dataset(self, directory: str, *args, **kwargs) -> list[tuple[str, int]]:
+        dataset = super().make_dataset(directory, *args, **kwargs)
+        return dataset
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -893,7 +935,18 @@ class ImagenetDataModule(ISSLImgDataModule):
         return ImageNetDataset
 
 ### Tensorflow Datasets Modules ###
-class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
+class CachedImageFolder(ImageFolder):
+    @file_cache(filename="cached_classes.json")
+    def find_classes(self, directory, *args, **kwargs):
+        classes = super().find_classes(directory, *args, **kwargs)
+        return classes
+
+    @file_cache(filename="cached_structure.json")
+    def make_dataset(self, directory, *args, **kwargs):
+        dataset = super().make_dataset(directory, *args, **kwargs)
+        return dataset
+
+class TensorflowBaseDataset(ISSLImgDataset, CachedImageFolder):
     """Base class for tensorflow-datasets.
 
     Notes
@@ -1010,12 +1063,15 @@ class TensorflowBaseDataset(ISSLImgDataset, ImageFolder):
         utils.helpers.remove_rf(Path(metadata.data_dir))
 
     def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
-        img, target = ImageFolder.__getitem__(self, index)
+        img, target = CachedImageFolder.__getitem__(self, index)
         return img, target
 
     @property
     def _tmp_len(self) -> int:
-        return ImageFolder.__len__(self)
+        return CachedImageFolder.__len__(self)
+
+    def cache_targets_(self):
+        self.cached_targets = np.array(self.targets)
 
     def to_tfds_split(self, split: str) -> str:
         """Change from a split to a tfds split."""
@@ -1189,6 +1245,7 @@ class Caltech101DataModule(ISSLImgDataModule):
 
 
 ### Other Datasets ###
+
 class ExternalImgDataset(ISSLImgDataset):
     """Base class for external datasets that are neither torchvision nor tensorflow. Images will be
     saved as jpeg.
@@ -1234,7 +1291,7 @@ class ExternalImgDataset(ISSLImgDataset):
         self.load_data_(curr_split)
         self.length = 0
         for ext in IMG_EXTENSIONS:
-            self.length += len(list(self.get_dir(curr_split).glob(f"**/*.{ext}")))
+            self.length += len(list(self.get_dir(curr_split).glob(f"**/*{ext}")))
 
         super().__init__(*args, curr_split=curr_split, **kwargs)
 
@@ -1337,6 +1394,7 @@ class ExternalImgDataset(ISSLImgDataset):
         ...
 
 
+
 class TinyImagenetDataset(ExternalImgDataset):
     """Tiny Imagenet."""
 
@@ -1408,7 +1466,10 @@ class TinyImagenetDataset(ExternalImgDataset):
         return img, target
 
     def load_data_(self, curr_split: str) -> None:
-        self.loader = ImageFolder(self.get_dir(curr_split))
+        self.loader = CachedImageFolder(self.get_dir(curr_split))
+
+    def cache_targets_(self):
+        self.cached_targets = np.array(self.loader.targets)
 
     def download_extract(self) -> None:
         super().download_extract()

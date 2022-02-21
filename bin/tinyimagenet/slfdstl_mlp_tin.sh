@@ -17,7 +17,7 @@ time=10080
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
-representor=slfdstl
+representor=slfdstl_mlp
 data_repr.kwargs.batch_size=256
 representor.loss.beta=3e-6
 decodability.kwargs.beta_pM_unif=1.7

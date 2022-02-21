@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import json
 import math
 import numbers
 import operator
+from pathlib import Path
 import random
 import sys
 import warnings
 from argparse import Namespace
 from collections.abc import MutableMapping, MutableSet, Sequence
-from functools import reduce
+from functools import reduce, wraps
 from queue import Queue
 from typing import Any, Optional, Union
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +24,6 @@ from matplotlib.cbook import MatplotlibDeprecationWarning
 from torch.optim.lr_scheduler import ReduceLROnPlateau, _LRScheduler
 from torchvision import transforms as transform_lib
 
-import pytorch_lightning as pl
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -31,6 +33,8 @@ try:
     from pl_bolts.optimizers import LinearWarmupCosineAnnealingLR
 except:
     pass
+
+logger = logging.getLogger(__name__)
 
 def is_pow_of_k(n, k):
     """Check if `n` is a power of k. Can be wrong for huge n."""
@@ -208,6 +212,23 @@ def tmp_seed(seed: Optional[int], is_cuda: bool = torch.cuda.is_available()):
             random.setstate(random_state)
             if is_cuda:
                 torch.cuda.set_rng_state(torch_cuda_state)
+
+def file_cache(filename):
+    """Decorator to cache the output of a function to disk."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(self, directory, *args, **kwargs):
+            filepath = Path(directory) / filename
+            if filepath.is_file():
+                out = json.loads(filepath.read_text())
+            else:
+                logger.info(f"Precomputing cache at {filepath}")
+                out = f(self, directory, *args, **kwargs)
+                filepath.write_text(json.dumps(out))
+            return out
+        return decorated
+    return decorator
+
 
 # taken from https://github.com/rwightman/pytorch-image-models/blob/d5ed58d623be27aada78035d2a19e2854f8b6437/timm/models/layers/weight_init.py
 def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='truncated_normal'):

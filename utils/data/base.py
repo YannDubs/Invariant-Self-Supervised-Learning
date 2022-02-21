@@ -223,7 +223,7 @@ class ISSLDataset(abc.ABC):
         return shapes["target"], shapes[self.aux_target]
 
     @abc.abstractmethod
-    def cache_data_(self, idcs=None):
+    def cache_data_(self, idcs : Sequence[int]=None, num_workers : int=0):
         """Caches the data for given idcs. If `None` caches all."""
         ...
 
@@ -411,6 +411,7 @@ class ISSLDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         """Prepare the datasets for the current stage."""
+        logger.info("Setting up data")
 
         if stage == "fit" or stage is None:
             if self.is_train_on_test :
@@ -428,18 +429,19 @@ class ISSLDataModule(LightningDataModule):
                 self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)
 
             if self.is_data_in_memory:
-                self.val_dataset.cache_data_()
-                logger.info(f"Cached the data for split=val.")
+                logger.info(f"Caching the data for split=val.")
+                self.val_dataset.cache_data_(num_workers=self.num_workers)
 
-                self.train_dataset.cache_data_()
-                logger.info(f"Cached the data for split=train.")
+                logger.info(f"Caching the data for split=train.")
+                self.train_dataset.cache_data_(num_workers=self.num_workers)
+
 
 
         if stage == "test" or stage is None:
             self.test_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
 
             if self.is_data_in_memory:
-                self.test_dataset.cache_data_()
+                self.test_dataset.cache_data_(num_workers=self.num_workers)
                 logger.info(f"Cached the data for split=test.")
 
     def train_dataloader(

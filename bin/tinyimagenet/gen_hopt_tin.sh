@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="gen_hopt_tin_final" # should add final
+experiment="gen_hopt_tin_final"
 notes="
 **Goal**: hyperparameter tuning for generative on tinyimagenet.
 "
@@ -27,9 +27,11 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=1,2,3
+seed=1
 trainer.max_epochs=300
 "
+#,2,3
+# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-21_15-26-53
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""

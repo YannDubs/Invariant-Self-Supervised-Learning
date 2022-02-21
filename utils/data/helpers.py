@@ -68,12 +68,12 @@ class CachedSubset(Subset):
         if is_cache_data:
             self.cache_data_()
 
-    def cache_data_(self, idcs=None):
+    def cache_data_(self, idcs=None, **kwargs):
         all_idcs = to_numpy(self.indices)
         if idcs is not None:
             all_idcs = all_idcs[idcs]
 
-        self.dataset.cache_data_(idcs=all_idcs)
+        self.dataset.cache_data_(idcs=all_idcs, **kwargs)
 
 class BalancedSubset(CachedSubset):
     """Split the dataset into a subset with possibility of stratifying.
@@ -202,6 +202,9 @@ def unzip(filename: Union[str, Path], is_rm: bool = True) -> None:
         if is_rm:
             filename.unlink()
 
+
+def _get_img_pool(i, loader):
+    return loader(i)[0] if i is not None else None
 
 # balancing weights can be computed by
 # name="pets37"
