@@ -1,6 +1,7 @@
 defaults:
   - base
 
+name: bnlinear
 kwargs:
   architecture: linear
   arch_kwargs:

@@ -342,14 +342,14 @@ class RepresentationUMAP(PlottingCallback):
             logger.info(f"Plotting only only len(idcs)={len(idcs_y)}<{self.n_samples} for UMAP.")
             self.n_samples = len(idcs_y)
         idcs = np.random.choice(idcs_y, size=self.n_samples, replace=False)
-        Xy = [(dataset[i][0].cpu(),dataset[i][1][0]) for i in idcs]
-        X,y = cont_tuple_to_tuple_cont(Xy)
+        XY = [(dataset[i][0].cpu(),dataset[i][1][0]) for i in idcs]
+        X,Y = cont_tuple_to_tuple_cont(XY)
         self.X = torch.stack(X)
 
         if hasattr(dataset, "idx_to_class"):
-            self.y = [dataset.idx_to_class[y] for y in y]
+            self.y = [dataset.idx_to_class[y] for y in Y]
         else:
-            self.y = y
+            self.y = Y
 
     def get_UMAP_embeddings(self, X, sup=None):
         return {f"UMAP K={k}, D={d} ": umap.UMAP(n_neighbors=k, min_dist=d).fit_transform(X, y=sup)

@@ -247,6 +247,14 @@ def begin(cfg: Container) -> None:
     cfg.paths.work = str(Path.cwd())
     cfg.other.git_hash = GIT_HASH
 
+    try:
+        # if continuing from single job you shouldn't append run to the end
+        continue_job = cfg.continue_job
+        if not  "_" in cfg.other.hydra_job_id:
+            cfg.job_id = "_".join(str(cfg.job_id).split("_")[:-1])
+    except:
+        pass
+
     logger.info(f"Workdir : {cfg.paths.work}.")
     logger.info(f"Job id : {cfg.job_id}.")
 

@@ -31,7 +31,7 @@ optimizer@optimizer_issl=AdamW
 scheduler@scheduler_issl=warm_unifmultistep
 optimizer_issl.kwargs.lr=2e-3
 representor.loss.beta=3e-6
-representor=slfdstl
+representor=slfdstl_assign
 timeout=$time
 "
 
@@ -41,31 +41,19 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/data_repr/accuracy_score]
-hydra.sweeper.n_trials=5
-hydra.sweeper.n_jobs=5
+hydra.sweeper.n_trials=15
+hydra.sweeper.n_jobs=15
 seed=1
 trainer.max_epochs=500
-decodability.kwargs.beta_pM_unif=1.7
-regularizer=huber
-optimizer_issl.kwargs.weight_decay=2e-6,3e-6
+decodability.kwargs.beta_pM_unif=1.7,1.3
+regularizer=huber,none
+optimizer_issl.kwargs.weight_decay=1e-6,3e-6
 decodability.kwargs.ema_weight_prior=null,0.7,0.5
 decodability.kwargs.projector_kwargs.bottleneck_size=256
-decodability.kwargs.beta_HMlZ=1.7,1.0
-decodability.kwargs.out_dim=8192,16384
-hydra.sweeper.study_name=v5
-"
-
-
-kwargs_multi="
-seed=1
-trainer.max_epochs=500
-decodability.kwargs.beta_pM_unif=1.7
-regularizer=none
-optimizer_issl.kwargs.weight_decay=2e-6
-decodability.kwargs.ema_weight_prior=0.7
-decodability.kwargs.projector_kwargs.bottleneck_size=256
-decodability.kwargs.beta_HMlZ=1.3
+decodability.kwargs.beta_HMlZ=1.7,1.0,1.3
+decodability.kwargs.temperature=1,0.5
 decodability.kwargs.out_dim=16384
+hydra.sweeper.study_name=v0
 "
 
 if [ "$is_plot_only" = false ] ; then

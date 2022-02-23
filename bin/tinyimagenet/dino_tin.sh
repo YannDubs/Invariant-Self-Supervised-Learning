@@ -24,6 +24,8 @@ kwargs_multi="
 seed=1,2,3
 trainer.max_epochs=500
 "
+# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-22_16-06-07
+# need to continue seed 1
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

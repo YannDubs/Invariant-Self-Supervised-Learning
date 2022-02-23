@@ -25,9 +25,10 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=1
+decodability.kwargs.is_self_contrastive=False
 "
 #seed=1,2,3
-# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-21_15-26-55
+# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-22_16-46-10
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

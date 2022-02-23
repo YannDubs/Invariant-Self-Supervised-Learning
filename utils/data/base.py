@@ -441,8 +441,9 @@ class ISSLDataModule(LightningDataModule):
             self.test_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
 
             if self.is_data_in_memory:
+                logger.info(f"Caching the data for split=test.")
                 self.test_dataset.cache_data_(num_workers=self.num_workers)
-                logger.info(f"Cached the data for split=test.")
+
 
     def train_dataloader(
         self,

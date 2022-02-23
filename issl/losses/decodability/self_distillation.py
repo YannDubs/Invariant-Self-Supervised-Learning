@@ -19,6 +19,7 @@ import  numpy as np
 
 __all__ = [
     "PriorSelfDistillationISSL",
+    "AssignSelfDistillationISSL",
     "SwavSelfDistillationISSL",
     "SimSiamSelfDistillationISSL",
     "DinoSelfDistillationISSL"
@@ -150,7 +151,8 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
     def __init__(
         self,
         *args,
-        beta_pM_unif: float = None,
+        beta_pM_unif: float = 1.7,
+        beta_HMlZ: float=1.0,
         ema_weight_prior: Optional[float] = None,
         is_batchnorm_pre: bool=True,
         **kwargs,
@@ -158,8 +160,11 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
 
         super().__init__(*args,  **kwargs)
         self.beta_pM_unif = beta_pM_unif
+        self.beta_HMlZ = beta_HMlZ
         self.ema_weight_prior = ema_weight_prior
         self.is_batchnorm_pre = is_batchnorm_pre
+
+        assert beta_HMlZ >= 1, "Using KL -> CE trick so need beta >= 1"
 
         # use same arch as projector
         Predictor = get_Architecture(**self.projector_kwargs)
@@ -230,12 +235,146 @@ class PriorSelfDistillationISSL(BaseSelfDistillationISSL):
         logs = dict(
             fit_pM_Unif=fit_pM_Unif,
             fit_pMlz_qMlz=fit_pMlz_qMlz.mean(),
-            H_Mlz=Categorical(probs=p_Mlz).entropy().mean(),
             H_M=p_M.entropy(),
         )
         other = dict()
 
+        if self.beta_HMlZ > 1:
+            delta_HMlZ = self.beta_HMlZ - 1 # the first beta is due to KL -> CE
+            H_Mlz = Categorical(logits=M_a).entropy().mean()
+            loss = loss + delta_HMlZ * H_Mlz
+            logs["H_Mlz"] = H_Mlz
+        else:
+            logs["H_Mlz"] = Categorical(probs=p_Mlz.detach()).entropy().mean()
+
         return loss, logs, other
+
+
+class AssignSelfDistillationISSL(BaseSelfDistillationISSL):
+    __doc__ = BaseSelfDistillationISSL.__doc__ + add_doc_prior
+
+    def __init__(
+        self,
+        *args,
+        beta_pM_unif: float = 1.7,
+        beta_HMlZ: float=1.7,
+        temperature: float=1.0,
+        temperature_assign:  Optional[float] = None,
+        ema_weight_prior: Optional[float] = None,
+        is_batchnorm_pre: bool=True,
+        **kwargs,
+    ) -> None:
+
+        super().__init__(*args,  **kwargs)
+        self.beta_pM_unif = beta_pM_unif
+        self.beta_HMlZ = beta_HMlZ
+        self.ema_weight_prior = ema_weight_prior
+        self.is_batchnorm_pre = is_batchnorm_pre
+        self.temperature = temperature
+        self.temperature_assign = temperature_assign or self.temperature / 2
+
+        # code ready for multi crops
+        self.crops_assign = 2
+        self.crops_pred = 2
+
+        assert beta_HMlZ >= 1, "Using KL -> CE trick so need beta >= 1"
+
+        # use same arch as projector
+        Predictor = get_Architecture(**self.projector_kwargs)
+        self.predictor = Predictor()
+
+        if self.is_batchnorm_pre:
+            self.predictor = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.predictor)
+            self.projector = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.projector)
+
+        if self.ema_weight_prior is not None:
+            # moving average should depend on predictor or projector => do not share
+            uniform = torch.ones(self.out_dim) / self.out_dim
+            self.running_means = nn.ModuleList([RunningMean(uniform,
+                                                            alpha_use=self.ema_weight_prior)
+                                                for _ in range(self.crops_assign)])
+
+        self.reset_parameters()
+
+    def loss(
+        self, z: torch.Tensor, z_a: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict, dict]:
+
+        z_proj = torch.cat([z, z_a])
+        z_pred = torch.cat([z, z_a])
+
+        # shape: [batch_size, M_shape]. Make sure not half prec
+        logits_assign = self.projector(z_proj).float() / self.temperature_assign
+        logits_predict = self.predictor(z_pred).float() / self.temperature
+
+        all_p_Mlz = F.softmax(logits_assign, dim=-1).chunk(self.crops_assign)
+        all_log_p_Mlz = F.log_softmax(logits_assign, dim=-1).chunk(self.crops_assign)
+        all_log_q_Mlz = F.log_softmax(logits_predict, dim=-1).chunk(self.crops_pred)
+
+        CE_pMlz_qMlza = 0
+        H_M = 0
+        CE_pMlz_pMlza = 0
+        n_CE_pq = 0
+        n_CE_pp = 0
+        for i_p, p_Mlz in enumerate(all_p_Mlz):
+
+            ##### Ensure maximality #####
+            # current marginal estimate p(M). batch shape: [] ; event shape: []
+            p_M = p_Mlz.mean(0, keepdim=True)
+
+            if self.ema_weight_prior is not None:
+                p_M = self.running_means[i_p](p_M)
+
+            # D[\hat{p}(M) || Unif(\calM)]. shape: []
+            # for unif prior same as maximizing entropy.
+            H_M = H_M + Categorical(probs=p_M).entropy()
+            #############################
+
+            ##### Ensure invariance and determinism of assignement #####
+            if self.beta_HMlZ > 1:
+                for i_log_p, log_p_Mlza in enumerate(all_log_p_Mlz):
+                    if i_p == i_log_p:
+                        continue
+                    CE_pMlz_pMlza = CE_pMlz_pMlza - (p_Mlz * log_p_Mlza).sum(-1)
+                    n_CE_pp += 1
+            else:
+                n_CE_pp = 1
+            #########################
+
+            for i_q, log_q_Mlza in enumerate(all_log_q_Mlz):
+                if i_p == i_q:
+                    continue # skip if same view
+
+                # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
+                # p(M|Z) you want to min H[M|Z]. So min KL + H[M|Z] = - E_{p(M|Z)}[log q(M|Z)]
+                CE_pMlz_qMlza = CE_pMlz_qMlza - (p_Mlz * log_q_Mlza).sum(-1)
+                n_CE_pq += 1
+
+        CE_pMlz_qMlza /= n_CE_pq
+        H_M /= len(all_p_Mlz)
+        CE_pMlz_pMlza /= n_CE_pp
+
+        fit_pM_Unif = - H_M # want to max entropy
+        if self.ema_weight_prior is not None:
+            # try to balance the scaling in gradients due to running mean
+            fit_pM_Unif = fit_pM_Unif / self.ema_weight_prior
+
+        # shape: [batch_size]
+        delta_H_MlZ = self.beta_HMlZ - 1  # the first beta is due to KL -> CE
+        loss = CE_pMlz_qMlza + self.beta_pM_unif * fit_pM_Unif + delta_H_MlZ * CE_pMlz_pMlza
+
+        logs = dict(
+            fit_pM_Unif=fit_pM_Unif,
+            fit_pMlz_qMlz=CE_pMlz_qMlza.mean(),
+            H_M=H_M,
+            H_Mlz=Categorical(probs=torch.cat(all_p_Mlz, dim=0).detach()).entropy().mean()
+        )
+        other = dict()
+
+        return loss, logs, other
+
+    def asymmetric_loss(self, z : torch.Tensor, z_a: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
+        pass # not using
 
 
 # do SSL by performing online clustering with hard constraint of equiprobability => learn a bank of M(X)

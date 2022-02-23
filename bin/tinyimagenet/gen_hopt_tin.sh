@@ -31,7 +31,7 @@ seed=1
 trainer.max_epochs=300
 "
 #,2,3
-# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-21_15-26-53
+# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-22_15-56-50/.submitit/3568562/3568562_0_log.out
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""

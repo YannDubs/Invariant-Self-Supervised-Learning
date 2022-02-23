@@ -684,7 +684,7 @@ class MnistDataset(ISSLImgDataset, MNIST):
         return img, target
 
     def cache_targets_(self):
-        self.cached_targets = to_numpy(self.targets)
+        self.cached_targets = to_numpy(self.targets).copy()
 
     @classmethod
     @property
@@ -732,7 +732,7 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
         return img, target
 
     def cache_targets_(self):
-        self.cached_targets = to_numpy(self.targets)
+        self.cached_targets = to_numpy(self.targets).copy()
 
     @classmethod
     @property
@@ -770,7 +770,7 @@ class Cifar100Dataset(ISSLImgDataset, CIFAR100):
         return shapes
 
     def cache_targets_(self):
-        self.cached_targets = to_numpy(self.targets)
+        self.cached_targets = to_numpy(self.targets).copy()
 
     def get_img_target(self, index: int) -> tuple[Any, int]:
         img, target = CIFAR100.__getitem__(self, index)
@@ -816,7 +816,7 @@ class STL10Dataset(ISSLImgDataset, STL10):
         return img, target
 
     def cache_targets_(self):
-        self.cached_targets = to_numpy(self.labels)
+        self.cached_targets = to_numpy(self.labels).copy()
 
     @classmethod
     @property
@@ -890,7 +890,7 @@ class ImageNetDataset(ISSLImgDataset, ImageNet):
         )
 
     def cache_targets_(self):
-        self.cached_targets = np.array(self.targets)
+        self.cached_targets = np.array(self.targets).copy()
 
     @file_cache(filename="cached_classes.json")
     def find_classes(self, directory: str, *args, **kwargs) -> tuple[list[str], dict[str, int]]:
@@ -1071,7 +1071,7 @@ class TensorflowBaseDataset(ISSLImgDataset, CachedImageFolder):
         return CachedImageFolder.__len__(self)
 
     def cache_targets_(self):
-        self.cached_targets = np.array(self.targets)
+        self.cached_targets = np.array(self.targets).copy()
 
     def to_tfds_split(self, split: str) -> str:
         """Change from a split to a tfds split."""
@@ -1469,7 +1469,7 @@ class TinyImagenetDataset(ExternalImgDataset):
         self.loader = CachedImageFolder(self.get_dir(curr_split))
 
     def cache_targets_(self):
-        self.cached_targets = np.array(self.loader.targets)
+        self.cached_targets = np.array(self.loader.targets).copy()
 
     def download_extract(self) -> None:
         super().download_extract()
