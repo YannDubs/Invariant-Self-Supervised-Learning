@@ -2,7 +2,7 @@
 defaults:
   - base@representor
   - override /regularizer: none
-  - override /decodability: swav_self_distillation
+  - override /decodability: swav
 
 representor:
   name: slfdstl_swav

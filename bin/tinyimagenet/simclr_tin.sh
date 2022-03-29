@@ -3,7 +3,7 @@
 
 experiment="simclr_tin_final"
 notes="
-**Goal**: ensure that you can replicate the whitening paper for tinyimagenet with simclr.
+**Goal**: tinyimagenet with simclr.
 "
 
 # parses special mode for running the script
@@ -17,20 +17,18 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 representor=cntr_simclr
-decodability.kwargs.temperature=0.07
 timeout=$time
 "
 
 kwargs_multi="
 seed=1,2,3
-trainer.max_epochs=500
 "
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 
     sleep 10
 

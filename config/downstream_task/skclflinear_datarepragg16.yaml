@@ -1,5 +1,0 @@
-defaults:
-  - base
-
-data: data_repr_agg16
-predictor: sk_clf_linear

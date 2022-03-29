@@ -2,13 +2,9 @@
 job_id: ${hydra:job.num}_${hydra:job.id} # job num is number in sweep. ID is unique ID like SLURM_JOB_ID
 
 # avoid unnecessary logging : remove progressbar
-callbacks: # can use any callback name of issl.callbacks, pl.callbacks
-  RichProgressBar:
-    is_use : false
 trainer:
   enable_progress_bar: false
-  log_every_n_steps: 1000
-  flush_logs_every_n_steps: 1000
+  log_every_n_steps: 300
 
 hydra:
   launcher:

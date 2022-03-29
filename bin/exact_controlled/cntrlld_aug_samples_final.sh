@@ -50,13 +50,13 @@ python utils/aggregate.py \
        "+col_val_subset.reg=[l2Mx]" \
        "+col_val_subset.repr=[exact,exact_100A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
        patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
+       +kwargs.pretty_renamer.Exact_100A="Finer" \
+       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Rand" \
        +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+       +kwargs.pretty_renamer.Exact_Stda="Std" \
        +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
-       +kwargs.pretty_renamer.Exact="Minimal: 10" \
+       +kwargs.pretty_renamer.Exact_Coarsera="Coarser" \
+       +kwargs.pretty_renamer.Exact="Exact" \
        +kwargs.pretty_renamer.Repr="Augmentation" \
        +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
        +plot_scatter_lines.x="n_samples" \
@@ -65,120 +65,122 @@ python utils/aggregate.py \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=True \
+       +plot_scatter_lines.legend_out=False \
        +plot_scatter_lines.is_no_legend_title=False \
+       +plot_scatter_lines.ylabel="" \
        "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
 
 
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.reg=[none]" \
-       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
-       patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
-       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
-       +kwargs.pretty_renamer.Exact="Minimal: 10" \
-       +kwargs.pretty_renamer.Repr="Augmentation" \
-       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
-       +plot_scatter_lines.x="n_samples" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
-       +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=True \
-       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
+#
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       "+col_val_subset.reg=[none]" \
+#       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+#       patterns.representor=null \
+#       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
+#       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
+#       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
+#       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+#       +kwargs.pretty_renamer.Exact_Noa="None" \
+#       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+#       +kwargs.pretty_renamer.Exact="Minimal: 10" \
+#       +kwargs.pretty_renamer.Repr="Augmentation" \
+#       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
+#       +plot_scatter_lines.x="n_samples" \
+#       +plot_scatter_lines.y="test/pred/accuracy_score" \
+#       +plot_scatter_lines.filename="lines_acc_vs_samples" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.style="repr" \
+#       +plot_scatter_lines.logbase_x=10 \
+#       +plot_scatter_lines.legend_out=False \
+#       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
 
+#  python utils/aggregate.py \
+#       experiment=$experiment  \
+#       "+col_val_subset.reg=[none]" \
+#       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+#       patterns.representor=null \
+#       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
+#       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
+#       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
+#       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+#       +kwargs.pretty_renamer.Exact_Noa="None" \
+#       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+#       +kwargs.pretty_renamer.Exact="Minimal: 10" \
+#       +kwargs.pretty_renamer.Repr="Augmentation" \
+#       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
+#       +plot_scatter_lines.x="n_samples" \
+#       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+#       +plot_scatter_lines.filename="lines_acc_vs_samples_agg" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.style="repr" \
+#       +plot_scatter_lines.logbase_x=10 \
+#       +plot_scatter_lines.legend_out=False \
+#       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
 
-  python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.reg=[none]" \
-       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
-       patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
-       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
-       +kwargs.pretty_renamer.Exact="Minimal: 10" \
-       +kwargs.pretty_renamer.Repr="Augmentation" \
-       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
-       +plot_scatter_lines.x="n_samples" \
-       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_agg" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
-       +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=True \
-       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.reg=[l2Mx]" \
-       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
-       patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
-       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
-       +kwargs.pretty_renamer.Exact="Minimal: 10" \
-       +kwargs.pretty_renamer.Repr="Augmentation" \
-       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
-       +plot_scatter_lines.x="n_samples" \
-       +plot_scatter_lines.y="test/pred/accuracy_score" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
-       +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=True \
-       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
-
-
-  python utils/aggregate.py \
-       experiment=$experiment  \
-       "+col_val_subset.reg=[l2Mx]" \
-       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
-       patterns.representor=null \
-       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
-       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
-       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
-       +kwargs.pretty_renamer.Exact_Stda="Standard" \
-       +kwargs.pretty_renamer.Exact_Noa="None" \
-       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
-       +kwargs.pretty_renamer.Exact="Minimal: 10" \
-       +kwargs.pretty_renamer.Repr="Augmentation" \
-       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
-       +plot_scatter_lines.x="n_samples" \
-       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
-       +plot_scatter_lines.filename="lines_acc_vs_samples_agg_reg" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.style="repr" \
-       +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=True \
-       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
-
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       "+col_val_subset.reg=[l2Mx]" \
+#       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+#       patterns.representor=null \
+#       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
+#       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
+#       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
+#       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+#       +kwargs.pretty_renamer.Exact_Noa="None" \
+#       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+#       +kwargs.pretty_renamer.Exact="Minimal: 10" \
+#       +kwargs.pretty_renamer.Repr="Augmentation" \
+#       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
+#       +plot_scatter_lines.x="n_samples" \
+#       +plot_scatter_lines.y="test/pred/accuracy_score" \
+#       +plot_scatter_lines.filename="lines_acc_vs_samples_reg" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.style="repr" \
+#       +plot_scatter_lines.logbase_x=10 \
+#       +plot_scatter_lines.legend_out=False \
+#       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
+#
+#  python utils/aggregate.py \
+#       experiment=$experiment  \
+#       "+col_val_subset.reg=[l2Mx]" \
+#       "+col_val_subset.repr=[exact,exact_100A,exact_1000A,exact_1000A_shuffle,exact_stdA,exact_noA,exact_coarserA]" \
+#       patterns.representor=null \
+#       +kwargs.pretty_renamer.Exact_100A="Finer: 100" \
+#       +kwargs.pretty_renamer.Exact_1000A_Shuffle="Different" \
+#       +kwargs.pretty_renamer.Exact_1000A="Finer: 1000" \
+#       +kwargs.pretty_renamer.Exact_Stda="Standard" \
+#       +kwargs.pretty_renamer.Exact_Noa="None" \
+#       +kwargs.pretty_renamer.Exact_Coarsera="Coarser: 2" \
+#       +kwargs.pretty_renamer.Exact="Minimal: 10" \
+#       +kwargs.pretty_renamer.Repr="Augmentation" \
+#       +collect_data.params_to_add.n_samples="data.kwargs.subset_train_size" \
+#       +plot_scatter_lines.x="n_samples" \
+#       +plot_scatter_lines.y="test/pred/accuracy_score_agg_min" \
+#       +plot_scatter_lines.filename="lines_acc_vs_samples_agg_reg" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.style="repr" \
+#       +plot_scatter_lines.logbase_x=10 \
+#       +plot_scatter_lines.legend_out=False \
+#       "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
 
 python utils/aggregate.py \
        experiment=$experiment  \

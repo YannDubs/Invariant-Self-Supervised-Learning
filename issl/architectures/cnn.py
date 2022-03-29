@@ -19,18 +19,9 @@ from issl.architectures.helpers import (
 )
 from issl.helpers import check_import, prod, weights_init
 
-# try:
-#     from pl_bolts.models.autoencoders.components import (
-#         ResNetDecoder,
-#         DecoderBlock,
-#         DecoderBottleneck,
-#     )
-# except ImportError:
-#     pass
-
 logger = logging.getLogger(__name__)
 
-__all__ = ["ResNet", "ResNetTranspose", "CNN", "CNNUnflatten"]
+__all__ = ["ResNet", "ResNetTranspose", "CNN", "CNNUnflatten", "ConvNext"]
 
 
 class ResNet(nn.Module):
@@ -59,13 +50,13 @@ class ResNet(nn.Module):
     norm_layer : nn.Module or {"identity","batch"}, optional
         Normalizing layer to use.
 
-    bottleneck : int, optional
-        Optional bottleneck. If given then the real output of the resnet will be `bottleneck`, but then this
-        will be followed by a a linear predictor to get to out_shape.
-
     is_no_linear : bool, optional
         Whether or not to remove the last linear layer. This is typical in self supervised learning but
         has the disadvantage that you cannot chose the dimensionality of Z.
+
+    is_channel_out_dim : bool, optional
+        Whether to change the dimension of the output using the channels before the pooling layer
+        rather than a linear mapping after the pooling.
     """
 
     def __init__(
@@ -74,9 +65,8 @@ class ResNet(nn.Module):
         out_shape: Sequence[int],
         base: str = "resnet18",
         is_pretrained: bool = False,
-        norm_layer: str = "batchnorm",
-        bottleneck: Optional[int] = None,
-        is_no_linear: bool= False
+        is_no_linear: bool= False,
+        is_channel_out_dim: bool=False
     ):
         super().__init__()
         kwargs = {}
@@ -84,57 +74,82 @@ class ResNet(nn.Module):
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
         self.out_dim = prod(self.out_shape)
         self.is_pretrained = is_pretrained
-        self.bottleneck = bottleneck
-        self.tmp_out_dim = self.out_dim if self.bottleneck is None else self.bottleneck
         self.is_no_linear = is_no_linear
+        self.is_channel_out_dim = is_channel_out_dim
 
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
-            kwargs["num_classes"] = self.tmp_out_dim
-            # TODO: one difference compared to standard implementation is that our output is linear (i.e. fc)
-            # while in standard implementation your return directly after avg pool. Issue with standard is that
-            # can't chose dimensionality of Z. Should check whether that gives worst performance
+            kwargs["num_classes"] = self.out_dim
 
         self.resnet = torchvision.models.__dict__[base](
             pretrained=self.is_pretrained,
-            norm_layer=get_Normalization(norm_layer, 2),
             **kwargs,
         )
 
-        if self.is_no_linear or self.is_pretrained:
-            # when pretrained has to remove last layer
-            assert self.tmp_out_dim == self.resnet.fc.in_features
-            self.resnet.fc = nn.Identity()
+        if self.is_channel_out_dim:
+            # TODO 512 only works for resnet18. Make it work for convnext and others!
+            conv1 = nn.Conv2d(512, self.out_dim, kernel_size=1, bias=False)
+            bn = torch.nn.BatchNorm2d(self.out_dim)
 
-        if self.in_shape[1] < 100:
+            nn.init.kaiming_normal_(conv1.weight, mode="fan_out", nonlinearity="relu")
+            nn.init.constant_(bn.weight, 1)
+            nn.init.constant_(bn.bias, 0)
+
+            resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
+
+            self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
+
+        if self.is_no_linear or self.is_pretrained or self.is_channel_out_dim:
+            # when pretrained has to remove last layer
+            self.rm_last_linear_()
+
+        self.update_conv_size_(self.in_shape)
+
+        self.reset_parameters()
+
+    def rm_last_linear_(self):
+        self.resnet.fc = nn.Identity()
+
+    def update_conv_size_(self, in_shape):
+        """Update network based on iamge size."""
+
+        if in_shape[1] < 100:
             # resnet for smaller images
             self.resnet.conv1 = nn.Conv2d(
                 in_shape[0], 64, kernel_size=3, stride=1, padding=1, bias=False
             )
+            weights_init(self.resnet.conv1)
 
-        if self.in_shape[1] < 50:
-            # following https://github.com/htdt/self-supervised/blob/d24f3c722ac4e945161a9cd8c830bf912403a8d7/model.py#L19
+        if in_shape[1] < 50:
+            # following https://github.com/htdt/self-supervised/blob/d24f3c722ac4e945161a9cd8c830bf912403a8d7/model
+            # .py#L19
             # this should only be removed for cifar
             self.resnet.maxpool = nn.Identity()
 
-        if self.bottleneck is None:
-            self.processor = nn.Identity()
-        else:
-            self.processor = nn.Linear(self.tmp_out_dim, self.out_dim)
-
-        self.reset_parameters()
-
     def forward(self, X):
         Y_pred = self.resnet(X)
-        Y_pred = self.processor(Y_pred)
         Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
         return Y_pred
 
     def reset_parameters(self):
         # resnet is already correctly initialized
-        if self.in_shape[1] < 100:
-            weights_init(self.resnet.conv1)
+        pass
 
+class ConvNext(ResNet):
+    def rm_last_linear_(self):
+        self.resnet.classifier[2] = nn.Identity()
+
+    def update_conv_size_(self, in_shape):
+        """Update network based on image size."""
+        if in_shape[1] < 100:
+            # convnext for smaller images (stride 4 -> 2)
+            conv1 = self.resnet.features[0][0]
+            self.resnet.features[0][0] = nn.Conv2d(
+                in_shape[0], conv1.out_channels,
+                kernel_size=conv1.kernel_size,
+                stride=2
+            )
+            weights_init(self.resnet.features[0][0])
 
 class Interpolate(nn.Module):
     """nn.Module wrapper for F.interpolate."""

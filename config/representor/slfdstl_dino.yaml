@@ -2,7 +2,7 @@
 defaults:
   - base@representor
   - override /regularizer: none
-  - override /decodability: dino_self_distillation
+  - override /decodability: dino
 
 representor:
   name: slfdstl_dino

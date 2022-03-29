@@ -6,4 +6,3 @@ is_switch_x_aux_trgt: False # whether to switch x and aux_trgt. Useful if want t
 
 loss:
   beta: 1e-1
-  beta_anneal: linear

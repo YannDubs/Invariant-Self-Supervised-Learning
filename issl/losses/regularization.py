@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import Sequence
+from functools import partial
 from typing import Any, Optional
 
 import einops
@@ -9,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from issl import get_marginalDist
-from issl.helpers import BatchRMSELoss, at_least_ndim, kl_divergence
+from issl.helpers import BatchRMSELoss, at_least_ndim, kl_divergence, rel_distance
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
@@ -31,12 +32,10 @@ class CoarseningRegularizer(nn.Module):
 
     Parameters
     ---------
-    loss : {"kl", "rmse", "cosine", "huber"} or callable, optional
+    loss : {"kl", "rmse", "cosine", "huber", "rel_l1"} or callable, optional
         What loss to use to bring enc(x) and enc(a) closer together. If `RMSE` or `cosine` will sample through the rep.
         If kl should be stochastic representation. Makes more sense to use a symmetric function and thus assume X ~ A.
 
-    is_distributions : bool, optional
-        Whether the loss should take in the distributions. Only used if the loss is callable.
     """
 
     def __init__(
@@ -56,6 +55,9 @@ class CoarseningRegularizer(nn.Module):
             self.is_distributions = False
         elif loss == "huber":
             self.loss_f = nn.SmoothL1Loss(reduction="none")
+            self.is_distributions = False
+        elif loss == "rel_l1":
+            self.loss_f = partial(rel_distance, p=1.0)
             self.is_distributions = False
         elif loss == "cosine":
             self.loss_f = lambda z, z_a: - F.cosine_similarity(
@@ -115,7 +117,6 @@ class CoarseningRegularizer(nn.Module):
         logs = dict()
         other = dict()
         return loss, logs, other
-
 
 class PriorRegularizer(nn.Module):
     """Regularizer of the mutual information I[Z,X] by using a  prior."""

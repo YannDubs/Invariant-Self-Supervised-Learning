@@ -7,3 +7,4 @@ kwargs:
   arch_kwargs:
     base: resnet18
     is_no_linear: False
+    is_channel_out_dim: False

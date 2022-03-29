@@ -1,0 +1,8 @@
+is_sklearn: False
+name: torch_mll # multi layer linear
+kwargs:
+  architecture: linear
+  arch_kwargs:
+    bottleneck_size: 512
+    out_shape: ${data.target_shape}
+    # in shape automatic

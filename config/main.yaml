@@ -12,7 +12,7 @@ defaults:
   # REPRESENTOR #
   - data@data_repr: mnist
   - architecture@encoder: resnet18
-  - architecture@online_evaluator: bnlinear
+  - architecture@online_evaluator: linear
   - checkpoint@checkpoint_repr: last
   - optimizer@optimizer_issl: Adam_lr3e-3_w0 # larger learning rate will decrease I[Z,X] usually, so can be seen as regularizer
   - scheduler@scheduler_issl: warm_unifmultistep
@@ -25,7 +25,7 @@ defaults:
 
   # downstream task #
   - checkpoint@checkpoint_pred: last # by default no validation set for predictors
-  - optimizer@optimizer_pred: SGD
+  - optimizer@dflt_optimizer_pred: SGD # can be modified in downstream task
   - scheduler@scheduler_pred: cosine_nowarm
 
   # OVERRIDES #
@@ -35,6 +35,7 @@ defaults:
 
 ########## GENERAL ##########
 experiment: ???
+job_num: ${hydra:job.num}
 job_id: ??? # unique identifier
 seed: 123
 timeout: 1440 # 24 hours
@@ -46,7 +47,9 @@ monitor_return: [] # normal return of the function. This is especially useful fo
 monitor_direction: [] # whether the monitor should be maximized or minimized. useful for hyperparameter tuning
 is_no_save: ${is_return} # if you are sure you don't want to save anything
 is_skip_pred: false # run predictor?
+is_sk_warm_start: False # whether to start from previous run for sklearn => quicker
 is_nlp_cluster: False # should the working directory be used as main
+is_rescale_lr: False # all lr will be given for bs 256 and then lienarly rescaled depending on bs. TODO: change to true (currently false for backward compatibility)
 
 paths: #! the best practice is not to modify those paths but to symlink them to the places you want
   relative_work: outputs/${now:%Y-%m-%d_%H-%M-%S}
@@ -63,7 +66,7 @@ paths: #! the best practice is not to modify those paths but to symlink them to 
   results: ${paths.base_dir}/results/${long_name}/jid_${job_id}
   pretrained:
     save: ${paths.base_dir}/pretrained/${long_name}/jid_${job_id} # directory for saving pretrained models
-    load: ${paths.base_dir}/pretrained/${long_name}/*  # directory for loading pretrained models if you use ** or * it will glob all matching files and take the latest
+    load: ${paths.base_dir}/pretrained/${long_name}/**  # directory for loading pretrained models if you use ** or * it will glob all matching files and take the latest
 
 other: # some meta information that can be useful for internal stuff (usually dirty workarounds or for logging)
   is_debug: False # using debug mode
@@ -102,10 +105,10 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
     kwargs:
       logging_interval : epoch
 
-  RichProgressBar:
-    is_use : true
+  TQDMProgressBar: # TODO RichProgressBar in lightning 1.6
+    is_use : ${trainer.enable_progress_bar }
     kwargs:
-      refresh_rate_per_second: 0.1
+      refresh_rate: ${trainer.log_every_n_steps}
 
   RichModelSummary:
     is_use: true
@@ -119,8 +122,7 @@ trainer:
   enable_progress_bar: True
   gradient_clip_val: 2 # null to disable
   gradient_clip_algorithm: "value" # "norm" to clip by norm (problem is if one val is inf, then all is 0)
-  log_every_n_steps: 200
-  flush_logs_every_n_steps: 200
+  log_every_n_steps: 100
   val_check_interval: 1.0 # less than 1 for subepoch validation.
   check_val_every_n_epoch: 25
   enable_checkpointing: True
@@ -148,7 +150,6 @@ data_repr:
 encoder:
   name: ???
   z_shape: 1024
-  is_relu_Z: False
   kwargs:
     in_shape: ${data.shape}
     out_shape: ${encoder.z_shape} # do not change that
@@ -186,7 +187,8 @@ scheduler_eval: {}
 ### RUNNING ###
 checkpoint_repr: {}
 # dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
-update_trainer_repr: {}
+update_trainer_repr:
+  max_epochs: 100
 
 ########## DOWNSTREAM TASK ##########
 downstream_task:
@@ -212,8 +214,10 @@ dflt_predictor:
   is_train: True
 
 ### OPTIMIZER ###
-optimizer_pred:
-  name: ${optimizer_pred.mode}_lr${format:${optimizer_pred.kwargs.lr},.1e}_w${format:${optimizer_pred.kwargs.weight_decay},.1e}
+optimizer_pred: {}
+
+dflt_optimizer_pred:
+  name: ${.mode}_lr${format:${.kwargs.lr},.1e}_w${format:${.kwargs.weight_decay},.1e}
   mode: ???
   kwargs:
     lr: ???

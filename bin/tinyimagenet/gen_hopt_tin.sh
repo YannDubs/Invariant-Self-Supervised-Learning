@@ -18,7 +18,7 @@ $base_kwargs_tin
 representor=gen
 data_repr.kwargs.batch_size=256
 optimizer_issl.kwargs.weight_decay=2e-6
-representor.loss.beta=2e-6
+representor.loss.beta=2e-4
 regularizer=huber
 decodability.kwargs.predecoder_kwargs.bottleneck_size=100
 decodability.kwargs.predecode_n_Mx=30000
@@ -27,11 +27,10 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=1
-trainer.max_epochs=300
+seed=1,2,3
+update_trainer_repr.max_epochs=300
 "
-#,2,3
-# /juice/scr/yanndubs/Invariant-Self-Supervised-Learning/outputs/2022-02-22_15-56-50/.submitit/3568562/3568562_0_log.out
+
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in ""

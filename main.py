@@ -17,6 +17,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Optional, Type
 import sys
+import time
 
 import hydra
 import matplotlib.pyplot as plt
@@ -25,6 +26,7 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from hydra import compose
+from joblib import load
 from omegaconf import Container, OmegaConf
 from pytorch_lightning.trainer.configuration_validator import verify_loop_configurations
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
@@ -94,6 +96,7 @@ def main_except(cfg):
             main(cfg)
 
     except SystemExit:
+        logger.exception("Failed this error:")
         # submitit returns sys.exit when SIGTERM. This will be run before exiting.
         smooth_exit(cfg)
 
@@ -124,12 +127,12 @@ def main(cfg):
     else:
         logger.info("Load pretrained representor ...")
         if repr_cfg.representor.is_use_init:
-            # for pretrained SSL models simply load the pretrained model (init)
+            # for online pretrained SSL models simply load the pretrained model (init)
             representor = ISSLModule(hparams=repr_cfg)
         else:
             representor = load_pretrained(repr_cfg, ISSLModule, stage)
-        repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
-        placeholder_fit(repr_trainer, representor, repr_datamodule)
+        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+        placeholder_fit(repr_trainer, representor)
         repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
 
     if repr_cfg.evaluation.representor.is_evaluate:
@@ -169,6 +172,7 @@ def main(cfg):
     ############## DOWNSTREAM PREDICTOR ##############
     pred_res_all = dict()
 
+    predictor = None
     for task in cfg.downstream_task.all_tasks:
         logger.info(f"Stage : Predict {task}")
         stage = "predictor"
@@ -183,7 +187,13 @@ def main(cfg):
         if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
             if is_sklearn:
                 assert not repr_cfg.representor.is_on_the_fly
-                predictor = SklearnPredictor(pred_cfg.predictor)
+
+                kwargs = {}
+                if pred_cfg.is_sk_warm_start and isinstance(predictor, SklearnPredictor):
+                    # will warm start from previous sklearn run
+                    kwargs["old_predictor"] = predictor
+
+                predictor = SklearnPredictor(pred_cfg.predictor, **kwargs)
                 pred_trainer = SklearnTrainer(pred_cfg)
             else:
                 predictor = Predictor(hparams=pred_cfg, representor=on_fly_representor)
@@ -195,11 +205,17 @@ def main(cfg):
 
         else:
             logger.info(f"Load pretrained predictor for {task} ...")
-            ReprPred = get_representor_predictor(on_fly_representor)
-            predictor = load_pretrained(pred_cfg, ReprPred, stage)
-            pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
-            placeholder_fit(pred_trainer, predictor, pred_datamodule)
-            pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
+            if is_sklearn:
+                assert not repr_cfg.representor.is_on_the_fly
+                pred_trainer = SklearnTrainer(pred_cfg)
+                predictor = load_pretrained(repr_cfg, None, stage, is_sklearn=True)
+            else:
+                ReprPred = get_representor_predictor(on_fly_representor)
+                predictor = load_pretrained(pred_cfg, ReprPred, stage)
+                pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+                placeholder_fit(pred_trainer, predictor)
+
+        pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
 
         if pred_cfg.evaluation.predictor.is_evaluate:
             logger.info(f"Evaluate predictor for {task} ...")
@@ -216,9 +232,8 @@ def main(cfg):
         else:
             pred_res = load_results(pred_cfg, stage)
 
-
         pred_res_all.update(pred_res)
-
+        save_end_file(pred_cfg)
 
     # TODO currently finalize_stage only stores the last predictor
     # so if you return, will only return last result from last loop
@@ -249,11 +264,13 @@ def begin(cfg: Container) -> None:
 
     try:
         # if continuing from single job you shouldn't append run to the end
-        continue_job = cfg.continue_job
-        if not  "_" in cfg.other.hydra_job_id:
+        continue_job = cfg.continue_job  # used to trigger the try except
+        if cfg.is_rm_job_num:
+            # in case the original job was actually without a job num
             cfg.job_id = "_".join(str(cfg.job_id).split("_")[:-1])
     except:
         pass
+
 
     logger.info(f"Workdir : {cfg.paths.work}.")
     logger.info(f"Job id : {cfg.job_id}.")
@@ -272,26 +289,23 @@ def set_downstream_task(cfg: Container, task: str):
     with omegaconf.open_dict(cfg):
 
         cfg.downstream_task = compose(  config_name="main", overrides=[f"+downstream_task={task}"] ).downstream_task
-        data = cfg.downstream_task.data
-        pred = cfg.downstream_task.predictor
-
         cfg.update_trainer_pred.max_epochs = int(cfg.update_trainer_pred.max_epochs * cfg.downstream_task.epochs_mult_factor)
 
         # TODO should clean that but not sure how. Currently:
         # 1/ reload hydra config with the current data as dflt config
-        dflts = compose(
-            config_name="main",
-            overrides=[
-                f"+data@dflt_data_pred={data}",
-                f"+predictor@dflt_predictor={pred}",
-            ],
-        )
+        overrides = [f"+data@dflt_data_pred={cfg.downstream_task.data}",f"+predictor@dflt_predictor={cfg.downstream_task.predictor}"]
+        if "optimizer" in cfg.downstream_task:
+            overrides += [f"optimizer@dflt_optimizer_pred={cfg.downstream_task.optimizer}"] # no + because there is a default
+
+        dflts = compose(config_name="main", overrides=overrides)
         cfg.dflt_predictor = dflts.dflt_predictor
         cfg.dflt_data_pred = dflts.dflt_data_pred
+        cfg.dflt_optimizer_pred = dflts.dflt_optimizer_pred
 
         # 2/ add any overrides
         cfg.predictor = OmegaConf.merge(cfg.dflt_predictor, cfg.predictor)
         cfg.data_pred = OmegaConf.merge(cfg.dflt_data_pred, cfg.data_pred)
+        cfg.optimizer_pred = OmegaConf.merge(cfg.dflt_optimizer_pred, cfg.optimizer_pred)
 
         if cfg.data_pred.is_copy_repr:
             name = cfg.data_repr.name
@@ -316,6 +330,7 @@ def set_downstream_task(cfg: Container, task: str):
 
 def set_cfg(cfg: Container, stage: str) -> Container:
     """Set the configurations for a specific mode."""
+
     cfg = copy.deepcopy(cfg)  # not inplace
 
     with omegaconf.open_dict(cfg):
@@ -338,26 +353,42 @@ def set_cfg(cfg: Container, stage: str) -> Container:
 
         logger.info(f"Name : {cfg.long_name}.")
 
+        if cfg.is_rescale_lr:
+            lr_stage = "issl" if cfg.stage == "repr" else cfg.stage
+            batch_size = cfg.data.kwargs.batch_size
+            if batch_size != 256:
+                new_lr = cfg[f"optimizer_{lr_stage}"].kwargs.lr * batch_size / 256
+                logger.info(f"Rescaling lr to {new_lr}.")
+                cfg[f"optimizer_{lr_stage}"].kwargs.lr = new_lr
+
+
     if not cfg.is_no_save:
         # make sure all paths exist
-        for _, path in cfg.paths.items():
+        for name, path in cfg.paths.items():
             if isinstance(path, str):
                 Path(path).mkdir(parents=True, exist_ok=True)
+        logger.info(f"Checkpoint path is {cfg.paths.checkpoint}.")
+        logger.info(f"Results path is {cfg.paths.results}.")
 
         Path(cfg.paths.pretrained.save).mkdir(parents=True, exist_ok=True)
 
-    file_end = Path(cfg.paths.logs) / f"{cfg.stage}_{FILE_END}"
-    if file_end.is_file():
-        logger.info(f"Skipping most of {cfg.stage} as {file_end} exists.")
+    #file_end_logs = Path(cfg.paths.logs) / f"{cfg.stage}_{FILE_END}"  # backward compatibility
+    file_end_pretrained = Path(cfg.paths.pretrained.save) / BEST_CHECKPOINT.format(stage=stage) # TMP
+    file_end_results = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"  # better to use this as sxavd on all machines
+
+    if file_end_results.is_file() or file_end_pretrained.is_file(): # or file_end_logs.is_file():
+        logger.info(f"Skipping most of {cfg.stage} as {file_end_results} exists.")
 
         with omegaconf.open_dict(cfg):
             if stage == "representor":
                 cfg.representor.is_train = False
                 cfg.evaluation.representor.is_evaluate = False
+                cfg.data_repr.kwargs.is_data_in_memory = False
 
-            elif stage == "predictor":  # improbable
+            elif stage == "predictor":
                 cfg.predictor.is_train = False
                 cfg.evaluation.predictor.is_evaluate = False
+                cfg.data_pred.kwargs.is_data_in_memory = False
 
             else:
                 raise ValueError(f"Unknown stage={stage}.")
@@ -444,7 +475,7 @@ def get_callbacks(
         is_img_aux_target = cfg.data.mode == "image"
         is_img_aux_target &= aux_target in ["representative", "input", "augmentation"]
 
-        if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval:
+        if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval and dm is not None:
             # can only plot if you have labels
             callbacks += [RepresentationUMAP(dm)]
 
@@ -464,9 +495,9 @@ def get_callbacks(
             # if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
             #     callbacks += [ReconstructMx()]
 
-    if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
-        # use momentum contrastive teacher, e.g. DINO
-        callbacks += [MAWeightUpdate()]
+        if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
+            # use momentum contrastive teacher, e.g. DINO
+            callbacks += [MAWeightUpdate()]
 
     callbacks += [ModelCheckpoint(**cfg.checkpoint.kwargs)]
 
@@ -571,33 +602,15 @@ def fit_(
     last_checkpoint = Path(cfg.checkpoint.kwargs.dirpath) / LAST_CHECKPOINT
     if last_checkpoint.exists():
         kwargs["ckpt_path"] = str(last_checkpoint)
+        logger.info(f"Continuing run from {last_checkpoint}")
 
     trainer.fit(module, datamodule=datamodule, **kwargs)
 
 
 def placeholder_fit(
-    trainer: pl.Trainer, module: pl.LightningModule, datamodule: pl.LightningDataModule
+    trainer: pl.Trainer, module: pl.LightningModule
 ) -> None:
     """Necessary setup of trainer before testing if you don't fit it."""
-
-    # TODO: clean as it seems that lightning keep changing stuff here which makes it impossible for
-    # backward compatibility
-
-    # links data to the trainer
-    # TODO check carefully as it seems that lightning will start changing data connectors
-    # https://github.com/PyTorchLightning/pytorch-lightning/issues/9778
-    trainer._data_connector.attach_data(module, datamodule=datamodule)
-
-    # clean hparams
-    if hasattr(module, "hparams"):
-        parsing.clean_namespace(module.hparams)
-
-    # check that model is configured correctly
-    verify_loop_configurations(trainer, module)
-
-    # attach model log function to callback
-    trainer._callback_connector.attach_model_logging_functions(module)
-
     trainer.model = module
 
 
@@ -628,7 +641,7 @@ def is_trained(cfg: NamespaceMap, stage: str) -> bool:
 
 
 def load_pretrained(
-    cfg: NamespaceMap, Module: Type[pl.LightningModule], stage: str, **kwargs
+    cfg: NamespaceMap, Module: Optional[Type[pl.LightningModule]], stage: str, is_sklearn: bool=False, **kwargs
 ) -> pl.LightningModule:
     """Load the best checkpoint from the latest run that has the same name as current run."""
     save_path = Path(cfg.paths.pretrained.load)
@@ -636,7 +649,10 @@ def load_pretrained(
     # select the latest checkpoint matching the path
     checkpoint = get_latest_match(save_path / filename)
 
-    loaded_module = Module.load_from_checkpoint(checkpoint, **kwargs)
+    if is_sklearn:
+        loaded_module = load(checkpoint)
+    else:
+        loaded_module = Module.load_from_checkpoint(checkpoint, **kwargs)
 
     return loaded_module
 
@@ -654,8 +670,12 @@ def evaluate(
     """Evaluate the trainer by logging all the metrics from the test set from the best model."""
     test_res = dict()
     to_save = dict()
+
     try:
-        ckpt_path = cfg.evaluation[stage].ckpt_path
+        if cfg.checkpoint.name == "last":
+            ckpt_path = None
+        else:
+            ckpt_path = cfg.evaluation[stage].ckpt_path
 
         if is_eval_train:
             # add train so that can see in wandb
@@ -671,9 +691,7 @@ def evaluate(
             try:
                 # also evaluate training set
                 train_dataloader = datamodule.train_dataloader()
-                train_res = trainer.test(
-                    dataloaders=train_dataloader, ckpt_path=ckpt_path, model=model
-                )[0]
+                train_res = trainer.test(dataloaders=train_dataloader, ckpt_path=ckpt_path, model=model)[0]
                 train_res = {
                     k: v for k, v in train_res.items() if f"/{train_stage}/" in k
                 }
@@ -736,6 +754,15 @@ def load_results(cfg: NamespaceMap, stage: str) -> dict:
     except:
         return dict()
 
+def save_end_file(cfg):
+    """"save end file to make sure that you don't retrain if preemption"""
+    if not cfg.is_no_save:
+        file_end = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"
+        file_end.touch(exist_ok=True)
+        logger.info(f"Saved {file_end}.")
+
+        # save config to results
+        cfg_save(cfg, Path(cfg.paths.results) / f"{cfg.stage}_{CONFIG_FILE}")
 
 def finalize_stage_(
     stage: str,
@@ -763,12 +790,7 @@ def finalize_stage_(
         remove_rf(cfg.paths.pretrained.save, not_exist_ok=True)
 
     if not cfg.is_no_save:
-        # save end file to make sure that you don't retrain if preemption
-        file_end = Path(cfg.paths.logs) / f"{cfg.stage}_{FILE_END}"
-        file_end.touch(exist_ok=True)
-
-        # save config to results
-        cfg_save(cfg, Path(cfg.paths.results) / f"{cfg.stage}_{CONFIG_FILE}")
+        save_end_file(cfg)
 
     finalize_kwargs["results"][stage] = results
     finalize_kwargs["cfgs"][stage] = cfg
@@ -853,6 +875,7 @@ if __name__ == "__main__":
     try:
         main_except()
     except:
+        logger.exception("Failed this error:")
         # exit gracefully, so wandb logs the problem
         print(traceback.print_exc(), file=sys.stderr)
         exit(1)

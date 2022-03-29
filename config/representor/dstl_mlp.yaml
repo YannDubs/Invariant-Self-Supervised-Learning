@@ -1,0 +1,29 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: none
+  - override /decodability: distillating
+
+representor:
+  name: dstl
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: ["data-standard"]
+      train_x_augmentations: "a_augmentations"
+
+decodability:
+  kwargs:
+    projector_kwargs:
+      architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
+      norm_layer: "batch" # mlp batchnorm
+
+    predictor_kwargs:
+      architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
+      norm_layer: "batch" # mlp batchnorm

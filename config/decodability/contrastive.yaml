@@ -1,7 +1,6 @@
 defaults:
   - base
 
-factor_beta: 1 # TODO: change to 0.01 (although not clear whether it's huber that should get it or whether it's contrastive)
 kwargs:
   mode: contrastive
   z_shape: ${encoder.z_shape}
@@ -12,7 +11,7 @@ kwargs:
   is_batchnorm_post: True
   is_batchnorm_pre: False
   predictor_kwargs:
-    architecture: "flatten"
+    architecture: "linear"
     out_shape: ${encoder.z_shape}
   projector_kwargs:
     architecture: "mlp"

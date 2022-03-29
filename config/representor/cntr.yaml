@@ -21,8 +21,8 @@ decodability:
     is_batchnorm_post: True
     is_self_contrastive: True
     predictor_kwargs: # will be replaced by projector when `is_pred_proj_same`
-      architecture: "flatten"
-      out_shape: ${encoder.z_shape}
+      architecture: "linear"
+      out_shape: 128
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 2048

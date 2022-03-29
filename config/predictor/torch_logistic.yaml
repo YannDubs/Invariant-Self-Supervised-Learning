@@ -1,5 +1,5 @@
 is_sklearn: False
-name: torch_logistic
+name: torch_logisticw${format:${optimizer_pred.kwargs.weight_decay},.1e}
 kwargs:
   architecture: linear
   arch_kwargs:

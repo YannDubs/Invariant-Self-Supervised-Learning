@@ -1,0 +1,19 @@
+defaults:
+  - base_distillating
+
+is_ema: True
+kwargs:
+  mode: dino_self_distillation
+  out_dim: 10000 # for imagenet they use 65k
+  student_temperature:  0.1
+  n_epochs: ${trainer.max_epochs}
+  freeze_Mx_epochs: 1
+  projector_kwargs:
+    architecture: "mlp"
+    hid_dim: 2048
+    n_hid_layers: 1
+    norm_layer: batchnorm
+    activation: GELU
+    bottleneck_size: 256
+    is_cosine: True
+    is_batchnorm_bottleneck: False

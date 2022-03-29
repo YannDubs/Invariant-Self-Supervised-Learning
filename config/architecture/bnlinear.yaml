@@ -5,4 +5,4 @@ name: bnlinear
 kwargs:
   architecture: linear
   arch_kwargs:
-    is_batchnorm: True
+    is_batchnorm_pre: True

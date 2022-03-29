@@ -286,7 +286,7 @@ class ContrastiveISSL(nn.Module):
         logs = dict(
             I_q_zm=(hat_H_m - hat_H_mlz.mean()),
             hat_H_m=hat_H_m,
-            n_negatives=n_classes,
+            n_negatives=float(n_classes),  # lightning expects float for logging
         )
 
         return hat_H_mlz, logs

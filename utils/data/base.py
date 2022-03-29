@@ -340,6 +340,10 @@ class ISSLDataModule(LightningDataModule):
         self.is_val_on_test = is_val_on_test
         self.is_force_all_train = is_force_all_train
 
+        self.is_already_called = dict()
+        for stage in ("fit", "validate", "test", "predict"):
+            self.is_already_called[stage] = False
+
     @classmethod
     @property
     def Dataset(cls) -> Any:
@@ -413,7 +417,8 @@ class ISSLDataModule(LightningDataModule):
         """Prepare the datasets for the current stage."""
         logger.info("Setting up data")
 
-        if stage == "fit" or stage is None:
+
+        if (stage == "fit" or stage is None) and not self.is_already_called["fit"]:
             if self.is_train_on_test :
                 logger.info("Training on the test set.")
                 self.train_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
@@ -435,14 +440,18 @@ class ISSLDataModule(LightningDataModule):
                 logger.info(f"Caching the data for split=train.")
                 self.train_dataset.cache_data_(num_workers=self.num_workers)
 
+            self.is_already_called["fit"] = True
 
 
-        if stage == "test" or stage is None:
+
+        if (stage == "test" or stage is None) and not self.is_already_called["test"]:
             self.test_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
 
             if self.is_data_in_memory:
                 logger.info(f"Caching the data for split=test.")
                 self.test_dataset.cache_data_(num_workers=self.num_workers)
+
+            self.is_already_called["test"] = True
 
 
     def train_dataloader(

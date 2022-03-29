@@ -18,7 +18,7 @@ $base_kwargs_tin
 representor=gen_vae
 data_repr.kwargs.batch_size=256
 optimizer_issl.kwargs.weight_decay=2e-6
-representor.loss.beta=3e-5
+representor.loss.beta=3e-3
 encoder.kwargs.arch_kwargs.is_no_linear=False
 timeout=$time
 "
@@ -27,7 +27,7 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=1,2,3
-trainer.max_epochs=300
+update_trainer_repr.max_epochs=300
 "
 
 

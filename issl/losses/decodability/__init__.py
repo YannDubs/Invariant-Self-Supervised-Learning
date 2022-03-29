@@ -5,7 +5,7 @@ import torch
 from .contrastive import *
 from .exact import *
 from .generative import *
-from .self_distillation import *
+from .distillating import *
 
 __all__ = ["get_loss_decodability"]
 
@@ -15,16 +15,14 @@ def get_loss_decodability(mode: str, **kwargs) -> torch.nn.Module:
         return ContrastiveISSL(**kwargs)
     elif mode == "generative":
         return GenerativeISSL(**kwargs)
-    elif mode == "simsiam_self_distillation":
-        return SimSiamSelfDistillationISSL(**kwargs)
-    elif mode == "prior_self_distillation":
-        return PriorSelfDistillationISSL(**kwargs)
-    elif mode == "assign_self_distillation":
-        return AssignSelfDistillationISSL(**kwargs)
-    elif mode == "swav_self_distillation":
-        return SwavSelfDistillationISSL(**kwargs)
-    elif mode == "dino_self_distillation":
-        return DinoSelfDistillationISSL(**kwargs)
+    elif mode in ["simsiam_self_distillation", "simsiam"]:
+        return SimSiamISSL(**kwargs)
+    elif mode in ["assign_self_distillation", "distillating"]:
+        return DistillatingISSL(**kwargs)
+    elif mode in ["swav_self_distillation", "swav"]:
+        return SwavISSL(**kwargs)
+    elif mode in ["dino_self_distillation", "dino"]:
+        return DinoISSL(**kwargs)
     elif mode == "exact":
         return ExactISSL(**kwargs)
     else:

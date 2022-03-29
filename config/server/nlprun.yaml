@@ -11,9 +11,8 @@ hydra:
     partition: jag-standard # jag-hi, jag-important, jag-standard, john (CPU)
     comment: null
     constraint: null # 12G,11G,24G,pascal,ampere,maxwell,turing,volta # TODO test if works if not will have to use gres
-    exclude: jagupard28,jagupard14
+    exclude: jagupard14,jagupard15,jagupard10
     array_parallelism: 30 # max number of parallel tasks
 
     max_num_timeout: 30 # allow resume from checkpointing
-    additional_parameters:
-      gres: gpu:${trainer.gpus}
+    gres: gpu:${trainer.gpus}

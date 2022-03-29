@@ -1,0 +1,30 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: none
+  - override /decodability: distillating
+
+representor:
+  name: dstl
+
+data_repr:
+  kwargs:
+    dataset_kwargs:
+      aux_target:  "augmentation"
+      a_augmentations: ["data-standard"]
+      train_x_augmentations: "a_augmentations"
+
+decodability: # TODO remove all of that! once evaluated
+  kwargs:
+    projector_kwargs:
+      architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
+      norm_layer: "batch" # mlp batchnorm
+      bottleneck_size: null # By default False for historical reasons but should be 512
+      is_skip_hidden: False
+      kwargs_prelinear: {}
+
+    predictor_kwargs:
+      architecture: "linear"
+      bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx

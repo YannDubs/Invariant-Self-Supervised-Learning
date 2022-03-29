@@ -178,8 +178,9 @@ class ResultAggregator(PostPlotter):
         self,
         pattern=f"results/**/results_representor.csv",
         table_name="representor",
-        params_to_rm=["jid"],
         params_to_add={},
+        params_to_create={},
+        params_to_rm=["jid","jobnum"],
     ):
         """Collect all the data.
 
@@ -199,14 +200,20 @@ class ResultAggregator(PostPlotter):
         table_name : str, optional
             Name of the table under which to save the loaded data.
 
-        params_to_rm : list of str, optional
-            Params to remove.
-
         params_to_add : dict, optional
             Parameters to add. Those will be added from the `config.yaml` files. The key should be
             the name of the paramter that you weant to add and the value should be the config key
             (using dots). E.g. {"lr": "optimizer.lr"}. The config file should be saved at the same
             place as the results file.
+
+        params_to_create : dict, optional
+            Parameters to create from other parameters. The key will be the created parameter. The
+            value should be a list [joint_parameter, replacer]. Where `joint_parameter` is a list of parameters
+            to replace (will be transformed to string and joint by underscore), and `replacer` is a dictionary
+             used to replace (keys correspond to joint_parameter).
+
+         params_to_rm : list of str, optional
+            Params to remove.
         """
         paths = list(self.base_dir.glob(pattern))
         if len(paths) == 0:
@@ -222,14 +229,17 @@ class ResultAggregator(PostPlotter):
 
             # make dict of params
             params = path_to_params(path_clean)
+            params["jobnum"] = params["jid"].split("_")[0]
 
             try:
                 self.job_ids.add(params["jid"].split("_")[1])
             except:
                 pass
 
-            for p in params_to_rm:
-                params.pop(p)
+            for new_param, (joint_parameter, replacer) in params_to_create.items():
+                replacer = {str(k):v for k,v in replacer.items()}
+                to_replace = "_".join(str(params[p]) for p in joint_parameter)
+                params[new_param] = replacer[to_replace]
 
             try:
                 cfg = cfg_load(folder / f"{get_stage_name(table_name)}_{CONFIG_FILE}")
@@ -242,6 +252,9 @@ class ResultAggregator(PostPlotter):
                         "Cannot use `params_to_add` as config file was not found:"
                     )
                     raise
+
+            for p in params_to_rm:
+                params.pop(p)
 
             # looks like : DataFrame(param1:...,param2:..., param3:...)
             df_params = pd.DataFrame.from_dict(params, orient="index").T
@@ -256,14 +269,16 @@ class ResultAggregator(PostPlotter):
             }
             dicts = {k: replace_keys(v, "_train", "") for k, v in dicts.items()}
 
-            dicts = {
-                k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
-            }
-
-            for task in cfg.downstream_tasks.all_tasks:
+            if table_name in self.cfgs:
                 dicts = {
-                    k: replace_keys(v, f"{task}/", "") for k, v in dicts.items()
+                    k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
                 }
+
+                if "downstream_tasks" in cfg:  # backward compatibility
+                    for task in cfg.downstream_tasks.all_tasks:
+                        dicts = {
+                            k: replace_keys(v, f"{task}/", "") for k, v in dicts.items()
+                        }
 
             # flattens dicts and make dataframe :
             # DataFrame(train/metric1:...,train/metric2:..., test/metric1:..., test/metric2:...)
@@ -616,7 +631,6 @@ class ResultAggregator(PostPlotter):
             Additional arguments to underlying seaborn plotting function. E.g. `col`, `row`, `hue`,
             `style`, `size` ...
         """
-
         kwargs["x"] = x
         kwargs["y"] = y
 

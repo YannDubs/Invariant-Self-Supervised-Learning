@@ -3,5 +3,3 @@ defaults:
 
 kwargs:
   architecture: linear
-  arch_kwargs:
-    is_batchnorm: True

@@ -28,8 +28,8 @@ while getopts ':s:p:m:t:v:a:c:i' flag; do
     c )
       id="${OPTARG}"
       mode="continue"
-      add_kwargs="${add_kwargs} mode=continue continue_job=${id}"
-      echo "Continuing job $id (Only if slurm) ..."
+      add_kwargs="${add_kwargs} mode=continue continue_job=${id}" # use job num for specific job in array
+      echo "Continuing job $id ..."
       ;;
     m )
       mode="${OPTARG}"

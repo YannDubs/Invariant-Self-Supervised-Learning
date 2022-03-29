@@ -46,7 +46,6 @@ optimizer_issl.kwargs.lr=tag(log,interval(3e-4,1e-2))
 optimizer_issl.kwargs.weight_decay=tag(log,interval(1e-7,1e-5))
 scheduler@scheduler_issl=warm_unifmultistep100,slowwarm_unifmultistep25,warm_unifmultistep25,warm_unifmultistep9
 seed=1,2,3,4,5,6,7,8,9
-encoder.is_relu_Z=True,False
 trainer.max_epochs=200
 "
 # to replicate should add 1000 epochs and warm_unifmultistep125

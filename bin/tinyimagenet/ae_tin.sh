@@ -24,7 +24,7 @@ timeout=$time
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=1,2,3
-trainer.max_epochs=300
+update_trainer_repr.max_epochs=300
 "
 
 if [ "$is_plot_only" = false ] ; then

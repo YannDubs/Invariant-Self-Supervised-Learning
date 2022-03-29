@@ -24,7 +24,7 @@ trainer:
 
 callbacks:
   GPUStatsMonitor:
-    is_use : true
+    is_use : False
 
 evaluation:
   representor:

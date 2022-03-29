@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from issl.architectures.helpers import get_Activation, get_Normalization
 from issl.helpers import batch_flatten, batch_unflatten, prod, weights_init
 
-__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine"]
+__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine", "FlattenMLL"]
 
 
 class MLP(nn.Module):
@@ -43,6 +43,9 @@ class MLP(nn.Module):
     is_cosine : bool, optional
         Whether the last layer should be cosine similarity instead of linear.
 
+    kwargs_prelinear : bool, optional
+        Additional arguments to the first linear layer which is a `FlattenLinear`.
+
     kwargs:
         Additional arguments of the last linear layer which is a `FlattenLinear`.
     """
@@ -58,6 +61,7 @@ class MLP(nn.Module):
         dropout_p: float = 0,
         is_skip_hidden: bool = False,
         is_cosine: bool= False,
+        kwargs_prelinear: dict = {},
         **kwargs
     ) -> None:
         super().__init__()
@@ -74,15 +78,16 @@ class MLP(nn.Module):
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine = is_cosine
 
+        PreLinear = FlattenLinear if len(kwargs_prelinear) > 0 else nn.Linear # TODO use only FlattenLinear (currently backward compatibility)
         self.pre_block = nn.Sequential(
-            nn.Linear(in_dim, hid_dim, bias=bias_hidden),
+            PreLinear(in_dim, hid_dim, bias=bias_hidden, **kwargs_prelinear),
             Norm(hid_dim),
             Activation(),
             Dropout(p=dropout_p),
         )
         layers = []
         # start at 1 because pre_block
-        for _ in range(1, n_hid_layers):
+        for _ in range(1, self.n_hid_layers):
             layers += [
                 nn.Linear(hid_dim, hid_dim, bias=bias_hidden),
                 Norm(hid_dim),
@@ -91,7 +96,7 @@ class MLP(nn.Module):
             ]
         self.hidden_block = nn.Sequential(*layers)
 
-        # suing flatten linear to have bottleneck size
+        # using flatten linear to have bottleneck size
         PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
         self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
 
@@ -155,6 +160,11 @@ class FlattenMLP(MLP):
     def reset_parameters(self):
         weights_init(self)
 
+class FlattenMLL(FlattenMLP):
+    """Multi layer linear: MLP with no activation."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, activation="Identity", **kwargs)
+
 
 class FlattenLinear(nn.Module):
     """
@@ -167,7 +177,7 @@ class FlattenLinear(nn.Module):
 
     out_shape : tuple or int
 
-    is_batchnorm : bool, optional
+    is_batchnorm_pre : bool, optional
         Whether to use a batchnorm layer at input. Note that this is simply a reparametrization
         of the following layer and is still linear.
 
@@ -176,30 +186,41 @@ class FlattenLinear(nn.Module):
         low rank. The result will still be linear (no non linearity) but more efficient if input and
         output is very large.
 
+    is_batchnorm_bottleneck : bool, optional
+        Whether to add a batchnorm between the bottleneck (if there is one) and the last linear layer
+        to improve training of two linear layers in a row (still linear).
+
     kwargs :
         Additional arguments to `torch.nn.Linear`.
     """
 
     def __init__(
-        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm: bool=False,
-            bottleneck_size : Optional[int]=None, **kwargs
+        self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
+        bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True, **kwargs
     ) -> None:
         super().__init__()
 
         self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
         self.bottleneck_size = bottleneck_size
-        self.is_batchnorm = is_batchnorm
+        self.is_batchnorm_pre = is_batchnorm_pre
+        self.is_batchnorm_bottleneck = is_batchnorm_bottleneck
 
         in_dim = prod(self.in_shape)
         out_dim = prod(self.out_shape)
+
+        # TODO rm next line. this is for backward compatibility
+        kwargs = {k: v for k, v in kwargs.items() if k != "is_batchnorm"}
+
+        if self.is_batchnorm_pre:
+            self.normalizer_pre = nn.BatchNorm1d(in_dim)
 
         if self.bottleneck_size is not None:
             self.bottleneck = nn.Linear(in_dim, self.bottleneck_size, bias=False)
             in_dim = self.bottleneck_size
 
-        if self.is_batchnorm:
-            self.normalizer = nn.BatchNorm1d(in_dim)
+            if self.is_batchnorm_bottleneck:
+                self.normalizer = nn.BatchNorm1d(self.bottleneck_size)
 
         self.linear = nn.Linear(in_dim, out_dim, **kwargs)
 
@@ -209,11 +230,15 @@ class FlattenLinear(nn.Module):
         weights_init(self)
 
     def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:
+
+        if self.is_batchnorm_pre:
+            X = self.normalizer_pre(X)
+
         if self.bottleneck_size is not None:
             X = self.bottleneck(X)
 
-        if self.is_batchnorm:
-            X = self.normalizer(X)
+            if self.is_batchnorm_bottleneck:
+                X = self.normalizer(X)
 
         out = self.linear(X)
 

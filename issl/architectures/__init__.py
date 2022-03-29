@@ -11,14 +11,13 @@ from .vit import *
 __all__ = ["get_Architecture"]
 
 
-def get_Architecture(architecture: Any, **kwargs) -> Any:
+def get_Architecture(architecture: str, **kwargs) -> Any:
     """Return the (uninstantiated) correct architecture.
 
     Parameters
     ----------
     architecture : {"mlp", "linear", "resnet", "identity", "cnn_unflatten", "vit", "cnn", "clip_vitb16", "clip_vitb32",
-                    "clip_rn50", "dino_vitb16", "dino_rn50", "dino_vits16", "simclr_rn50", "swav_rn50"} or callable.
-        If callable will return it.
+                    "clip_rn50", "dino_vitb16", "dino_rn50", "dino_vits16", "simclr_rn50", "swav_rn50"}.
 
     kwargs :
         Additional arguments to the Module.
@@ -28,11 +27,11 @@ def get_Architecture(architecture: Any, **kwargs) -> Any:
     Architecture : uninstantiated nn.Module
         Architecture that can be instantiated by `Architecture(in_shape, out_shape)`
     """
-    if not isinstance(architecture, str):
-        return architecture
-
     if architecture == "mlp":
         return partial(FlattenMLP, **kwargs)
+
+    if architecture == "mll":
+        return partial(FlattenMLL, **kwargs)
 
     elif architecture == "identity":
         return partial(torch.nn.Identity, **kwargs)
@@ -45,6 +44,9 @@ def get_Architecture(architecture: Any, **kwargs) -> Any:
 
     elif architecture == "cosine":
         return partial(FlattenCosine, **kwargs)
+
+    elif architecture == "convnext":
+        return partial(ConvNext, **kwargs)
 
     elif architecture == "resnet":
         return partial(ResNet, **kwargs)

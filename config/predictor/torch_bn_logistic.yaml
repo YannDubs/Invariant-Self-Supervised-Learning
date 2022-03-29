@@ -4,4 +4,4 @@ defaults:
 name: torch_bn_logistic
 kwargs:
   arch_kwargs:
-    is_batchnorm: True
+    is_batchnorm_pre: True

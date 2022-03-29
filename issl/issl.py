@@ -7,7 +7,6 @@ import logging
 
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
 from issl.distributions import CondDist
 from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod
 from issl.losses import get_loss_decodability, get_regularizer
@@ -30,8 +29,6 @@ class ISSLModule(pl.LightningModule):
         )
         self.loss_regularizer = get_regularizer(**self.hparams.regularizer.kwargs)
 
-        self.beta_annealer = self.get_beta_annealer()
-
         if self.hparams.evaluation.representor.is_online_eval:
             # replaces pl_bolts.callbacks.SSLOnlineEvaluator because training
             # as a callback was not well support by lightning
@@ -42,27 +39,6 @@ class ISSLModule(pl.LightningModule):
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
-    @property
-    def final_beta(self):
-        """Return the final beta to use."""
-        cfg = self.hparams
-        beta = (
-            cfg.representor.loss.beta
-            * cfg.regularizer.factor_beta
-            * cfg.decodability.factor_beta
-        )
-        return beta
-
-    def get_beta_annealer(self) -> Annealer:
-        """Return the annealer for the weight of the regularizer."""
-        cfg = self.hparams
-        beta_annealer = Annealer(
-            self.final_beta * 1e-5,  # don't use 0 in case geometric
-            self.final_beta,
-            n_steps_anneal=math.ceil(1 / 10 * cfg.data.max_steps),  # arbitrarily 1/10th
-            mode=cfg.representor.loss.beta_anneal,
-        )
-        return beta_annealer
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         """
@@ -113,11 +89,6 @@ class ISSLModule(pl.LightningModule):
         else:
             z = p_Zlx.mean
 
-        # one difference compared to standard implementation is that our representation does not go through a relu
-        # if it goes through linear after resnet
-        if self.hparams.encoder.is_relu_Z:
-            z = F.relu(z)
-
         if is_return_p_ZlX:
             return z, p_Zlx
 
@@ -135,7 +106,8 @@ class ISSLModule(pl.LightningModule):
         # p_Zlx batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
         z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
 
-        if self.loss_regularizer is not None:
+        beta = self.hparams.representor.loss.beta
+        if self.loss_regularizer is not None or math.isclose(beta, 0):
             # `sample_eff` is proxy to ensure supp(p(Z|M(X))) = supp(p(Z|X)). shape: [batch_size]
             regularize, s_logs, s_other = self.loss_regularizer(
                 z, aux_target, p_Zlx, self
@@ -164,32 +136,14 @@ class ISSLModule(pl.LightningModule):
     def loss(
         self, decodability: torch.Tensor, regularize: Optional[torch.Tensor]
     ) -> tuple[torch.Tensor, dict, dict]:
-        curr_beta = self.beta_annealer(n_update_calls=self.global_step)
 
         # E_x[...]. shape: shape: []
         # ensure that using float32 because small / large beta can cause issues in half precision
         decodability = decodability.float().mean(0)
+        regularize = regularize.float().mean(0) if regularize is not None else 0.0
+        loss = decodability + self.hparams.representor.loss.beta * regularize
 
-        if regularize is not None:
-            regularize = regularize.float().mean(0)
-
-            # use actual (annealed) beta for the gradients, but still want the loss to be in terms of
-            # final beta for plotting and checkpointing => use trick
-            beta_sample_eff = curr_beta * regularize  # actual gradients
-            beta_sample_eff = (
-                beta_sample_eff
-                - beta_sample_eff.detach()
-                + (self.final_beta * regularize.detach())
-            )
-        else:
-            beta_sample_eff = 0
-            regularize = 0
-
-        loss = decodability + beta_sample_eff
-
-        logs = dict(
-            loss=loss, decodability=decodability, regularize=regularize, beta=curr_beta,
-        )
+        logs = dict(loss=loss, decodability=decodability, regularize=regularize)
 
         other = dict()
 

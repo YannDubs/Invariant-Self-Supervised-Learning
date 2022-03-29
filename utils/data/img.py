@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import copy
 import logging
+import multiprocessing
 import os
 from collections.abc import Callable, Sequence
 import time
@@ -277,6 +278,10 @@ class ISSLImgDataset(ISSLDataset):
 
         # pool.map doesn't allow local functions
         get_img = partial(_get_img_pool, loader=self.get_img_target)
+
+        if idcs is not None or len(all_idcs) < 1000:
+            logger.info(f"Using only 1 worker to avoid freezing because of len={len(all_idcs)} or idcs given.")
+            num_workers = 0
 
         if num_workers > 0:
             with Pool(num_workers) as pool:

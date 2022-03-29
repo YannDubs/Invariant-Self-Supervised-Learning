@@ -49,7 +49,6 @@ regularizer=huber,none
 representor.loss.beta=tag(log,interval(1e-7,3e-5))
 decodability.kwargs.temperature=0.3,0.5,0.7
 decodability.kwargs.is_self_contrastive=True,False
-encoder.is_relu_Z=True,False
 data_repr.kwargs.batch_size=256,512,1024
 trainer.max_epochs=1000
 "

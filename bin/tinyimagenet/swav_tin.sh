@@ -19,19 +19,20 @@ representor=slfdstl_swav
 decodability.kwargs.temperature=0.07
 decodability.kwargs.n_Mx=500
 decodability.kwargs.epoch_queue_starts=5
+downstream_task.all_tasks=[torchmlp_datarepr,torchmlp_datarepr001test]
 timeout=$time
 "
 
 kwargs_multi="
 seed=1,2,3
-trainer.max_epochs=500
+
 " # RUNNING STANFORD
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m &  >> logs/"$experiment".log 2>&1 &
 
     sleep 10
 

@@ -23,6 +23,8 @@ PRETTY_RENAMER = StrFormatter(
         "Resnet": "ResNet",
         "Lr": "Learning Rate",
         "Test/Pred/": "",
+        "Pytorch Datarepr/": "",
+        "Test/Pred Train/": "Train ",
         "Train/Pred/": "Train ",
         "Zdim": r"$\mathcal{Z}$ dim.",
         "Pred": "Downstream Pred.",
@@ -38,6 +40,8 @@ PRETTY_RENAMER = StrFormatter(
         "N Tasks": "# Tasks",
         "N Samples": "# Samples",
         "2.0": "Binary",
+        "Dstl": "DISSL",
+        "Cntr": "CISSL",
     },
     to_upper=["Cifar10", "Mnist", "Mlp", "Adam"],
 )

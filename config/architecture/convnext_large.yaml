@@ -1,0 +1,10 @@
+defaults:
+  - base
+
+name: convnext_large
+kwargs:
+  architecture: convnext
+  arch_kwargs:
+    base: convnext_large
+    is_no_linear: False
+    # out size 1536

@@ -1,5 +1,4 @@
 name: ${.kwargs.loss}Mx
-factor_beta: 1
 kwargs:
   loss: ???
   mode: coarsenerMx

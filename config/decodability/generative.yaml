@@ -1,7 +1,6 @@
 defaults:
   - base
 
-factor_beta: 100
 is_reconstruct: True # can reconstruct images
 kwargs:
   mode: generative

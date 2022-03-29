@@ -1,5 +1,4 @@
 name: prior
-factor_beta: 1
 kwargs:
   mode: prior
   z_shape: ${encoder.z_shape}

@@ -264,8 +264,10 @@ class Predictor(pl.LightningModule):
 class SklearnPredictor(Pipeline):
     """Sklearn predictor."""
 
-    def __init__(self, cfgp):
+    def __init__(self, cfgp, old_predictor=None):
         self.cfgp = cfgp
+        self.old_predictor = None  # trick to make cloning work with sklearn (pipeline will be clones)
+
         steps = []
 
         dict_cfgp = namespace2dict(self.cfgp)
@@ -275,7 +277,13 @@ class SklearnPredictor(Pipeline):
         if self.cfgp.is_preprocess:
             steps += [("preprocesser", instantiate(dict_cfgp["preprocesser"]))]
 
-        steps += [("model", instantiate(dict_cfgp["model"]))]
+        if old_predictor is None:
+            steps += [("model", instantiate(dict_cfgp["model"]))]
+        else:
+            # TODO : clean and add logistic regression CV instead
+            logger.info("Using warm start for Sklearn. Currently this assumes that `C` was the only modified hyperparameter")
+            old_predictor.C = dict_cfgp["model"]["C"]
+            steps += [("model", old_predictor)]
 
         super().__init__(steps)
 

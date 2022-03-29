@@ -13,4 +13,5 @@ model:
   solver: "lbfgs" # should probably use "saga" for large datasets (but might need to normalize)
   n_jobs: -1
   max_iter: 300
+  warm_start: True # this should always be true (generally no impact), to control warm start between downstream tasks use is_sk_warm_start
   verbose: 1

@@ -964,14 +964,14 @@ class LinearLR(_LRScheduler):
 @contextlib.contextmanager
 def plot_config(
     style="ticks",
-    context="notebook",
+    context="talk",
     palette="colorblind",
-    font_scale=1.5,
+    font_scale=1.15,
     font="sans-serif",
     is_ax_off=False,
     is_rm_xticks=False,
     is_rm_yticks=False,
-    rc={"lines.linewidth": 2},
+    rc={"lines.linewidth": 4},
     set_kwargs=dict(),
     despine_kwargs=dict(),
     # pretty_renamer=dict(), #TODO
@@ -1344,3 +1344,19 @@ class LearnedSoftmax(nn.Module):
             y_hat = self.softmax(logits / temperature)
 
         return y_hat
+
+def rel_distance(x1, x2, **kwargs):
+    """
+    Return the relative distance of positive examples compaired to negative.
+    ~0 means that positives are essentially the same compared to negatives.
+    ~1 means that positives and negatives are essentially indistinguishable.
+    """
+    batch_size = x1.shape[0]
+    dist = torch.cdist(x1, x2, **kwargs)
+    dist_no_diag = dist * (1 - torch.eye(*dist.size(), out=torch.empty_like(dist)))
+    dist_neg_row = dist_no_diag.sum(0) / (batch_size - 1)
+    dist_neg_col = dist_no_diag.sum(1) / (batch_size - 1)
+    dist_neg = (dist_neg_row + dist_neg_col) / 2
+    dist_pos = dist.diag()
+    dist_rel = dist_pos / dist_neg
+    return dist_rel

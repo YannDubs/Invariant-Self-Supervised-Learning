@@ -22,6 +22,7 @@ patterns:
 
 collect_data:
   params_to_add: {}
+  params_to_create: {}
 
 plot_optuna_hypopt:
   storage: sqlite:///${kwargs.base_dir}/${base_path}/optuna.db

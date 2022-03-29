@@ -1,3 +1,4 @@
 # @package _global_
 continue_job: ???
-job_id: ${hydra:job.num}_${continue_job}_${hydra:job.num}
+is_rm_job_num: False
+job_id: ${job_num}_${continue_job}_${job_num}

@@ -1,0 +1,9 @@
+defaults:
+  - base
+
+kwargs:
+  mode: ???
+  z_shape: ${encoder.z_shape}
+  out_dim: 1000
+  projector_kwargs:
+    architecture: "mlp"

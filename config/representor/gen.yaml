@@ -19,6 +19,3 @@ decodability:
   kwargs:
     predecode_n_Mx: 100
     is_batchnorm_pre: True
-
-encoder:
-  is_relu_Z: True

@@ -381,12 +381,13 @@ class SklearnTrainer:
     def save_checkpoint(self, ckpt_path: Union[str, Path], weights_only: bool = False):
         dump(self.model, ckpt_path)
 
+
     def test(
         self, dataloaders: DataLoader, ckpt_path: Union[str, Path], model: torch.nn.Module=None
     ) -> list[dict[str, float]]:
         data = dataloaders.dataset
 
-        if model is not  None:
+        if model is None:
             model = self.model
 
         if ckpt_path is not None and ckpt_path != "best":
