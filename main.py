@@ -37,7 +37,7 @@ from pytorch_lightning.utilities import parsing
 import issl
 from issl import ISSLModule, Predictor
 from issl.callbacks import (
-    LatentDimInterpolator,
+    EffectiveDim, LatentDimInterpolator,
     MAWeightUpdate, ReconstructImages, ReconstructMx, RepresentationUMAP
 )
 from issl.helpers import check_import, prod
@@ -119,7 +119,7 @@ def main(cfg):
     if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
         representor = ISSLModule(hparams=repr_cfg)
         repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
-        initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
+        representor = initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
 
         logger.info("Train representor ...")
         fit_(repr_trainer, representor, repr_datamodule, repr_cfg)
@@ -455,12 +455,27 @@ def initialize_representor_(
     cfg: NamespaceMap,
 ) -> None:
     """Additional steps needed for initialization of the compressor + logging."""
-    # LOGGING
+
+    if cfg.paths.pretrained.init_repr is not None:
+        logger.info(f"Initializing the representor from {cfg.paths.pretrained.init_repr}.")
+        # loading is not in place (it's a class function)
+        module = module.load_from_checkpoint(cfg.paths.pretrained.init_repr, hparams=cfg)
+    elif cfg.paths.pretrained.init_enc is not None:
+        logger.info(f"Initializing the encoder from {cfg.paths.pretrained.init_enc}.")
+        repr = module.load_from_checkpoint(cfg.paths.pretrained.init_enc, hparams=cfg)
+        module.p_ZlX.load_state_dict(repr.p_ZlX.state_dict())
+        try:  # also try to initialize online eval head
+            module.evaluator.load_state_dict(repr.evaluator.state_dict())
+        except:
+            pass
+
     # save number of parameters for the main model (not online optimizer but with coder)
     n_param = sum(
         p.numel() for p in module.get_specific_parameters("all") if p.requires_grad
     )
     log_dict(trainer, {"n_param": n_param}, is_param=True)
+
+    return module
 
 
 def get_callbacks(
@@ -474,6 +489,9 @@ def get_callbacks(
         aux_target = cfg.data.kwargs.dataset_kwargs.aux_target
         is_img_aux_target = cfg.data.mode == "image"
         is_img_aux_target &= aux_target in ["representative", "input", "augmentation"]
+
+        if cfg.logger.is_can_plot_img:
+            callbacks += [EffectiveDim(cfg.encoder.z_shape)]
 
         if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval and dm is not None:
             # can only plot if you have labels

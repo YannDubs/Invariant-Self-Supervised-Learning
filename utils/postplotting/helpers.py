@@ -52,6 +52,7 @@ def aggregate(
     table: Union[pd.DataFrame, pd.Series],
     cols_to_agg: list[str] = [],
     aggregates: list[str] = ["mean", "sem"],
+    is_rename_cols: bool = True
 ) -> Union[pd.DataFrame, pd.Series]:
     """Aggregate values of pandas dataframe over some columns.
 
@@ -65,6 +66,9 @@ def aggregate(
 
     aggregates : list of str
         list of functions to use for aggregation. The aggregated columns will be called `{col}_{aggregate}`.
+
+    is_rename_cols : bool
+        Whether to add the aggregation name to the column.
     """
     if len(cols_to_agg) == 0:
         return table
@@ -74,7 +78,12 @@ def aggregate(
 
     new_idcs = [c for c in table.index.names if c not in cols_to_agg]
     table_agg = table.reset_index().groupby(by=new_idcs, dropna=False).agg(aggregates)
-    table_agg.columns = ["_".join(col).rstrip("_") for col in table_agg.columns.values]
+
+    if is_rename_cols:
+        table_agg.columns = ["_".join(col).rstrip("_") for col in table_agg.columns.values]
+    else:
+        table_agg.columns = [col[0] for col in table_agg.columns.values]
+
     return table_agg
 
 

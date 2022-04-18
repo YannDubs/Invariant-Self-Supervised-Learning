@@ -73,7 +73,7 @@ class ExactISSL(nn.Module):
         weights_init(self)
 
     def forward(
-        self, z: torch.Tensor, m: torch.Tensor, _
+        self, z: torch.Tensor, z_a: torch.Tensor, m: torch.Tensor, _
     ) -> tuple[torch.Tensor, dict, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 

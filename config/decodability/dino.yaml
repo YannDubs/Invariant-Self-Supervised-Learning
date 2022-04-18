@@ -4,7 +4,7 @@ defaults:
 is_ema: True
 kwargs:
   mode: dino_self_distillation
-  out_dim: 10000 # for imagenet they use 65k
+  out_dim: 1000 # used to be 10k (in case backward compatible)
   student_temperature:  0.1
   n_epochs: ${trainer.max_epochs}
   freeze_Mx_epochs: 1

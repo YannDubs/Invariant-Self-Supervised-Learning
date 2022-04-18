@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 from sklearn.preprocessing import minmax_scale
 
 import hydra
@@ -41,6 +41,7 @@ sys.path.append(CURR_DIR)
 
 from issl.helpers import check_import  # isort:skip
 from main import CONFIG_FILE, get_stage_name  # isort:skip
+
 from utils.helpers import (  # isort:skip
     cfg_load,
     cfg_save,
@@ -109,6 +110,7 @@ def main(cfg):
     aggregator.replace(**cfg.replace)
     aggregator.sort(cfg.sort)
     aggregator.subset(**cfg.col_val_subset)
+    aggregator.subset_numeric(**cfg.col_cond_subset)
     aggregator.merge_columns(cfg.merge_cols)
 
     for f in cfg.agg_mode:
@@ -179,8 +181,9 @@ class ResultAggregator(PostPlotter):
         pattern=f"results/**/results_representor.csv",
         table_name="representor",
         params_to_add={},
+        params_to_add_dflt={},
         params_to_create={},
-        params_to_rm=["jid","jobnum"],
+        params_to_rm=["jobnum"],
     ):
         """Collect all the data.
 
@@ -206,6 +209,9 @@ class ResultAggregator(PostPlotter):
             (using dots). E.g. {"lr": "optimizer.lr"}. The config file should be saved at the same
             place as the results file.
 
+        params_to_add_dflt : dict, optional
+            Default parameter in case you use parameters to add.
+
         params_to_create : dict, optional
             Parameters to create from other parameters. The key will be the created parameter. The
             value should be a list [joint_parameter, replacer]. Where `joint_parameter` is a list of parameters
@@ -215,13 +221,20 @@ class ResultAggregator(PostPlotter):
          params_to_rm : list of str, optional
             Params to remove.
         """
-        paths = list(self.base_dir.glob(pattern))
+        if isinstance(pattern, list):
+            paths = []
+            for p in pattern:
+                paths.extend(list(self.base_dir.glob(p)))
+        else:
+            paths = list(self.base_dir.glob(pattern))
+
         if len(paths) == 0:
             raise ValueError(f"No files found for your pattern={pattern}")
 
         results = []
         self.param_names[table_name] = set()
         for path in paths:
+
             folder = path.parent
 
             # select everything from "exp_"
@@ -244,7 +257,10 @@ class ResultAggregator(PostPlotter):
             try:
                 cfg = cfg_load(folder / f"{get_stage_name(table_name)}_{CONFIG_FILE}")
                 for name, param_key in params_to_add.items():
-                    params[name] = cfg.select(param_key)
+                    try:
+                        params[name] = cfg.select(param_key)
+                    except KeyError:
+                        params[name] = params_to_add_dflt[name]
                 self.cfgs[table_name] = cfg  # will ony save last
             except FileNotFoundError:
                 if len(params_to_add) > 0:
@@ -269,16 +285,10 @@ class ResultAggregator(PostPlotter):
             }
             dicts = {k: replace_keys(v, "_train", "") for k, v in dicts.items()}
 
-            if table_name in self.cfgs:
-                dicts = {
-                    k: replace_keys(v, f"{cfg.data.name}/", "") for k, v in dicts.items()
-                }
-
-                if "downstream_tasks" in cfg:  # backward compatibility
-                    for task in cfg.downstream_tasks.all_tasks:
-                        dicts = {
-                            k: replace_keys(v, f"{task}/", "") for k, v in dicts.items()
-                        }
+            dicts = { k: {s_k.split("/")[0] + "/" + s_k.split("/")[-1] :
+                          s_v for s_k, s_v in v.items()
+                          }
+                      for k, v in dicts.items() }
 
             # flattens dicts and make dataframe :
             # DataFrame(train/metric1:...,train/metric2:..., test/metric1:..., test/metric2:...)
@@ -316,6 +326,31 @@ class ResultAggregator(PostPlotter):
                 table = table[(table[col]).isin(val)]
                 if table.empty:
                     logger.info(f"Empty table after filtering {col}={val}")
+
+                self.tables[k] = table.set_index(self.tables[k].index.names)
+
+    def subset_numeric(self, **col_cond):
+        """Subset all tables by keeping only the values larger than the given min_values.
+        Similar to subset but for numeric.
+
+        Parameters
+        ----------
+        values:
+            Keys are the columns to subset and value is a tuple (operator, ) .
+            Example: {"epochs", (">",10)}.
+        """
+        for col, cond in col_cond.items():
+            logger.debug(f"Keeping only {col}{cond} for col={col}.")
+            for k in self.tables.keys():
+                table = self.tables[k].reset_index()
+                if col not in table.columns:
+                    logger.info(f"Skipping subsetting {k} as {col} not there.")
+                    continue
+
+                serie = table[col]
+                table = table[eval(f"serie{cond}")]
+                if table.empty:
+                    logger.info(f"Empty table after filtering {col}{cond}")
 
                 self.tables[k] = table.set_index(self.tables[k].index.names)
 
@@ -377,6 +412,7 @@ class ResultAggregator(PostPlotter):
     def summarize_metrics(
         self,
         data=None,
+        cols_to_max=[],
         cols_to_agg=["seed"],
         aggregates=["mean", "sem"],
         filename="summarized_metrics_{table}",
@@ -541,6 +577,7 @@ class ResultAggregator(PostPlotter):
         set_kwargs={},
         x_rotate=0,
         cols_vary_only=None,
+        cols_to_max=[],
         cols_to_agg=[],
         aggregates=["mean", "sem"],
         is_x_errorbar=False,
@@ -552,6 +589,11 @@ class ResultAggregator(PostPlotter):
         ylabel="",
         hue_order=None,
         style_order=None,
+        is_invert_xaxis=False,
+        is_invert_yaxis=False,
+        x_tick_spacing=None,
+        y_tick_spacing=None,
+        multipy_y=None,
         **kwargs,
     ):
         """Plotting all combinations of scatter and line plots.
@@ -627,12 +669,24 @@ class ResultAggregator(PostPlotter):
             General config for plotting, e.g. arguments to matplotlib.rc, sns.plotting_context,
             matplotlib.set ...
 
+        is_invert_xaxis, is_invert_yaxis : bool, optional
+            Whether to invert the x/ axis.
+
+        x_tick_spacing, y_tick_spacing : float, optional
+            Explicit forcing of tick spacing.
+
+        multipy_y : float, optional
+            Factor by which to multiply the y values. Example 100 for accuracy.
+
         kwargs :
             Additional arguments to underlying seaborn plotting function. E.g. `col`, `row`, `hue`,
             `style`, `size` ...
         """
         kwargs["x"] = x
         kwargs["y"] = y
+
+        if multipy_y is not None:
+            data[y] *= multipy_y
 
         if hue_order is not None:
             # prettify hue order => can give in not prettified version
@@ -651,7 +705,7 @@ class ResultAggregator(PostPlotter):
 
         if mode == "relplot":
             used_kwargs = dict(
-                legend="full",
+                #legend="full",
                 kind="line",
                 markers=True,
                 facet_kws={
@@ -667,7 +721,12 @@ class ResultAggregator(PostPlotter):
 
         elif mode == "lmplot":
             used_kwargs = dict(
-                legend="full", sharey=sharey, sharex=sharex, legend_out=legend_out,
+                facet_kws={
+                    "sharey": sharey,
+                    "sharex": sharex,
+                    "legend_out": legend_out,
+                },
+                #legend="full",
             )
             used_kwargs.update(kwargs)
 
@@ -693,14 +752,25 @@ class ResultAggregator(PostPlotter):
                 set_log_scale, basex=logbase_x, basey=logbase_y, **kwargs
             )
 
-        # TODO remove when waiting for https://github.com/mwaskom/seaborn/issues/2456
-        if xlabel != "":
-            for ax in sns_plot.fig.axes:
+        for ax in sns_plot.fig.axes:
+            # TODO remove when waiting for https://github.com/mwaskom/seaborn/issues/2456
+            if xlabel != "":
                 ax.set_xlabel(xlabel)
 
-        if ylabel != "":
-            for ax in sns_plot.fig.axes:
+            if ylabel != "":
                 ax.set_ylabel(ylabel)
+
+            if is_invert_xaxis:
+                ax.invert_xaxis()
+
+            if is_invert_yaxis:
+                ax.invert_yaxis()
+
+            if x_tick_spacing:
+                ax.xaxis.set_major_locator(MultipleLocator(x_tick_spacing))
+
+            if y_tick_spacing:
+                ax.yaxis.set_major_locator(MultipleLocator(y_tick_spacing))
 
         sns_plot.tight_layout()
 
@@ -771,6 +841,7 @@ class ResultAggregator(PostPlotter):
         set_kwargs: set = {},
         x_rotate: float = 0,
         cols_vary_only: Optional[str] = None,
+        cols_to_max: Sequence[str] = [],
         cols_to_agg: Sequence[str] = [],
         aggregates: Sequence[str] = ["mean", "sem"],
         row_title: str = "{row_name}",

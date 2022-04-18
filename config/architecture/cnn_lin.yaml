@@ -1,7 +1,0 @@
-defaults:
-  - base
-
-name: cnn_lin
-kwargs:
-  architecture: cnn
-  activation: Identity

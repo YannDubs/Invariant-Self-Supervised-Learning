@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment="regularizer_tin"
+experiment="cntr_pred_tin"
 notes="
-**Goal**: effect of regularizer on computational efficiency.
+**Goal**: what predictor to use for contr.
 "
 
 # parses special mode for running the script
@@ -15,25 +15,21 @@ time=10000
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
+representor=cntr
 seed=1
-data_repr.kwargs.batch_size=256
+data_repr.kwargs.batch_size=512
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+update_trainer_repr.max_epochs=200
 timeout=$time
 "
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=dstl
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
-regularizer=huber
-representor.loss.beta=1e-5,1e-3
-update_trainer_repr.max_epochs=150,500
+decodability.kwargs.predictor_kwargs.out_shape=32,64,128,256
 "
-#  TODO 0,1e-6,1e-5,1e-4,1e-3
-#  TODO max_epochs=100,500
-
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -42,6 +38,3 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
-
-# TODO
-# line plot. x = reg (or collapsing quanitified), y=acc, hue=epoch

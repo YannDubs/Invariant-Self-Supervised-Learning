@@ -10,7 +10,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from issl import get_marginalDist
-from issl.helpers import BatchRMSELoss, at_least_ndim, kl_divergence, rel_distance
+from issl.helpers import (BatchRMSELoss, at_least_ndim, eye_like, kl_divergence, prod, rel_distance,
+                          corrcoeff_to_eye_loss,
+                          rayleigh_coeff)
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
@@ -20,6 +22,8 @@ def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
         return PriorRegularizer(**kwargs)
     elif mode == "coarsenerMx":
         return CoarseningRegularizerMx(**kwargs)
+    elif mode == "effdim":
+        return EffdimRegularizer(**kwargs)
     elif mode is None:
         return None
     else:
@@ -56,8 +60,20 @@ class CoarseningRegularizer(nn.Module):
         elif loss == "huber":
             self.loss_f = nn.SmoothL1Loss(reduction="none")
             self.is_distributions = False
+        elif loss == "rel_l1_clamp":
+            # clamp to 0.1 to avoid distance of negatives to go to infty (numerically unstable)
+            # 0.1 means that relative distance of positive is 10% of negatives
+            # TODO should only clamp gradients of the negatives. Positives should still be forced to collapse
+            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0).clamp(min=0.1)
+            self.is_distributions = False
         elif loss == "rel_l1":
-            self.loss_f = partial(rel_distance, p=1.0)
+            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0)
+            self.is_distributions = False
+        elif loss == "corrcoef":
+            self.loss_f = corrcoeff_to_eye_loss
+            self.is_distributions = False
+        elif loss == "rayleigh":
+            self.loss_f = rayleigh_coeff
             self.is_distributions = False
         elif loss == "cosine":
             self.loss_f = lambda z, z_a: - F.cosine_similarity(
@@ -72,6 +88,7 @@ class CoarseningRegularizer(nn.Module):
     def forward(
         self,
         z: torch.Tensor,
+        z_a : torch.Tensor,
         a: torch.Tensor,
         p_Zlx: torch.distributions.TransformedDistribution,
         parent: Any,
@@ -82,6 +99,9 @@ class CoarseningRegularizer(nn.Module):
         ----------
         z : Tensor shape=[batch_size, z_dim]
             Samples from the encoder.
+
+        z_a : Tensor shape=[batch_size, z_dim]
+            Augmented samples from the encoder.
 
         a : Tensor shape=[batch_size, *x_shape]
             Augmented sample.
@@ -108,7 +128,7 @@ class CoarseningRegularizer(nn.Module):
             in_a = parent.p_ZlX(a)
         else:
             in_x = z
-            in_a = parent(a, is_sample=True)
+            in_a = z_a
 
         # shape : [batch]
         loss = self.loss_f(in_x, in_a)
@@ -127,7 +147,7 @@ class PriorRegularizer(nn.Module):
         self.q_Z = get_marginalDist(family, z_shape)
 
     def forward(
-        self, z, a, p_Zlx: torch.distributions.TransformedDistribution, parent,
+        self, z, z_a, a, p_Zlx: torch.distributions.TransformedDistribution, parent,
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
 
@@ -179,7 +199,7 @@ class CoarseningRegularizerMx(nn.Module):
         self.loss = loss
 
     def forward(
-        self, z: torch.Tensor, Mx: torch.Tensor, _, __,
+        self, z: torch.Tensor, z_a: torch.Tensor, Mx: torch.Tensor, _, __,
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
 
@@ -187,6 +207,9 @@ class CoarseningRegularizerMx(nn.Module):
         ----------
         z : Tensor shape=[batch_size, z_dim]
             Samples from the encoder.
+
+        z_a : Tensor shape=[batch_size, z_dim]
+            Augmented samples from the encoder.
 
         Mx : Tensor shape=[batch_size, *Mx_shape]
             Maximal invariants.
@@ -240,3 +263,48 @@ class CoarseningRegularizerMx(nn.Module):
         other = dict()
 
         return loss, logs, other
+
+
+class EffdimRegularizer(nn.Module):
+    """Increases effective dimensionality by each diemnsion independent..
+
+    Parameters
+    ---------
+    z_shape : list or int
+        Shape of representation.
+
+    is_use_augmented : bool, optional
+        Whether to compute the cross correlation between examples with different augmentations rather than same
+        augmentations, Both give optimal representations.
+    """
+
+    def __init__(
+        self,
+        z_shape,
+        is_use_augmented: bool = True,
+    ) -> None:
+        super().__init__()
+        self.is_use_augmented = is_use_augmented
+
+        z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
+        self.corr_coef_bn = torch.nn.BatchNorm1d(z_dim, affine=False)
+
+    def forward(
+        self,
+        z: torch.Tensor,
+        z_a: torch.Tensor,
+        a: torch.Tensor,
+        p_Zlx: torch.distributions.TransformedDistribution,
+        parent: Any,
+    ) -> tuple[torch.Tensor, dict, dict]:
+        batch_size, dim = z.shape
+        z_a = z_a if self.is_use_augmented else z
+
+        corr_coeff = (self.corr_coef_bn(z).T @ self.corr_coef_bn(z_a)) / batch_size
+
+        pos_loss = (corr_coeff.diagonal() - 1).pow(2)
+        neg_loss = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(dim, dim - 1).pow(2).mean(1)
+        logs = dict()
+        other = dict()
+
+        return pos_loss + neg_loss, logs, other

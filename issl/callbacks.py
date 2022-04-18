@@ -21,7 +21,7 @@ from .helpers import (
     UnNormalizer,
     cont_tuple_to_tuple_cont, is_colored_img,
     plot_config,
-    tensors_to_fig,
+    prod, tensors_to_fig,
     to_numpy,
     is_pow_of_k,
     check_import
@@ -107,6 +107,69 @@ class PlottingCallback(Callback):
         raise NotImplementedError()
 
 
+class EffectiveDim(PlottingCallback):
+    """Logs the (log of abs) eigenspectrum of the cross correlation matrix of Z, to check effective dimensionality.
+
+    Parameters
+    ----------
+    z_shape : list or int
+        Shape of z.
+    """
+    def __init__(self, z_shape, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.train_corr_coef = 0
+        self.val_corr_coef = 0
+        self.n_train_steps = 0
+        self.n_val_steps = 0
+
+        z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
+        self.corr_coef_bn = torch.nn.BatchNorm1d(z_dim, affine=False)
+
+    def on_train_batch_end(self, trainer, pl_module, *args, **kwargs):
+        Z = pl_module._save["train"]["Z"]
+        corr_coef = (self.corr_coef_bn(Z).T @ self.corr_coef_bn(Z))
+        self.train_corr_coef += corr_coef
+        self.n_train_steps += 1
+
+    def on_validation_batch_end(self, trainer, pl_module, *args, **kwargs):
+        Z = pl_module._save["val"]["Z"]
+        corr_coef = (self.corr_coef_bn(Z).T @ self.corr_coef_bn(Z))
+        self.val_corr_coef += corr_coef
+        self.n_val_steps += 1
+
+    def on_train_epoch_end(self, trainer, pl_module, *args, **kwargs):
+        corr_coef = self.train_corr_coef / self.n_train_steps
+        rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True)
+        pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
+
+        super().on_train_epoch_end(trainer, pl_module, *args, **kwargs)
+
+        self.n_train_steps = 0
+        self.train_corr_coef = 0
+
+    def on_validation_epoch_end(self, trainer, pl_module, *args, **kwargs):
+        corr_coef = self.val_corr_coef / self.n_val_steps
+        rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True)
+        pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
+        self.n_val_steps = 0
+        self.val_corr_coef = 0
+
+    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        with torch.no_grad():
+            corr_coef = self.train_corr_coef / self.n_train_steps
+            eigenv = torch.linalg.eigvalsh(corr_coef)
+            eigenv = eigenv.abs().log().sort(descending=True)[0]
+
+            with plot_config(**self.plot_config_kwargs):
+                fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+                ax.plot(eigenv)
+                ax.set_xlabel("Singular value rank")
+                ax.set_ylabel("Log of singular value")
+                fig.tight_layout()
+
+                yield fig, dict(name="Effective dim")
+
 class ReconstructImages(PlottingCallback):
     """Logs some reconstructed images.
 
@@ -121,9 +184,9 @@ class ReconstructImages(PlottingCallback):
 
         cfg = pl_module.hparams
         #! waiting for torch lightning #1243
-        a_hat = pl_module._save["A_hat"].float()
-        a = pl_module._save["A"].float()
-        x = pl_module._save["X"].float()
+        a_hat = pl_module._save["train"]["A_hat"].float()
+        a = pl_module._save["train"]["A"].float()
+        x = pl_module._save["train"]["X"].float()
 
         if is_colored_img(x):
             if cfg.data.normalized:

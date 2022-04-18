@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from functools import partial
 from typing import Any
+import torch
 
 from .basic import *
 from .cnn import *
-from .pretrained_ssl import *
-from .vit import *
 
 __all__ = ["get_Architecture"]
 
@@ -53,21 +52,6 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
 
     elif architecture == "resnet_transpose":
         return partial(ResNetTranspose, **kwargs)
-
-    elif architecture == "cnn":
-        return partial(CNN, **kwargs)
-
-    elif architecture == "cnn_unflatten":
-        return partial(CNNUnflatten, **kwargs)
-
-    elif architecture == "vit":
-        return partial(ViT, **kwargs)
-
-    elif ("dino" in architecture) or ("clip" in architecture):
-        return partial(PretrainedSSL, model=architecture, **kwargs)
-
-    elif architecture in ["swav_rn50", "swav_rn50"]:
-        return partial(PretrainedSSL, model=architecture, **kwargs)
 
     else:
         raise ValueError(f"Unknown architecture={architecture}.")

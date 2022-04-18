@@ -12,7 +12,7 @@ import torch.nn as nn
 from issl.architectures import  get_Architecture
 from issl.architectures.basic import FlattenCosine
 from issl.helpers import (RunningMean, average_dict, freeze_module_, kl_divergence, prod, queue_push_, sinkhorn_knopp,
-                          weights_init)
+                          weights_init, BatchNorm1d)
 from torch.distributions import Categorical
 from torch.nn import functional as F
 import  numpy as np
@@ -73,7 +73,7 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         return kwargs
 
     def forward(
-            self, z: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
+            self, z: torch.Tensor, z_a: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 
@@ -106,9 +106,6 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             raise ValueError(
                 f"When using contrastive loss the representation needs to be flattened."
             )
-
-        # shape: [batch_size, z_dim]
-        z_a = parent(a, is_sample=False)
 
         loss, logs, other = self.loss(z, z_a)
 
@@ -157,6 +154,7 @@ class DistillatingISSL(BaseDistillationISSL):
         ema_weight_prior: Optional[float] = None,
         is_batchnorm_pre: bool=True,
         is_reweight_ema: bool=True,
+        bottleneck_kwargs: dict = {},
         predictor_kwargs: dict[str, Any] = {
                                "architecture": "linear",
                            },
@@ -186,8 +184,10 @@ class DistillatingISSL(BaseDistillationISSL):
         self.predictor = Predictor()
 
         if self.is_batchnorm_pre:
-            self.predictor = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.predictor)
-            self.projector = nn.Sequential(nn.BatchNorm1d(self.z_dim), self.projector)
+            # not sure that you want to use batchnorm_pre in the case where using bn in the linear layer
+            # and even less sure about learning a bias term for those
+            self.predictor = nn.Sequential(BatchNorm1d(self.z_dim, **bottleneck_kwargs), self.predictor)
+            self.projector = nn.Sequential(BatchNorm1d(self.z_dim, **bottleneck_kwargs), self.projector)
 
         if self.ema_weight_prior is not None:
             # moving average should depend on predictor or projector => do not share
@@ -197,6 +197,12 @@ class DistillatingISSL(BaseDistillationISSL):
                                                 for _ in range(self.crops_assign)])
 
         self.reset_parameters()
+
+    def get_Mx(self, z):
+        """Return the parameters of the categorical dist of predicted M(X). If entropy is 0 then this is Mx."""
+        logits_assign = self.projector(z).float() / self.temperature_assign
+        Mx = F.softmax(logits_assign, dim=-1)
+        return Mx
 
     def loss(
         self, z: torch.Tensor, z_a: torch.Tensor,
@@ -354,7 +360,7 @@ class SwavISSL(BaseDistillationISSL):
 
         out = super().forward(*args, **kwargs)
 
-        if self.is_curr_using_queue:
+        if self.queue_size > 0:
             queue_push_(self.queue, self._to_add_to_queue)
             del self._to_add_to_queue
 
@@ -381,21 +387,20 @@ class SwavISSL(BaseDistillationISSL):
         with torch.no_grad():
             z_proj_t = self.projector(z_a).detach()
 
-            if self.is_curr_using_queue:
+            if self.queue_size > 0:
                 # fill the queue with the target embedding => ensure that you still use the most recent logits.
                 # + detach to avoid huge memory cost. Will only store after going through z and z_a!
                 self._to_add_to_queue = z_proj_t
 
+            if self.is_curr_using_queue:
                 if len(self.queue.queue) > 0:
                     # get logits for the queue and add them to the target ones => assignments will consider queue
-                    # shape: [batch_size * queue_size, M_shape]
-                    zs_proj_queue = torch.cat(list(self.queue.queue), dim=0)
-
                     # shape: [batch_size * queue_size + n_tgt, n_Mx]
-                    z_proj_t = torch.cat([z_proj_t, zs_proj_queue], dim=0)
+                    zs_proj_queue = list(self.queue.queue)
+                    z_proj_t = torch.cat([z_proj_t] + zs_proj_queue, dim=0)
 
                 else:
-                    pass  # at the start has noting (and cat breaks if nothing)
+                    pass  # at the start has nothing (and cat breaks if nothing)
 
             # compute logits. shape: [batch_size, n_Mx]
             Mt_logits = self.prototypes(z_proj_t).float()
@@ -603,7 +608,7 @@ class DinoISSL(BaseDistillationISSL):
 
 
     def forward(
-            self, z: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
+            self, z: torch.Tensor, z_a: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
 
         self.current_epoch = parent.current_epoch

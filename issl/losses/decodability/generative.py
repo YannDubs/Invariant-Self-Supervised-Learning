@@ -105,7 +105,7 @@ class GenerativeISSL(nn.Module):
         weights_init(self)
 
     def forward(
-        self, z: torch.Tensor, aux_target: torch.Tensor, _, __
+        self, z: torch.Tensor, z_a: torch.Tensor, aux_target: torch.Tensor, _, __
     ) -> tuple[torch.Tensor, dict, dict]:
         """Generate A and compute the upper bound on R[A|Z].
 

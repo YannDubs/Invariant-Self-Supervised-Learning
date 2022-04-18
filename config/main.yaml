@@ -67,6 +67,8 @@ paths: #! the best practice is not to modify those paths but to symlink them to 
   pretrained:
     save: ${paths.base_dir}/pretrained/${long_name}/jid_${job_id} # directory for saving pretrained models
     load: ${paths.base_dir}/pretrained/${long_name}/**  # directory for loading pretrained models if you use ** or * it will glob all matching files and take the latest
+    init_repr: null # will initialize reprensentor from previous model
+    init_enc: null # will initialize encoder from previous model
 
 other: # some meta information that can be useful for internal stuff (usually dirty workarounds or for logging)
   is_debug: False # using debug mode
@@ -193,7 +195,6 @@ update_trainer_repr:
 ########## DOWNSTREAM TASK ##########
 downstream_task:
   all_tasks: [pytorch_datarepr]
-
 
 ### DATA ###
 # everything you want to override would go here

@@ -7,8 +7,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from issl.helpers import plot_config
-
+import logging
 from .helpers import aggregate, assert_sns_vary_only_param, get_default_args, save_fig
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "data_getter",
@@ -156,6 +158,7 @@ def single_plot(fn):
         folder_col=dflt_kwargs["folder_col"],
         filename=dflt_kwargs["filename"],
         cols_vary_only=dflt_kwargs["cols_vary_only"],
+        cols_to_max=dflt_kwargs["cols_to_max"],
         cols_to_agg=dflt_kwargs["cols_to_agg"],
         aggregates=dflt_kwargs["aggregates"],
         plot_config_kwargs=dflt_kwargs["plot_config_kwargs"],
@@ -173,6 +176,7 @@ def single_plot(fn):
             "folder_col",
             "filename",
             "cols_vary_only",
+            "cols_to_max",
             "cols_to_agg",
             "aggregates",
             "plot_config_kwargs",
@@ -189,8 +193,9 @@ def single_plot(fn):
         kwargs["x"] = x
         kwargs["y"] = y
 
+        logger.info(f"Data shape={data.shape}.")
+        data = aggregate(data, cols_to_max, ["max"], is_rename_cols=False)
         assert_sns_vary_only_param(data, kwargs, cols_vary_only)
-
         data = aggregate(data, cols_to_agg, aggregates)
         pretty_data = self.prettify_(data)
         pretty_kwargs = self.prettify_kwargs(pretty_data, **kwargs)

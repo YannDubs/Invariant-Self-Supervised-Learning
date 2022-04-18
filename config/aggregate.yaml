@@ -6,6 +6,7 @@ is_force_gpu: True
 experiment: ???
 agg_mode: [summarize_metrics] # plot_scatter_lines
 col_val_subset : {}
+col_cond_subset : {}
 fillna: {}
 cols_to_str: []
 replace: {}
@@ -19,9 +20,9 @@ patterns:
   representor: "${base_path}/**/results_representor.csv"
   predictor: "${base_path}/**/results_predictor.csv"
 
-
 collect_data:
   params_to_add: {}
+  params_to_add_dflt : {}
   params_to_create: {}
 
 plot_optuna_hypopt:

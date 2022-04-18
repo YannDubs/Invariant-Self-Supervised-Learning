@@ -3,11 +3,11 @@ defaults:
 
 kwargs:
   mode: swav_self_distillation
-  n_Mx: 3000
+  n_Mx: 1000
   temperature:  0.1
-  queue_size:  15
+  queue_size:  0
   out_dim: 128
-  epoch_queue_starts: 5
+  epoch_queue_starts: 15
   projector_kwargs:
     architecture: "mlp"
     hid_dim: 2048

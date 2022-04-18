@@ -17,6 +17,12 @@ trainer:
   limit_test_batches: 0.05
   limit_predict_batches: 0.1
 
+update_trainer_repr:
+  max_epochs: 3
+
+update_trainer_pred:
+  max_epochs: 3
+
 data_repr:
   kwargs:
     # decreased because it was giving an error

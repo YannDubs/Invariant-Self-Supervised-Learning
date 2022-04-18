@@ -10,13 +10,14 @@ data@data_repr=tinyimagenet
 data_repr.kwargs.is_force_all_train=True
 data_repr.kwargs.is_val_on_test=True
 checkpoint@checkpoint_repr=last
-optimizer@optimizer_issl=AdamW
-scheduler@scheduler_issl=warm_unifmultistep
+optimizer@optimizer_issl=Adam
+scheduler@scheduler_issl=cosine
 optimizer_issl.kwargs.weight_decay=1e-6
 optimizer_issl.kwargs.lr=2e-3
 update_trainer_repr.max_epochs=500
 regularizer=none
 "
+# NOW USUGIN ADAM and COSINE so should rerun many things
 
 # running all sklearn in a row because using warm start to make it computationally more efficient (doesn't restart from scratch)
 #  but have to be careful of fisrt running the models with the least data => does not leak data with warm start

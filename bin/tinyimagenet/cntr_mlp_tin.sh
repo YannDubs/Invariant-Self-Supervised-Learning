@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment="cntr_mlp_tin_final"
+experiment="cntr_kl_final"
 notes="
-**Goal**:  contrastive on tinyimagenet.
+**Goal**: effect of KL direction.
 "
 
 # parses special mode for running the script
@@ -11,7 +11,6 @@ source `dirname $0`/base_tin.sh
 
 time=10000
 
-# define all the arguments modified or added to `conf`. If they are added use `+`
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
@@ -21,7 +20,6 @@ timeout=$time
 "
 
 
-# every arguments that you are sweeping over
 kwargs_multi="
 seed=1,2,3
 downstream_task.all_tasks=[torchmlp_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-4_datarepr,torchlogisticw1e-4_datarepr]

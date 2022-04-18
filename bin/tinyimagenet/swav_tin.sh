@@ -16,17 +16,14 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 representor=slfdstl_swav
-decodability.kwargs.temperature=0.07
-decodability.kwargs.n_Mx=500
-decodability.kwargs.epoch_queue_starts=5
-downstream_task.all_tasks=[torchmlp_datarepr,torchmlp_datarepr001test]
+decodability.kwargs.n_Mx=1000
+decodability.kwargs.queue_size=0
 timeout=$time
 "
 
 kwargs_multi="
 seed=1,2,3
-
-" # RUNNING STANFORD
+"
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

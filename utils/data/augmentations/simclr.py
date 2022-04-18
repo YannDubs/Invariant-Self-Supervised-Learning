@@ -15,44 +15,32 @@ from torchvision.transforms import InterpolationMode
 
 
 def get_simclr_augmentations(
-    input_height: int, dataset: Optional[str] = None
+    input_height: int, dataset: Optional[str] = None, strength : float =1.0  # multiply all numeric values
 ) -> Callable[..., Any]:
     dataset = dataset.lower()
 
-    if dataset == "stl10":
-        jitter_strength = 1.0
+    if dataset in ["stl10", "tiny-imagenet-200"]:
         gaussian_blur = False
-        col_s1, col_s2 = 0.4, 0.1
-        crop_s = 0.2
-        p_gray = 0.1
-    elif dataset == "tiny-imagenet-200":
-        jitter_strength = 1.0
-        gaussian_blur = False
-        col_s1, col_s2 = 0.4, 0.1
-        crop_s = 0.2
-        p_gray = 0.1
+        col_s1 = 0.4 * strength
+        col_s2 = 0.1 * strength
+        crop_s = 0.2 / strength
+        p_gray = 0.1 * strength
     elif "cifar10" in dataset:
-        jitter_strength = 0.5
         gaussian_blur = False
-        col_s1, col_s2 = 0.4, 0.1
-        crop_s = 0.2
-        p_gray = 0.1
+        col_s1 = 0.2 * strength
+        col_s2 = 0.05 * strength
+        crop_s = 0.2 / strength
+        p_gray = 0.1 * strength
     elif dataset == "imagenet":
-        jitter_strength = 1.0
         gaussian_blur = True
-        col_s1, col_s2 = 0.8, 0.2
-        crop_s = 0.08
-        p_gray = 0.2
+        col_s1 = 0.8 * strength
+        col_s2 = 0.2 * strength
+        crop_s = 0.08 / strength
+        p_gray = 0.2 * strength
     else:
         raise ValueError(f"Unknown dataset={dataset} for simclr augmentations.")
 
-    color_jitter = transforms.ColorJitter(
-        col_s1 * jitter_strength,
-        col_s1 * jitter_strength,
-        col_s1 * jitter_strength,
-        col_s2 * jitter_strength,
-    )
-
+    color_jitter = transforms.ColorJitter(col_s1, col_s1, col_s1, col_s2)
     data_transforms = [
         transforms.RandomResizedCrop(
             size=input_height,

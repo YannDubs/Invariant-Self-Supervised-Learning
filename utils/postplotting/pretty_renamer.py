@@ -26,22 +26,26 @@ PRETTY_RENAMER = StrFormatter(
         "Pytorch Datarepr/": "",
         "Test/Pred Train/": "Train ",
         "Train/Pred/": "Train ",
+        "Test/Repr/": "Test ",
         "Zdim": r"$\mathcal{Z}$ dim.",
         "Pred": "Downstream Pred.",
         "Repr": "ISSL",
+        "N Equiv": "# Equiv.", #r"$|\mathcal{X}/{\sim}|$",
         # Project specific
         "Acc ": "Acc. ",
         "Accuracy Score": "Acc.",
         "Std Gen Smallz": "Std. Gen. ISSL",
         "Cntr Stda": "Our Cont. ISSL",
         "Acc. Agg Min": "Worst Acc.",
-        # "Acc": "Accuracy",
+        "Acc.": "Accuracy", # if want all long
+        "Acc": "Accuracy", #might cause issues
         "K Labels": "Max. # Labels",
         "N Tasks": "# Tasks",
         "N Samples": "# Samples",
         "2.0": "Binary",
         "Dstl": "DISSL",
         "Cntr": "CISSL",
+        "Decodability": "ISSL Loss",
     },
     to_upper=["Cifar10", "Mnist", "Mlp", "Adam"],
 )

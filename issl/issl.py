@@ -8,7 +8,7 @@ import logging
 import pytorch_lightning as pl
 import torch
 from issl.distributions import CondDist
-from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod
+from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod, rel_distance
 from issl.losses import get_loss_decodability, get_regularizer
 from issl.predictors import OnlineEvaluator
 from torch.nn import functional as F
@@ -38,6 +38,8 @@ class ISSLModule(pl.LightningModule):
 
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
+
+        self._save= dict()
 
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
@@ -106,30 +108,39 @@ class ISSLModule(pl.LightningModule):
         # p_Zlx batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
         z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
 
+        try:
+            z_a = self(aux_target, is_sample=False)
+        except:
+            z_a = None
+
         beta = self.hparams.representor.loss.beta
         if self.loss_regularizer is not None or math.isclose(beta, 0):
             # `sample_eff` is proxy to ensure supp(p(Z|M(X))) = supp(p(Z|X)). shape: [batch_size]
             regularize, s_logs, s_other = self.loss_regularizer(
-                z, aux_target, p_Zlx, self
+                z, z_a, aux_target, p_Zlx, self
             )
         else:
             regularize, s_logs, s_other = None, dict(), dict()
 
         # `decodability` is proxy for R_f[A|Z]. shape: [batch_size]
-        decodability, d_logs, d_other = self.loss_decodability(z, aux_target,  x, self)
+        decodability, d_logs, d_other = self.loss_decodability(z, z_a, aux_target,  x, self)
         loss, logs, other = self.loss(decodability, regularize)
 
         # to log (dict)
         logs.update(d_logs)
         logs.update(s_logs)
-        logs["z_norm_l2"] = F.normalize(z, dim=1, p=2).mean()
+        logs["z_norm_l2"] = z.norm(dim=1, p=2).mean()
         logs["z_max"] = z.abs().max(dim=-1)[0].mean()
-        logs["z_norm_l1"] = F.normalize(z, dim=1, p=1).mean()
+        logs["z_norm_l1"] = z.norm(dim=1, p=1).mean()
+
+        if z_a is not None:
+            logs["rel_distance"] = rel_distance(z.detach(), z_a.detach()).mean()  # estimate neural collapse
 
         # any additional information that can be useful (dict)
         other.update(d_other)
         other.update(s_other)
-        other["X"] = x[0].detach().cpu()
+        other["X"] = x[0].detach().float().cpu()
+        other["Z"] = z.detach().float().cpu()
 
         return loss, logs, other
 
@@ -161,8 +172,7 @@ class ISSLModule(pl.LightningModule):
             loss, logs, other = self.step(batch)
 
             # Imp: waiting for torch lightning #1243
-            # Dev: might not be needed if no save
-            self._save = other
+            self._save["train"] = other
 
         # ONLINE EVALUATOR
         elif curr_opt == "evaluator":
@@ -183,8 +193,9 @@ class ISSLModule(pl.LightningModule):
     def test_val_step(
         self, batch: torch.Tensor, batch_idx: int, step: str
     ) -> Optional[torch.Tensor]:
-        # TODO for some reason validation step for wandb logging after resetting is not correct
-        loss, logs, _ = self.step(batch)
+        loss, logs, other = self.step(batch)
+
+        self._save[step] = other
 
         if self.hparams.evaluation.representor.is_online_eval:
             _, online_logs = self.evaluator(batch, self)

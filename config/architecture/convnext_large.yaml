@@ -7,4 +7,5 @@ kwargs:
   arch_kwargs:
     base: convnext_large
     is_no_linear: False
+    is_channel_out_dim: False
     # out size 1536

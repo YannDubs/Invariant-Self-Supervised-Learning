@@ -689,7 +689,7 @@ def get_lr_scheduler(
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma)
     elif scheduler_type == "UniformMultiStepLR":
         if k_steps is None:
-            k_steps = 5 if epochs > 300 else 3
+            k_steps = (5 + (epochs // 1000)) if epochs > 300 else 3
         delta_epochs = epochs // (k_steps + 1)
         milestones = [delta_epochs * i for i in range(1, k_steps + 1)]
         if decay_per_step is not None:
@@ -1153,7 +1153,12 @@ class Annealer:
 
 
 
-
+class BatchNorm1d(nn.BatchNorm1d):
+    def __init__(self, *args, is_bias=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_bias = is_bias
+        if self.affine and not self.is_bias:
+            self.bias.requires_grad = False
 
 
 # modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11
@@ -1345,6 +1350,20 @@ class LearnedSoftmax(nn.Module):
 
         return y_hat
 
+
+def warmup_cosine_scheduler(step, warmup_steps, total_steps, boundary=0, optima=1):
+    """Computes scheduler for cosine with warmup."""
+    if step < warmup_steps:
+        return boundary + (float(step) / float(max(1, warmup_steps))) * (optima - boundary)
+
+    progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+
+    return boundary + 0.5 * (1.0 + math.cos(math.pi * progress)) * (optima - boundary)
+
+def eye_like(x):
+    """Return an identity like `x`."""
+    return torch.eye(*x.size(), out=torch.empty_like(x))
+
 def rel_distance(x1, x2, **kwargs):
     """
     Return the relative distance of positive examples compaired to negative.
@@ -1353,10 +1372,32 @@ def rel_distance(x1, x2, **kwargs):
     """
     batch_size = x1.shape[0]
     dist = torch.cdist(x1, x2, **kwargs)
-    dist_no_diag = dist * (1 - torch.eye(*dist.size(), out=torch.empty_like(dist)))
+    dist_no_diag = dist * (1 - eye_like(dist))
     dist_neg_row = dist_no_diag.sum(0) / (batch_size - 1)
     dist_neg_col = dist_no_diag.sum(1) / (batch_size - 1)
     dist_neg = (dist_neg_row + dist_neg_col) / 2
     dist_pos = dist.diag()
-    dist_rel = dist_pos / dist_neg
+    dist_rel = dist_pos / (dist_neg + 1e-5)
+    return dist_rel
+
+def corrcoeff_to_eye_loss(x1,x2):
+    batch_size, dim = x1.shape
+    x1_norm = (x1 - x1.mean(1, keepdim=True)) / x1.std(1, keepdim=True)
+    x2_norm = (x2 - x2.mean(1, keepdim=True)) / x2.std(1, keepdim=True)
+    corr_coeff = x1_norm @ x2_norm.T / dim
+    pos_loss = (corr_coeff.diagonal() - 1).pow(2)
+    neg_loss_1 = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(batch_size, batch_size - 1).pow(2).mean(1)
+    neg_loss_2 = corr_coeff.T.masked_select(~eye_like(corr_coeff).bool()).view(batch_size, batch_size - 1).pow(2).mean(1)
+    neg_loss = (neg_loss_1 + neg_loss_2) / 2  # symmetrize
+    return pos_loss + neg_loss
+
+def rayleigh_coeff(x1,x2):
+    batch_size = x1.shape[0]
+    dist = x1 @ x2.T
+    dist_no_diag = dist * (1 - eye_like(dist))
+    dist_neg_row = dist_no_diag.sum(0) / (batch_size - 1)
+    dist_neg_col = dist_no_diag.sum(1) / (batch_size - 1)
+    dist_neg = (dist_neg_row + dist_neg_col) / 2
+    dist_pos = dist.diag()
+    dist_rel = dist_pos / (dist_neg + 1e-5)
     return dist_rel

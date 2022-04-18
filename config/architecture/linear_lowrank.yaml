@@ -1,0 +1,7 @@
+defaults:
+  - base
+
+kwargs:
+  architecture: linear
+  arch_kwargs:
+    bottleneck_size: 64

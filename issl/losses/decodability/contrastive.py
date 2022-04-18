@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from issl.architectures import get_Architecture
-from issl.helpers import prod, weights_init
+from issl.helpers import prod, warmup_cosine_scheduler, weights_init
 
 __all__ = ["ContrastiveISSL"]
 
@@ -72,6 +72,9 @@ class ContrastiveISSL(nn.Module):
         z_shape: Sequence[int],
         temperature: float = 0.07,
         is_train_temperature: bool = False,
+        is_cosine_pos_temperature: bool = False,
+        is_cosine_neg_temperature: bool = False,
+        n_epochs: Optional[int] = None,
         min_temperature: float = 0.01,
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
@@ -84,12 +87,16 @@ class ContrastiveISSL(nn.Module):
             "norm_layer": "batch",
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
+        is_margin_loss: bool = False,  # DEV
         p_ZlX: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
         self.is_train_temperature = is_train_temperature
+        self.is_cosine_neg_temperature = is_cosine_neg_temperature
+        self.is_cosine_pos_temperature = is_cosine_pos_temperature
+        self.n_epochs = n_epochs
         self.min_temperature = min_temperature
         self.is_pred_proj_same = is_pred_proj_same
         self.is_batchnorm_pre = is_batchnorm_pre
@@ -97,6 +104,7 @@ class ContrastiveISSL(nn.Module):
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
+        self.is_margin_loss = is_margin_loss
 
         if self.is_pred_proj_same:
             self.is_self_contrastive = False
@@ -115,6 +123,14 @@ class ContrastiveISSL(nn.Module):
             self.log_temperature = nn.Parameter(
                 torch.log(torch.tensor(self.init_temperature))
             )
+        elif self.is_cosine_neg_temperature:
+            self.precomputed_temperature = [warmup_cosine_scheduler(i, (self.n_epochs // 50) + 1, self.n_epochs,
+                                                                    boundary=1, optima=self.min_temperature)
+                                            for i in range(1000)]
+        elif self.is_cosine_pos_temperature:
+            self.precomputed_temperature = [warmup_cosine_scheduler(i, (self.n_epochs // 50) + 1, self.n_epochs,
+                                                                    boundary=self.min_temperature, optima=1)
+                                            for i in range(1000)]
         else:
             self._temperature = temperature
 
@@ -155,7 +171,7 @@ class ContrastiveISSL(nn.Module):
         return kwargs
 
     def forward(
-        self, z: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
+        self, z: torch.Tensor, z_a: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
     
@@ -190,10 +206,9 @@ class ContrastiveISSL(nn.Module):
                 f"When using contrastive loss the representation needs to be flattened."
             )
 
-        batch_size, z_dim = z.shape
+        self.current_epoch = parent.current_epoch
 
-        # shape: [batch_size, z_dim]
-        z_a = parent(a, is_sample=False)
+        batch_size, z_dim = z.shape
 
         # shape: [(2) * batch_size, (2) * batch_size]
         logits = self.compute_logits_p_Alz(z, z_a)
@@ -236,6 +251,10 @@ class ContrastiveISSL(nn.Module):
             temperature = torch.clamp(
                 self.log_temperature.exp(), min=self.min_temperature
             )
+
+        elif self.is_cosine_neg_temperature or self.is_cosine_pos_temperature:
+            temperature = self.precomputed_temperature[self.current_epoch]
+
         else:
             temperature = self._temperature
         return temperature
@@ -262,31 +281,33 @@ class ContrastiveISSL(nn.Module):
             # you masked select all but the current z. arange takes care of idx of z which increases
             pos_idx = torch.cat([arange + batch_size - 1, arange], dim=0)
 
-            # I[Z,f(M(X))] = E[ log \frac{(N-1) exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-            # = log(N-1) + E[ log \frac{ exp(z^T z_p)}{\sum^{N-1} exp(z^T z')} ]
-            # = log(N-1) + E[ log softmax(z^Tz_p) ]
-            # = log(N-1) - E[ crossentropy(z^Tz, p) ]
-            # = \hat{H}[f(M(X))] - \hat{H}[f(M(X))|Z]
-            hat_H_mlz = F.cross_entropy(logits[mask].view(new_batch_size, n_classes),
-                                        pos_idx,
-                                        reduction="none")
+            logits = logits[mask].view(new_batch_size, n_classes)
+            if not self.is_margin_loss:
+                hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
+            else:
+                hat_H_mlz = F.multi_margin_loss(logits, pos_idx, reduction="none")
 
         else:
-            # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
-            # all the add examples have 0 probability under p
-            log_q = logits.log_softmax(-1)[:, :new_batch_size]
-            # only keep the probability you assign to the 2 positives then sum and divide by 2
-            # essentially multiply and sum by p giving mass 0.5 to each
-            mask = torch.eye(batch_size, device=device).bool().repeat(2, 2)
-            log_q = log_q[mask].view(new_batch_size, 2)
-            hat_H_mlz = - log_q.sum(1) / 2
+            if not self.is_margin_loss:
+                # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
+                # all the add examples have 0 probability under p
+                log_q = logits.log_softmax(-1)[:, :new_batch_size]
+                # only keep the probability you assign to the 2 positives then sum and divide by 2
+                # essentially multiply and sum by p giving mass 0.5 to each
+                mask = torch.eye(batch_size, device=device).bool().repeat(2, 2)
+                log_q = log_q[mask].view(new_batch_size, 2)
+                hat_H_mlz = - log_q.sum(1) / 2
+
+            else:  # TODO rm if do not use
+                pos_idx = torch.eye(batch_size, device=device).repeat(2, 2).long()
+                hat_H_mlz = F.multilabel_margin_loss(logits, pos_idx, reduction="none")
 
         hat_H_m = math.log(n_classes)
         logs = dict(
             I_q_zm=(hat_H_m - hat_H_mlz.mean()),
             hat_H_m=hat_H_m,
             n_negatives=float(n_classes),  # lightning expects float for logging
+            temperature=self.temperature
         )
 
         return hat_H_mlz, logs

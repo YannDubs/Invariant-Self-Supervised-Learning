@@ -6,5 +6,6 @@ kwargs:
   architecture: convnext
   arch_kwargs:
     base: convnext_small
+    is_channel_out_dim: False
     is_no_linear: False
     # out size 768

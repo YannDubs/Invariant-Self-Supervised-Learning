@@ -1,5 +1,0 @@
-defaults:
-  - base
-
-kwargs:
-  architecture: swav_rn50

@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from issl.architectures.helpers import get_Activation, get_Normalization
-from issl.helpers import batch_flatten, batch_unflatten, prod, weights_init
+from issl.helpers import batch_flatten, batch_unflatten, prod, weights_init, BatchNorm1d
 
 __all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine", "FlattenMLL"]
 
@@ -196,7 +196,8 @@ class FlattenLinear(nn.Module):
 
     def __init__(
         self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
-        bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True, **kwargs
+        bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True,
+            bottleneck_kwargs : dict = {}, **kwargs
     ) -> None:
         super().__init__()
 
@@ -213,14 +214,14 @@ class FlattenLinear(nn.Module):
         kwargs = {k: v for k, v in kwargs.items() if k != "is_batchnorm"}
 
         if self.is_batchnorm_pre:
-            self.normalizer_pre = nn.BatchNorm1d(in_dim)
+            self.normalizer_pre = BatchNorm1d(in_dim, **bottleneck_kwargs)
 
         if self.bottleneck_size is not None:
             self.bottleneck = nn.Linear(in_dim, self.bottleneck_size, bias=False)
             in_dim = self.bottleneck_size
 
             if self.is_batchnorm_bottleneck:
-                self.normalizer = nn.BatchNorm1d(self.bottleneck_size)
+                self.normalizer = BatchNorm1d(self.bottleneck_size, **bottleneck_kwargs)
 
         self.linear = nn.Linear(in_dim, out_dim, **kwargs)
 

@@ -167,6 +167,9 @@ class ISSLImgDataset(ISSLDataset):
         label class of size. There will be n_sub_label subpartitions. This is useful to know exactly the number of
         equivalence classes you are learning, while being somewhat realistic.
 
+    simclr_aug_strength : float, optional
+        Strength of standard simCLR augmentations.
+
     kwargs:
         Additional arguments to `ISSLDataset`.
     """
@@ -184,6 +187,7 @@ class ISSLImgDataset(ISSLDataset):
         is_shuffle_targets: bool = False,
         is_shuffle_Mx: bool = False,
         n_sub_label: int = 1,
+        simclr_aug_strength: float = 1.0,
         **kwargs,
     ):
         self.base_resize = base_resize
@@ -203,8 +207,9 @@ class ISSLImgDataset(ISSLDataset):
         self.n_sub_label = n_sub_label
         self.is_shuffle_targets = is_shuffle_targets
         self.is_shuffle_Mx = is_shuffle_Mx
+        self.simclr_aug_strength = simclr_aug_strength
 
-        self.cache_targets_() # cache only targets
+        self.cache_targets_()  # cache only targets
 
         if self.is_shuffle_targets:
             # need to shuffle before computing Mx
@@ -455,7 +460,7 @@ class ISSLImgDataset(ISSLDataset):
                 ),
                 "crop": RandomCrop(size=(shape[1], shape[2])),
                 "simclr-imagenet": get_simclr_augmentations(
-                    shape[-1], dataset="imagenet"
+                    shape[-1], dataset="imagenet", strength=self.simclr_aug_strength
                 ),
             },
             tensor={"erasing": RandomErasing(value=0.5),},
@@ -464,10 +469,10 @@ class ISSLImgDataset(ISSLDataset):
         try:
             # might not be possible depending on the dataset
             augmentations["PIL"]["simclr"] = get_simclr_augmentations(
-                shape[-1], dataset=self.dataset_name
+                shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength
             )
         except ValueError:
-            logger.debug(f"Could load dataset-specific augmentation for {self.dataset_name}.")
+            logger.debug(f"Could not load dataset-specific augmentation for {self.dataset_name}.")
 
         return augmentations
 

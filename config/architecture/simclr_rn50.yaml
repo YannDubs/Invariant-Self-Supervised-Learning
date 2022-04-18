@@ -1,5 +1,0 @@
-defaults:
-  - base
-
-kwargs:
-  architecture: simclr_rn50
