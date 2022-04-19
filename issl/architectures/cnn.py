@@ -4,6 +4,7 @@ import logging
 import math
 from collections.abc import Sequence
 from typing import Any, Optional, Union
+import einops
 
 import torchvision
 from torchvision import transforms as transform_lib
@@ -21,7 +22,7 @@ from issl.helpers import check_import, johnson_lindenstrauss_init_, prod, weight
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["ResNet", "ResNetTranspose",  "ConvNext"]
+__all__ = ["ResNet",  "ConvNext"]
 
 
 class ResNet(nn.Module):
@@ -104,73 +105,88 @@ class ResNet(nn.Module):
         self.reset_parameters()
 
     def update_out_chan_(self):
+
         if self.bottleneck_channel is None:
             conv1 = nn.Conv2d(self.resnet.fc.in_features, self.out_dim, kernel_size=1, bias=False)
+            bn = torch.nn.BatchNorm2d(self.out_dim)
+            weights_init(bn)
+            resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
 
         else:  # TODO chose best
-            if self.bottleneck_mode == "linear":
-                # low rank linear
-                conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features, self.bottleneck_channel, kernel_size=1, bias=False)
-                conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim, kernel_size=1, bias=False)
 
-                if self.is_bn_bttle_channel:
-                    bn = torch.nn.BatchNorm2d(self.bottleneck_channel, affine=False)
-                    conv1 = nn.Sequential(conv1_to_bttle, bn, conv1_from_bttle)
-                else:
-                    conv1 = nn.Sequential(conv1_to_bttle, conv1_from_bttle)
+            if self.bottleneck_mode == "bttle_expand":
 
-                weights_init(conv1)
-                johnson_lindenstrauss_init_(conv1[0])
+                assert self.out_dim % self.resnet.fc.in_features == 0
 
-            elif self.bottleneck_mode == "mlp":
-                conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                resizer = BottleneckExpand(self.resnet.fc.in_features,
                                            self.bottleneck_channel,
-                                           kernel_size=1,
-                                           bias=False) # will use batchnorm
-                conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim,
-                                             kernel_size=1, bias=False)
-                bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
-                conv1 = nn.Sequential(conv1_to_bttle, bn, nn.ReLU(), conv1_from_bttle)
-
-                weights_init(conv1)
-                johnson_lindenstrauss_init_(conv1[0])
-
-            elif self.bottleneck_mode == "cnn":
-                # use depth wise seprable convolutions to be more efficient parameter wise
-                depthconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
-                                                self.resnet.fc.in_features,
-                                                groups=self.resnet.fc.in_features,
-                                                stride=1,  padding=1, kernel_size=3,
-                                                bias=False)  # will use batchnorm
-                pointconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
-                                               self.bottleneck_channel,
-                                               kernel_size=1, bias=False)  # will use batchnorm
-
-                bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
-
-                depthconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
-                                                self.bottleneck_channel,
-                                                groups=self.bottleneck_channel,
-                                                stride=1, padding=1, kernel_size=3,
-                                                bias=False)  # will use batchnorm
-                pointconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
-                                                self.out_dim,
-                                                kernel_size=1, bias=False)  # will use batchnorm
-
-                conv1 = nn.Sequential(depthconv1_to_bttle, pointconv1_to_bttle,
-                                      bn, nn.ReLU(),
-                                      depthconv1_from_bttle, pointconv1_from_bttle)
-
-                weights_init(conv1)
-                johnson_lindenstrauss_init_(conv1[1])
+                                           expansion=self.out_dim // self.resnet.fc.in_features)
 
             else:
-                raise ValueError(f"Unknown self.bottleneck_mode={self.bottleneck_mode}.")
 
-        bn = torch.nn.BatchNorm2d(self.out_dim)
-        weights_init(bn)
+                if self.bottleneck_mode == "linear":
+                    # low rank linear
+                    conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features, self.bottleneck_channel, kernel_size=1, bias=False)
+                    conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim, kernel_size=1, bias=False)
 
-        resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
+                    if self.is_bn_bttle_channel:
+                        bn = torch.nn.BatchNorm2d(self.bottleneck_channel, affine=False)
+                        conv1 = nn.Sequential(conv1_to_bttle, bn, conv1_from_bttle)
+                    else:
+                        conv1 = nn.Sequential(conv1_to_bttle, conv1_from_bttle)
+
+                    weights_init(conv1)
+                    johnson_lindenstrauss_init_(conv1[0])
+
+                elif self.bottleneck_mode == "mlp":
+                    conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                                               self.bottleneck_channel,
+                                               kernel_size=1,
+                                               bias=False) # will use batchnorm
+                    conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim,
+                                                 kernel_size=1, bias=False)
+                    bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
+                    conv1 = nn.Sequential(conv1_to_bttle, bn, nn.ReLU(), conv1_from_bttle)
+
+                    weights_init(conv1)
+                    johnson_lindenstrauss_init_(conv1[0])
+
+                elif self.bottleneck_mode == "cnn":
+                    # use depth wise seprable convolutions to be more efficient parameter wise
+                    depthconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                                                    self.resnet.fc.in_features,
+                                                    groups=self.resnet.fc.in_features,
+                                                    stride=1,  padding=1, kernel_size=3,
+                                                    bias=False)  # will use batchnorm
+                    pointconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                                                   self.bottleneck_channel,
+                                                   kernel_size=1, bias=False)  # will use batchnorm
+
+                    bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
+
+                    depthconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
+                                                    self.bottleneck_channel,
+                                                    groups=self.bottleneck_channel,
+                                                    stride=1, padding=1, kernel_size=3,
+                                                    bias=False)  # will use batchnorm
+                    pointconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
+                                                    self.out_dim,
+                                                    kernel_size=1, bias=False)  # will use batchnorm
+
+                    conv1 = nn.Sequential(depthconv1_to_bttle, pointconv1_to_bttle,
+                                          bn, nn.ReLU(),
+                                          depthconv1_from_bttle, pointconv1_from_bttle)
+
+                    weights_init(conv1)
+                    johnson_lindenstrauss_init_(conv1[1])
+
+                else:
+                    raise ValueError(f"Unknown self.bottleneck_mode={self.bottleneck_mode}.")
+
+                bn = torch.nn.BatchNorm2d(self.out_dim)
+                weights_init(bn)
+
+                resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
 
         self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
 
@@ -254,99 +270,32 @@ class ConvNext(ResNet):
             )
             weights_init(self.resnet.features[0][0])
 
-class Interpolate(nn.Module):
-    """nn.Module wrapper for F.interpolate."""
 
-    def __init__(self, size=None, scale_factor=None):
+class BottleneckExpand(nn.Module):
+
+    def __init__(
+            self,
+            in_channels,
+            hidden_channels,
+            expansion=8,
+            norm_layer=None,
+            is_residual=True
+    ):
         super().__init__()
-        self.size, self.scale_factor = size, scale_factor
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        self.expansion = expansion
+        self.is_residual = is_residual
+        out_channels = in_channels * self.expansion
+        self.conv1 = nn.Conv2d(in_channels, hidden_channels, kernel_size=1, bias=False)
+        self.bn1 = norm_layer(hidden_channels)
+        self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, kernel_size=3, bias=False, padding=1)
+        self.bn2 = norm_layer(hidden_channels)
+        self.conv3 = nn.Conv2d(hidden_channels, out_channels, kernel_size=1, bias=False)
+        self.bn3 = norm_layer(out_channels)
+        self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, x):
-        return F.interpolate(x, size=self.size, scale_factor=self.scale_factor)
-
-
-def conv3x3(in_planes, out_planes, stride=1):
-    """3x3 convolution with padding."""
-    return nn.Conv2d(
-        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
-    )
-
-
-def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution."""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-
-def resize_conv3x3(in_planes, out_planes, scale=1):
-    """upsample + 3x3 convolution with padding to avoid checkerboard artifact."""
-    if scale == 1:
-        return conv3x3(in_planes, out_planes)
-    else:
-        return nn.Sequential(
-            Interpolate(scale_factor=scale), conv3x3(in_planes, out_planes)
-        )
-
-
-def resize_conv1x1(in_planes, out_planes, scale=1):
-    """upsample + 1x1 convolution with padding to avoid checkerboard artifact."""
-    if scale == 1:
-        return conv1x1(in_planes, out_planes)
-    else:
-        return nn.Sequential(
-            Interpolate(scale_factor=scale), conv1x1(in_planes, out_planes)
-        )
-
-
-class DecoderBlock(nn.Module):
-    """ResNet block, but convs replaced with resize convs, and channel increase is in second conv, not first."""
-
-    expansion = 1
-
-    def __init__(self, inplanes, planes, scale=1, upsample=None, activation="ReLU"):
-        super().__init__()
-        self.conv1 = resize_conv3x3(inplanes, inplanes)
-        self.bn1 = nn.BatchNorm2d(inplanes)
-        self.relu = get_Activation(activation)()
-        self.conv2 = resize_conv3x3(inplanes, planes, scale)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.upsample = upsample
-
-    def forward(self, x):
-        identity = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.upsample is not None:
-            identity = self.upsample(x)
-
-        out += identity
-        out = self.relu(out)
-
-        return out
-
-
-class DecoderBottleneck(nn.Module):
-    """ResNet bottleneck, but convs replaced with resize convs."""
-
-    expansion = 4
-
-    def __init__(self, inplanes, planes, scale=1, upsample=None, activation="ReLU"):
-        super().__init__()
-        width = planes  # this needs to change if we want wide resnets
-        self.conv1 = resize_conv1x1(inplanes, width)
-        self.bn1 = nn.BatchNorm2d(width)
-        self.conv2 = resize_conv3x3(width, width, scale)
-        self.bn2 = nn.BatchNorm2d(width)
-        self.conv3 = conv1x1(width, planes * self.expansion)
-        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
-        self.relu = get_Activation(activation)()
-        self.upsample = upsample
-        self.scale = scale
+        self.reset_parameters()
 
     def forward(self, x):
         identity = x
@@ -362,163 +311,13 @@ class DecoderBottleneck(nn.Module):
         out = self.conv3(out)
         out = self.bn3(out)
 
-        if self.upsample is not None:
-            identity = self.upsample(x)
+        if self.is_residual:
+            identity = einops.repeat(identity, 'b c h w -> b (tile c) h w', tile=self.expansion)
+            out += identity
 
-        out += identity
         out = self.relu(out)
+
         return out
-
-
-class ResNetDecoder(nn.Module):
-    """Resnet in reverse order."""
-
-    def __init__(
-        self,
-        block,
-        layers,
-        latent_dim,
-        input_height,
-        first_conv=False,
-        maxpool1=False,
-        activation="ReLU",
-    ):
-        super().__init__()
-
-        self.expansion = block.expansion
-        self.inplanes = 512 * block.expansion
-        self.first_conv = first_conv
-        self.maxpool1 = maxpool1
-        self.input_height = input_height
-        self.activation = activation
-
-        self.upscale_factor = 8
-
-        self.linear = nn.Linear(latent_dim, self.inplanes * 4 * 4)
-
-        self.layer1 = self._make_layer(block, 256, layers[0], scale=2)
-        self.layer2 = self._make_layer(block, 128, layers[1], scale=2)
-        self.layer3 = self._make_layer(block, 64, layers[2], scale=2)
-
-        if self.maxpool1:
-            self.layer4 = self._make_layer(block, 64, layers[3], scale=2)
-            self.upscale_factor *= 2
-        else:
-            self.layer4 = self._make_layer(block, 64, layers[3])
-
-        if self.first_conv:
-            self.upscale = Interpolate(scale_factor=2)
-            self.upscale_factor *= 2
-        else:
-            self.upscale = Interpolate(scale_factor=1)
-
-        # interpolate after linear layer using scale factor
-        self.upscale1 = Interpolate(size=input_height // self.upscale_factor)
-
-        self.conv1 = nn.Conv2d(
-            64 * block.expansion, 3, kernel_size=3, stride=1, padding=1, bias=False
-        )
-
-    def _make_layer(self, block, planes, blocks, scale=1):
-        upsample = None
-        if scale != 1 or self.inplanes != planes * block.expansion:
-            upsample = nn.Sequential(
-                resize_conv1x1(self.inplanes, planes * block.expansion, scale),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-
-        layers = []
-        layers.append(
-            block(self.inplanes, planes, scale, upsample, activation=self.activation)
-        )
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, activation=self.activation))
-
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        x = self.linear(x)
-
-        # NOTE: replaced this by Linear(in_channels, 514 * 4 * 4)
-        # x = F.interpolate(x, scale_factor=4)
-
-        x = x.view(x.size(0), 512 * self.expansion, 4, 4)
-        x = self.upscale1(x)
-
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        x = self.upscale(x)
-
-        x = self.conv1(x)
-        return x
-
-
-class ResNetTranspose(nn.Module):
-    # transposed version of the resnet. Can be used as a decoder.
-    def __init__(
-        self,
-        in_shape: Sequence[int],
-        out_shape: Sequence[int],
-        base: str = "resnet18",
-        activation: str = "ReLU",
-    ) -> None:
-        super().__init__()
-
-        self.out_shape = out_shape
-        self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
-        self.in_dim = prod(self.in_shape)
-        self.base = base
-        self.activation = activation
-
-        if self.base == "resnet18":
-            block = DecoderBlock
-            layers = [2, 2, 2, 2]
-        elif self.base == "resnet34":
-            block = DecoderBlock
-            layers = [3, 4, 6, 3]
-        elif self.base == "resnet50":
-            block = DecoderBottleneck
-            layers = [3, 4, 6, 3]
-        elif self.base == "resnet101":
-            block = DecoderBottleneck
-            layers = [3, 4, 23, 3]
-        else:
-            raise ValueError(f"Unknown base = {self.base}")
-
-        is_small = self.out_shape[1] < 100
-        self.resnet = ResNetDecoder(
-            block,
-            layers,
-            self.in_dim,
-            self.out_shape[1],
-            first_conv=not is_small,
-            maxpool1=not is_small,
-            activation=self.activation,
-        )
-
-        n_chan = self.out_shape[0]
-        if n_chan != 3:
-            # replace in case it's black and white
-            self.resnet.conv1 = nn.Conv2d(
-                self.resnet.conv1.in_channels,
-                n_chan,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False,
-            )
-
-        self.reset_parameters()
 
     def reset_parameters(self) -> None:
         weights_init(self)
-
-    def forward(self, Z: torch.Tensor):
-        Z = Z.flatten(start_dim=Z.ndim - len(self.in_shape))
-        X_hat = self.resnet(Z)
-        return X_hat
-
-

@@ -33,6 +33,7 @@ from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.utilities import parsing
+from pytorch_lightning.plugins.environments import SLURMEnvironment
 
 import issl
 from issl import ISSLModule, Predictor
@@ -578,15 +579,11 @@ def get_trainer(
 
     # TRAINER
     trainer = pl.Trainer(
+        plugins=[SLURMEnvironment(auto_requeue=False)], # lightning automatically detects slurm and tries to handle checkpointing but we want outside #6389
         logger=get_logger(cfg, module, is_representor),
         callbacks=get_callbacks(cfg, is_representor, dm=dm),
         **kwargs,
     )
-
-    # lightning automatically detects slurm and tries to handle checkpointing but we want outside
-    # so simply remove hpc save until  #6204 #5225 #6389
-    # TODO change when #6389
-    trainer.checkpoint_connector.hpc_save = lambda *args, **kwargs: None
 
     return trainer
 
@@ -624,7 +621,11 @@ def save_pretrained(
     if not is_sklearn:
         # restore best checkpoint
         best = trainer.checkpoint_callback.best_model_path
-        trainer.checkpoint_connector.resume_start(best)
+        try:
+            trainer._checkpoint_connector.resume_start(best)
+        except AttributeError:
+            # Older versions of lightning
+            trainer.checkpoint_connector.resume_start(best)
 
     # save
     dest_path = Path(cfg.paths.pretrained.save)

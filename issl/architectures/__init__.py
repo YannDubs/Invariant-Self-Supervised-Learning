@@ -50,8 +50,5 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
     elif architecture == "resnet":
         return partial(ResNet, **kwargs)
 
-    elif architecture == "resnet_transpose":
-        return partial(ResNetTranspose, **kwargs)
-
     else:
         raise ValueError(f"Unknown architecture={architecture}.")
