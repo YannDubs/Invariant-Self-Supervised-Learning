@@ -7,11 +7,11 @@ import logging
 
 import pytorch_lightning as pl
 import torch
-from issl.distributions import CondDist
-from issl.helpers import Annealer, OrderedSet, append_optimizer_scheduler_, prod, rel_distance
+
+from issl import get_Architecture
+from issl.helpers import OrderedSet, append_optimizer_scheduler_, rel_distance
 from issl.losses import get_loss_decodability, get_regularizer
 from issl.predictors import OnlineEvaluator
-from torch.nn import functional as F
 
 __all__ = ["ISSLModule"]
 logger = logging.getLogger(__name__)
@@ -23,8 +23,11 @@ class ISSLModule(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(hparams)
 
-        self.p_ZlX = CondDist(**self.hparams.encoder.kwargs)
-        self.loss_decodability = get_loss_decodability(p_ZlX=self.p_ZlX,
+        cfge = self.hparams.encoder.kwargs
+        Architecture = get_Architecture(cfge.architecture, **cfge.arch_kwargs)
+        self.encoder = Architecture(cfge.in_shape, cfge.out_shape)
+
+        self.loss_decodability = get_loss_decodability(encoder=self.encoder,
             **self.hparams.decodability.kwargs
         )
         self.loss_regularizer = get_regularizer(**self.hparams.regularizer.kwargs)
@@ -39,7 +42,7 @@ class ISSLModule(pl.LightningModule):
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
-        self._save= dict()
+        self._save = dict()
 
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
@@ -55,7 +58,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False, p_ZlX=None, rm_out_chan: bool = False,
+        self, x: torch.Tensor, encoder=None, **kwargs
     ):
         """Represents the data `x`.
 
@@ -64,14 +67,8 @@ class ISSLModule(pl.LightningModule):
         x : torch.Tensor of shape=[batch_size, *data.shape]
             Data to represent.
 
-        is_sample : bool, optional
-            Whether to sample the representation rather than return expected representation.
-
-        is_return_p_ZlX : bool, optional
-            Whether to return the encoder in addition to the representation.
-
-        p_ZlX : CondDist, optional
-            Encoder to use instead of the default `self.p_ZlX`. Useful to use an EMA encoder.
+        encoder : Module, optional
+            Encoder to use instead of the default `self.encoder`. Useful to use an EMA encoder.
 
         Returns
         -------
@@ -79,23 +76,11 @@ class ISSLModule(pl.LightningModule):
             Represented data.
         """
 
-        if p_ZlX is None:
-            p_ZlX = self.p_ZlX
-
-        # batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        if rm_out_chan:
-            p_Zlx = p_ZlX(x, rm_out_chan=True)
-        else:
-            p_Zlx = p_ZlX(x)
+        if encoder is None:
+            encoder = self.encoder
 
         # shape: [batch_size, *z_shape]
-        if is_sample:
-            z = p_Zlx.rsample()
-        else:
-            z = p_Zlx.mean
-
-        if is_return_p_ZlX:
-            return z, p_Zlx
+        z = encoder(x, **kwargs)
 
         return z
 
@@ -103,31 +88,33 @@ class ISSLModule(pl.LightningModule):
 
         x, (_, aux_target) = batch
 
-        if self.hparams.representor.is_switch_x_aux_trgt and self.stage == "repr":
-            # switch x and aux_target. Useful if want augmentations as inputs. Only during representations.
-            x, aux_target = aux_target, x
+        if self.hparams.decodability.is_encode_aux:
+            if self.hparams.encoder.rm_out_chan_aug:
+                # here we use a different transformation for the augmentations and the inputs
+                z, z_no_out_chan = self(x, is_return_no_out_chan=True)
+                z_a, z_a_no_out_chan = self(aux_target, is_return_no_out_chan=True)
 
-        # z shape: [batch_size, *z_shape]
-        # p_Zlx batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
+                # z shape: [2 * batch_size, *z_shape]
+                z = torch.cat([z, z_a])
+                z_tgt = torch.cat([z_no_out_chan, z_a_no_out_chan])
 
-        try:
-            # TODO if keeping rm_out_chan then for regularizer will need to give the augmentation after out chan
-            z_a = self(aux_target, is_sample=False, rm_out_chan=self.hparams.encoder.rm_out_chan_aug)
-        except:
-            z_a = None
+            else:
+                # z shape: [2 * batch_size, *z_shape]
+                z = self(torch.cat([x, aux_target]))
+                z_tgt = z
+        else:
+            z = self(x)  # only encode the input (ie if asymmetry between X and A)
+            z_tgt = None
 
         beta = self.hparams.representor.loss.beta
         if self.loss_regularizer is not None or math.isclose(beta, 0):
-            # `sample_eff` is proxy to ensure supp(p(Z|M(X))) = supp(p(Z|X)). shape: [batch_size]
-            regularize, s_logs, s_other = self.loss_regularizer(
-                z, z_a, aux_target, p_Zlx, self
-            )
+            # `sample_eff` is proxy to ensure Z = Z_a. shape: [batch_size]
+            regularize, s_logs, s_other = self.loss_regularizer(z, aux_target, self)
         else:
             regularize, s_logs, s_other = None, dict(), dict()
 
         # `decodability` is proxy for R_f[A|Z]. shape: [batch_size]
-        decodability, d_logs, d_other = self.loss_decodability(z, z_a, aux_target,  x, self)
+        decodability, d_logs, d_other = self.loss_decodability(z, z_tgt, x, aux_target, self)
         loss, logs, other = self.loss(decodability, regularize)
 
         # to log (dict)
@@ -137,14 +124,15 @@ class ISSLModule(pl.LightningModule):
         logs["z_max"] = z.abs().max(dim=-1)[0].mean()
         logs["z_norm_l1"] = z.norm(dim=1, p=1).mean()
 
-        if z_a is not None:
-            logs["rel_distance"] = rel_distance(z.detach(), z_a.detach()).mean()  # estimate neural collapse
+        z_x, z_a = z.detach().chunk(2, dim=0)
+        if self.hparams.decodability.is_encode_aux:
+            logs["rel_distance"] = rel_distance(z_x, z_a).mean()  # estimate neural collapse
 
         # any additional information that can be useful (dict)
         other.update(d_other)
         other.update(s_other)
         other["X"] = x[0].detach().float().cpu()
-        other["Z"] = z.detach().float().cpu()
+        other["Z"] = z_x.float().cpu()
 
         return loss, logs, other
 

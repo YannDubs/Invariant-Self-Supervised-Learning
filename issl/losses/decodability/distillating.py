@@ -38,7 +38,7 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`.
 
-    p_ZlX : CondDist, optional
+    encoder : Module, optional
         Optional encoder.
     """
 
@@ -47,7 +47,7 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
             z_shape: Sequence[int],
             out_dim: float = 512,
             projector_kwargs: dict[str, Any] = {"architecture": "linear"},
-            p_ZlX: Optional[nn.Module]=None # only used for DINO
+            encoder: Optional[nn.Module]=None # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
@@ -73,7 +73,7 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         return kwargs
 
     def forward(
-            self, z: torch.Tensor, z_a: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
+            self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 
@@ -82,11 +82,11 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         z : Tensor shape=[batch_size, z_dim]
             Sampled representation.
 
-        a : Tensor shape=[batch_size, *x_shape]
-            Augmented sample.
+        z_tgt : Tensor shape=[2 * batch_size, *x_shape]
+            Representation from the other branch.
 
         parent : ISSLModule, optional
-            Parent module. Should have attribute `parent.p_Zlx`.
+            Parent module. Should have attribute `parent.encoder`.
 
         Returns
         -------
@@ -107,16 +107,19 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
                 f"When using contrastive loss the representation needs to be flattened."
             )
 
-        loss, logs, other = self.loss(z, z_a)
+        loss, logs, other = self.loss(z, z_tgt)
 
         return loss, logs, other
 
     def loss(
-        self, z: torch.Tensor, z_a: torch.Tensor,
+        self, z: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
-        loss1, logs1, other = self.asymmetric_loss(z, z_a)
-        loss2, logs2, _ = self.asymmetric_loss(z_a, z)
+        z_x, z_a = z.chunk(2, dim=0)
+        z_tgt_x, z_tgt_a = z_tgt.chunk(2, dim=0)
+
+        loss1, logs1, other = self.asymmetric_loss(z_x, z_tgt_a)
+        loss2, logs2, _ = self.asymmetric_loss(z_a, z_tgt_x)
         loss = (loss1 + loss2) / 2
 
         logs = average_dict(logs1, logs2)
@@ -124,7 +127,7 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         return loss, logs, other
 
     @abc.abstractmethod
-    def asymmetric_loss(self, z : torch.Tensor, z_a: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
+    def asymmetric_loss(self, z_src : torch.Tensor, z_tgt: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
         pass
 
 # performs SSL by having one part of the model implementing the M(X)
@@ -184,13 +187,13 @@ class DistillatingISSL(BaseDistillationISSL):
         self.predictor = Predictor()
 
         if self.is_batchnorm_pre:
-            z_shape_a = self.projector_kwargs.get("in_shape", self.z_dim)
-            z_dim_a = z_shape_a if isinstance(z_shape_a, int) else prod(z_shape_a)
+            m_hat_shape = self.projector_kwargs.get("in_shape", self.z_dim)
+            m_hat_dim = m_hat_shape if isinstance(m_hat_shape, int) else prod(m_hat_shape)
 
             # not sure that you want to use batchnorm_pre in the case where using bn in the linear layer
             # and even less sure about learning a bias term for those
             self.predictor = nn.Sequential(BatchNorm1d(self.z_dim, **batchnorm_kwargs), self.predictor)
-            self.projector = nn.Sequential(BatchNorm1d(z_dim_a, **batchnorm_kwargs), self.projector)
+            self.projector = nn.Sequential(BatchNorm1d(m_hat_dim, **batchnorm_kwargs), self.projector)
 
         if self.ema_weight_prior is not None:
             # moving average should depend on predictor or projector => do not share
@@ -201,22 +204,19 @@ class DistillatingISSL(BaseDistillationISSL):
 
         self.reset_parameters()
 
-    def get_Mx(self, z):
+    def get_Mx(self, z_tgt):
         """Return the parameters of the categorical dist of predicted M(X). If entropy is 0 then this is Mx."""
-        logits_assign = self.projector(z).float() / self.temperature_assign
+        logits_assign = self.projector(z_tgt).float() / self.temperature_assign
         Mx = F.softmax(logits_assign, dim=-1)
         return Mx
 
     def loss(
-        self, z: torch.Tensor, z_a: torch.Tensor,
+        self, z: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
-        z_proj = torch.cat([z, z_a])
-        z_pred = torch.cat([z, z_a])
-
         # shape: [batch_size, M_shape]. Make sure not half prec
-        logits_assign = self.projector(z_proj).float() / self.temperature_assign
-        logits_predict = self.predictor(z_pred).float() / self.temperature
+        logits_assign = self.projector(z_tgt).float() / self.temperature_assign
+        logits_predict = self.predictor(z).float() / self.temperature
 
         all_p_Mlz = F.softmax(logits_assign, dim=-1).chunk(self.crops_assign)
         all_log_p_Mlz = F.log_softmax(logits_assign, dim=-1).chunk(self.crops_assign)
@@ -287,7 +287,7 @@ class DistillatingISSL(BaseDistillationISSL):
 
         return loss, logs, other
 
-    def asymmetric_loss(self, z : torch.Tensor, z_a: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
+    def asymmetric_loss(self, z_src : torch.Tensor, z_tgt: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
         pass  # not using
 
 
@@ -374,21 +374,21 @@ class SwavISSL(BaseDistillationISSL):
         return (self.queue_size > 0) and (self.current_epoch >= self.epoch_queue_starts)
 
     def asymmetric_loss(
-        self, z: torch.Tensor, z_a: torch.Tensor,
+        self, z_src: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
-        n_tgt = z_a.size(0)
+        n_tgt = z_tgt.size(0)
 
         # shape: [batch_size, M_shape]
         # makes more sense to not concat because of batchnorms (but slower)
-        z_proj_s = self.projector(z)
+        z_proj_s = self.projector(z_src)
 
         # compute logits. shape: [batch_size, n_Mx]
         # make sure float32 and not 16
         Ms_logits = self.prototypes(z_proj_s).float()
 
         with torch.no_grad():
-            z_proj_t = self.projector(z_a).detach()
+            z_proj_t = self.projector(z_tgt).detach()
 
             if self.queue_size > 0:
                 # fill the queue with the target embedding => ensure that you still use the most recent logits.
@@ -472,13 +472,12 @@ class SimSiamISSL(BaseDistillationISSL):
 
         self.reset_parameters()
 
-    def loss(self, z, z_a):
+    def loss(self, z, _):
 
         # shape: [batch_size, M_shape]
         z_proj = self.projector(z)
-        z_a_proj = self.projector(z_a)
 
-        loss, logs, other = super().loss(z_proj, z_a_proj)
+        loss, logs, other = super().loss(z_proj, z_proj)
 
         logs["std_collapse"] = F.normalize(z_proj, dim=1, p=2).std(-1).mean()
         logs["std_collapse_norm"] = logs["std_collapse"] * (z_proj.size(1) ** 0.5)  # should be one if gaussian
@@ -486,14 +485,14 @@ class SimSiamISSL(BaseDistillationISSL):
         return loss, logs, other
 
     def asymmetric_loss(
-        self, z: torch.Tensor, z_a: torch.Tensor,
+        self, z_src: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict, dict]:
 
-        p = self.predictor(z)
-        z_a = z_a.detach()
+        p = self.predictor(z_src)
+        z_tgt = z_tgt.detach()
 
         # shape: [batch_size]
-        loss = -F.cosine_similarity(p, z_a, dim=-1)
+        loss = -F.cosine_similarity(p, z_tgt, dim=-1)
 
         logs = dict()
         other = dict()
@@ -519,7 +518,7 @@ class DinoISSL(BaseDistillationISSL):
     def __init__(
             self,
             *args,
-            p_ZlX: nn.Module,
+            encoder: nn.Module,
             out_dim: int=10000, # for imagenet they use 65k
             projector_kwargs: dict[str, Any] = {
                 "architecture": "mlp",
@@ -555,9 +554,9 @@ class DinoISSL(BaseDistillationISSL):
         # cannot use deepcopy because weight norm => reinstantiate
         TeacherProj = get_Architecture(**self.projector_kwargs)
         self.teacher_proj = TeacherProj()
-        self.teacher_p_ZlX = copy.deepcopy(p_ZlX)
+        self.teacher_encoder = copy.deepcopy(encoder)
         freeze_module_(self.teacher_proj)
-        freeze_module_(self.teacher_p_ZlX)
+        freeze_module_(self.teacher_encoder)
 
         self.n_epochs = n_epochs
         self.teacher_temp_schedule = np.concatenate((
@@ -611,7 +610,7 @@ class DinoISSL(BaseDistillationISSL):
 
 
     def forward(
-            self, z: torch.Tensor, z_a: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
+            self, z: torch.Tensor, z_tgt: torch.Tensor, x : torch.Tensor, a : torch.Tensor , parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
 
         self.current_epoch = parent.current_epoch
@@ -623,22 +622,10 @@ class DinoISSL(BaseDistillationISSL):
 
         # shape: [batch_size, M_shape].
         # have to use x and a directly because the encoder is different now
-        student_M = self.encoder_project(x, parent.p_ZlX, self.projector, parent)
-        student_M_a = self.encoder_project(a, parent.p_ZlX, self.projector, parent)
-        teacher_M = self.encoder_project(x, self.teacher_p_ZlX, self.teacher_proj, parent)
-        teacher_M_a = self.encoder_project(a, self.teacher_p_ZlX, self.teacher_proj, parent)
+        student_M = self.projector(z).float()
+        teacher_M = self.teacher_proj(parent(torch.cat([x, a]),
+                                             encoder=self.teacher_encoder)).float()
 
-        # shape: [batch_size]
-        loss1, logs1, other = self.asymmetric_loss(student_M, teacher_M_a)
-        loss2, logs2, __ = self.asymmetric_loss(student_M_a, teacher_M)
-        loss = (loss1 + loss2) / 2
-
-        logs = average_dict(logs1, logs2)
+        loss, logs, other = super().loss(student_M, teacher_M)
 
         return loss, logs, other
-
-    def encoder_project(self, x, p_ZlX, projector, parent):
-        """Take the input and predict the estimated maximal invariant."""
-        z = parent(x, is_sample=False, p_ZlX=p_ZlX)
-        M = projector(z).float()
-        return M

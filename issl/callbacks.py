@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Sequence, Union
 
-import einops
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
@@ -18,10 +17,9 @@ import math
 from torch import nn
 
 from .helpers import (
-    UnNormalizer,
-    cont_tuple_to_tuple_cont, is_colored_img,
+    cont_tuple_to_tuple_cont,
     plot_config,
-    prod, tensors_to_fig,
+    prod,
     to_numpy,
     is_pow_of_k,
     check_import
@@ -140,7 +138,7 @@ class EffectiveDim(PlottingCallback):
 
     def on_train_epoch_end(self, trainer, pl_module, *args, **kwargs):
         corr_coef = self.train_corr_coef / self.n_train_steps
-        rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True)
+        rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True).float()
         pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
 
         super().on_train_epoch_end(trainer, pl_module, *args, **kwargs)
@@ -150,7 +148,7 @@ class EffectiveDim(PlottingCallback):
 
     def on_validation_epoch_end(self, trainer, pl_module, *args, **kwargs):
         corr_coef = self.val_corr_coef / self.n_val_steps
-        rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True)
+        rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True).float()
         pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
         self.n_val_steps = 0
         self.val_corr_coef = 0
@@ -170,185 +168,6 @@ class EffectiveDim(PlottingCallback):
 
                 yield fig, dict(name="Effective dim")
 
-class ReconstructImages(PlottingCallback):
-    """Logs some reconstructed images.
-
-    Notes
-    -----
-    - the model should return a dictionary after each training step, containing
-    a tensor "Y_hat" and a tensor "Y" both of image shape.
-    - this will log one reconstructed image (+real) after each training epoch.
-    """
-
-    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-
-        cfg = pl_module.hparams
-        #! waiting for torch lightning #1243
-        a_hat = pl_module._save["train"]["A_hat"].float()
-        a = pl_module._save["train"]["A"].float()
-        x = pl_module._save["train"]["X"].float()
-
-        if is_colored_img(x):
-            if cfg.data.normalized:
-                # undo normalization for plotting
-                unnormalizer = UnNormalizer(cfg.data.normalized)
-                x = unnormalizer(x)
-
-        yield a_hat, dict(name="rec_img")
-
-        yield a, dict(name="trgt_img")
-
-        yield x, dict(name="input_img")
-
-class ReconstructMx(PlottingCallback):
-    """Reconstruct the estimated M(X).
-
-    Notes
-    -----
-    - The model should have attribute `f_ZhatlM` and `suff_stat_AlZhat`.
-    """
-    def __init__(
-        self,
-        *args,
-        max_Mx_plot=10,
-        **kwargs,
-    ) -> None:
-        super().__init__(*args,  **kwargs)
-        self.max_Mx_plot = max_Mx_plot
-
-    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-        n_Mx = pl_module.loss_decodability.predecode_n_Mx
-
-        with torch.no_grad():
-            pl_module.eval()
-            with plot_config(**self.plot_config_kwargs, font_scale=2):
-                Ms = torch.eye(n_Mx, device=pl_module.device)[:self.max_Mx_plot, :self.max_Mx_plot]
-                Zhat = pl_module.loss_decodability.f_ZhatlM(Ms)
-                img = pl_module.loss_decodability.suff_stat_AlZhat(Zhat)
-                img = torch.sigmoid(img) # put back on [0,1]
-
-                fig = tensors_to_fig(img,n_cols=10)
-
-        pl_module.train()
-
-        yield fig, dict(name="rec_Mx")
-
-class LatentDimInterpolator(PlottingCallback):
-    """Logs interpolated images.
-
-    Parameters
-    ----------
-    z_dim : int 
-        Number of dimensions for latents.
-
-    range_start : float, optional
-        Start of the interpolating range.
-
-    range_end : float, optional
-        End of the interpolating range.
-
-    n_per_lat : int, optional
-        Number of traversal to do for each latent.
-
-    n_lat_traverse : int, optional
-        Number of latent to traverse for traversal 1_d. Max is `z_dim`.
-
-    kwargs :
-        Additional arguments to PlottingCallback.
-    """
-
-    def __init__(
-        self,
-        z_dim: int,
-        range_start: float = -5,
-        range_end: float = 5,
-        n_per_lat: int = 7,
-        n_lat_traverse: int = 5,
-        **kwargs,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.z_dim = z_dim
-        self.range_start = range_start
-        self.range_end = range_end
-        self.n_per_lat = n_per_lat
-        self.n_lat_traverse = n_lat_traverse
-
-    def yield_figs_kwargs(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-
-        with torch.no_grad():
-            pl_module.eval()
-            with plot_config(**self.plot_config_kwargs, font_scale=2):
-                traversals_2d = self.latent_traverse_2d(pl_module)
-
-            with plot_config(**self.plot_config_kwargs, font_scale=1.5):
-                traversals_1d = self.latent_traverse_1d(pl_module)
-
-        pl_module.train()
-
-        yield traversals_2d, dict(name="traversals_2d")
-        yield traversals_1d, dict(name="traversals_1d")
-
-    def _traverse_line(
-        self, idx: int, pl_module: pl.LightningModule, z: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
-        """Return a (size, latent_size) latent sample, corresponding to a traversal
-        of a latent variable indicated by idx."""
-
-        if z is None:
-            z = torch.zeros(1, self.n_per_lat, self.z_dim, device=pl_module.device)
-
-        traversals = torch.linspace(
-            self.range_start,
-            self.range_end,
-            steps=self.n_per_lat,
-            device=pl_module.device,
-        )
-        for i in range(self.n_per_lat):
-            z[:, i, idx] = traversals[i]
-
-        z = einops.rearrange(z, "r c ... -> (r c) ...")
-        img = pl_module.loss_decodability.suff_stat_AlZ(z)
-
-        # put back to [0,1]
-        img = torch.sigmoid(img)
-        return img
-
-    def latent_traverse_2d(self, pl_module: pl.LightningModule) -> plt.Figure:
-        """Traverses the first 2 latents TOGETHER."""
-        traversals = torch.linspace(
-            self.range_start,
-            self.range_end,
-            steps=self.n_per_lat,
-            device=pl_module.device,
-        )
-        z_2d = torch.zeros(
-            self.n_per_lat, self.n_per_lat, self.z_dim, device=pl_module.device
-        )
-        for i in range(self.n_per_lat):
-            z_2d[i, :, 0] = traversals[i]  # fill first latent
-
-        imgs = self._traverse_line(1, pl_module, z=z_2d)  # fill 2nd latent and rec.
-        fig = tensors_to_fig(
-            imgs,
-            n_cols=self.n_per_lat,
-            x_labels=["1st Latent"],
-            y_labels=["2nd Latent"],
-        )
-
-        return fig
-
-    def latent_traverse_1d(self, pl_module: pl.LightningModule) -> plt.Figure:
-        """Traverses the first `self.n_lat` latents separately."""
-        n_lat_traverse = min(self.n_lat_traverse, self.z_dim)
-        imgs = [self._traverse_line(i, pl_module) for i in range(n_lat_traverse)]
-        imgs = torch.cat(imgs, dim=0)
-        fig = tensors_to_fig(
-            imgs,
-            n_cols=self.n_per_lat,
-            x_labels=["Sweeps"],
-            y_labels=[f"Lat. {i}" for i in range(n_lat_traverse)],
-        )
-        return fig
 
 class RepresentationUMAP(PlottingCallback):
     """Plot the UMAP 2D plot of the representations, for different hyperparameters.
@@ -498,8 +317,8 @@ class MAWeightUpdate(pl.Callback):
     ) -> None:
 
         # get networks
-        student_enc = pl_module.p_ZlX
-        teacher_enc = pl_module.loss_decodability.teacher_p_ZlX
+        student_enc = pl_module.encoder
+        teacher_enc = pl_module.loss_decodability.teacher_encoder
 
         student_proj = pl_module.loss_decodability.projector
         teacher_proj = pl_module.loss_decodability.teacher_proj

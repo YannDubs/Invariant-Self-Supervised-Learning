@@ -158,8 +158,6 @@ encoder:
     out_shape: ${encoder.z_shape} # do not change that
     architecture: ???
     arch_kwargs: {}
-    fam_kwargs: {}
-    family: deterministic
 
 online_evaluator:
   name: ???

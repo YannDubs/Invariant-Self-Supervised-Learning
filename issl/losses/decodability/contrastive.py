@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 import math
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -88,7 +88,7 @@ class ContrastiveISSL(nn.Module):
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
         is_margin_loss: bool = False,  # DEV
-        p_ZlX: Optional[nn.Module] = None  # only used for DINO
+        encoder: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
@@ -171,23 +171,20 @@ class ContrastiveISSL(nn.Module):
         return kwargs
 
     def forward(
-        self, z: torch.Tensor, z_a: torch.Tensor, a: torch.Tensor, x: torch.Tensor, parent: Any
+        self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, parent: Any
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
     
         Parameters
         ----------
-        z : Tensor shape=[batch_size, z_dim]
-            Reconstructed representations.
+        z : Tensor shape=[2 * batch_size, z_dim]
+            Representations.
 
-        a : Tensor shape=[batch_size, *x_shape]
-            Augmented sample.
-
-        x : Tensor shape=[batch_size, *x_shape]
-            Source sample.
+        z_tgt : Tensor shape=[2 * batch_size, *x_shape]
+            Representation from the other branch.
 
         parent : ISSLModule, optional
-            Parent module. Should have attribute `parent.p_ZlX`.
+            Parent module.
     
         Returns
         -------
@@ -208,12 +205,13 @@ class ContrastiveISSL(nn.Module):
 
         self.current_epoch = parent.current_epoch
 
-        batch_size, z_dim = z.shape
+        new_batch_size, z_dim = z.shape
+        batch_size = new_batch_size // 2
 
-        # shape: [(2) * batch_size, (2) * batch_size]
-        logits = self.compute_logits_p_Alz(z, z_a)
+        # shape: [2 * batch_size, 2 * batch_size]
+        logits = self.compute_logits_p_Alz(z, z_tgt)
 
-        # shape: [(2 *) batch_size]
+        # shape: [2 * batch_size]
         hat_H_mlz, logs = self.compute_loss(logits)
 
         # shape: [batch_size]
@@ -224,15 +222,11 @@ class ContrastiveISSL(nn.Module):
         return hat_H_mlz, logs, other
 
     def compute_logits_p_Alz(
-        self, z: torch.Tensor, z_a: torch.Tensor,
+        self, z_src: torch.Tensor, z_tgt: torch.Tensor,
     ) -> torch.Tensor:
         """Compute the logits for the contrastive predictor p(A|Z)."""
 
-        # shape: [2*batch_size, z_dim]
-        z_src = torch.cat([z, z_a], dim=0)
-        z_tgt = torch.cat([z, z_a], dim=0)
-
-        # shape: [(2*)batch_size, out_shape]
+        # shape: [2*batch_size, out_shape]
         z_src = self.predictor(z_src)
         z_tgt = self.projector(z_tgt)
 
@@ -240,7 +234,7 @@ class ContrastiveISSL(nn.Module):
         z_src = F.normalize(z_src, dim=1, p=2)
         z_tgt = F.normalize(z_tgt, dim=1, p=2)
 
-        # shape: [(2*)batch_size, (2*)batch_size]
+        # shape: [2*batch_size, 2*batch_size]
         logits = z_src @ z_tgt.T
 
         return logits
@@ -261,8 +255,8 @@ class ContrastiveISSL(nn.Module):
 
     def compute_loss(self, logits: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Computes the upper bound H_q[A|Z]."""
-        n_classes = logits.size(1)  # (2*)batch_size
-        new_batch_size = logits.size(0)  # (2*)batch_size
+        n_classes = logits.size(1)  # 2*batch_size
+        new_batch_size = logits.size(0)  # 2*batch_size
         batch_size = new_batch_size // 2
         device = logits.device
         arange = torch.arange(batch_size, device=device)

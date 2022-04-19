@@ -1,5 +1,0 @@
-name: prior
-kwargs:
-  mode: prior
-  z_shape: ${encoder.z_shape}
-  family: unitgaussian

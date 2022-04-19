@@ -2,7 +2,7 @@
 
 decodability:
   name: ${decodability.kwargs.mode}
-  is_reconstruct: False # by default cannot reconstruct images
+  is_encode_aux : True
   kwargs:
     mode: ???
 

@@ -185,14 +185,23 @@ class ResNet(nn.Module):
             # this should only be removed for cifar
             self.resnet.maxpool = nn.Identity()
 
-    def forward(self, X, rm_out_chan=False):
-        if rm_out_chan:  # TODO test if works and worth keeping
+    def forward_out_chan(self, Y_pred):
+        return self.resnet.avgpool(Y_pred)
+
+    def forward(self, X, is_return_no_out_chan=False):
+        if is_return_no_out_chan:  # TODO test if works and worth keeping
             assert self.is_channel_out_dim
             breakpoint()
             old_avg_pool = self.resnet.avgpool
-            self.resnet.avgpool = self.resnet.avgpool[1]
+            self.resnet.avgpool = nn.Identity()
             Y_pred = self.resnet(X)
             self.resnet.avgpool = old_avg_pool
+
+            Y_pred_no_out_chan = self.resnet.avgpool[1](Y_pred)
+            Y_pred_out_chan = self.resnet.avgpool(Y_pred)
+
+            # also return the representation without ourt channel
+            return Y_pred_out_chan, Y_pred_no_out_chan
 
         else:
             Y_pred = self.resnet(X)

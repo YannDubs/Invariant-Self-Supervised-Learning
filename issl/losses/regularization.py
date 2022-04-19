@@ -1,25 +1,19 @@
 """Regularizers for H[Z] and thus improve downstream sample efficiency."""
 from __future__ import annotations
 
-from collections import Sequence
-from functools import partial
 from typing import Any, Optional
 
 import einops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from issl import get_marginalDist
-from issl.helpers import (BatchRMSELoss, at_least_ndim, eye_like, kl_divergence, prod, rel_distance,
-                          corrcoeff_to_eye_loss,
-                          rayleigh_coeff)
+from issl.helpers import (BatchRMSELoss, at_least_ndim, eye_like, prod, rel_distance,
+                          corrcoeff_to_eye_loss, rayleigh_coeff)
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
     if mode == "coarsener":
         return CoarseningRegularizer(**kwargs)
-    elif mode == "prior":
-        return PriorRegularizer(**kwargs)
     elif mode == "coarsenerMx":
         return CoarseningRegularizerMx(**kwargs)
     elif mode == "effdim":
@@ -39,78 +33,47 @@ class CoarseningRegularizer(nn.Module):
     loss : {"kl", "rmse", "cosine", "huber", "rel_l1"} or callable, optional
         What loss to use to bring enc(x) and enc(a) closer together. If `RMSE` or `cosine` will sample through the rep.
         If kl should be stochastic representation. Makes more sense to use a symmetric function and thus assume X ~ A.
-
     """
 
     def __init__(
         self,
         loss: Any,
-        is_distributions: bool = False,
     ) -> None:
         super().__init__()
-        self.is_distributions = is_distributions
 
-        if loss == "kl":
-            # use symmetric kl divergence
-            self.loss_f = lambda p, q: (kl_divergence(p, q) + kl_divergence(q, p)) / 2
-            self.is_distributions = True
-        elif loss == "rmse":
+        if loss == "rmse":
             self.loss_f = BatchRMSELoss()
-            self.is_distributions = False
         elif loss == "huber":
             self.loss_f = nn.SmoothL1Loss(reduction="none")
-            self.is_distributions = False
         elif loss == "rel_l1_clamp":
             # clamp to 0.1 to avoid distance of negatives to go to infty (numerically unstable)
             # 0.1 means that relative distance of positive is 10% of negatives
             # TODO should only clamp gradients of the negatives. Positives should still be forced to collapse
             self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0).clamp(min=0.1)
-            self.is_distributions = False
         elif loss == "rel_l1":
             self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0)
-            self.is_distributions = False
         elif loss == "corrcoef":
             self.loss_f = corrcoeff_to_eye_loss
-            self.is_distributions = False
         elif loss == "rayleigh":
             self.loss_f = rayleigh_coeff
-            self.is_distributions = False
         elif loss == "cosine":
             self.loss_f = lambda z, z_a: - F.cosine_similarity(
                 z.flatten(1, -1), z_a.flatten(1, -1), dim=-1, eps=1e-08
             )
-            self.is_distributions = False
         elif not isinstance(loss, str):
             self.loss_f = loss
         else:
             raise ValueError(f"Unknown loss={loss}.")
 
     def forward(
-        self,
-        z: torch.Tensor,
-        z_a : torch.Tensor,
-        a: torch.Tensor,
-        p_Zlx: torch.distributions.TransformedDistribution,
-        parent: Any,
+            self, z: torch.Tensor, _, __
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
 
         Parameters
         ----------
-        z : Tensor shape=[batch_size, z_dim]
+        z : Tensor shape=[2 * batch_size, z_dim]
             Samples from the encoder.
-
-        z_a : Tensor shape=[batch_size, z_dim]
-            Augmented samples from the encoder.
-
-        a : Tensor shape=[batch_size, *x_shape]
-            Augmented sample.
-
-        p_Zlx : torch.Distribution
-            Encoded distribution.
-
-        parent : ISSLModule, optional
-            Parent module. Should have attribute `parent.p_ZlX`.
 
         Returns
         -------
@@ -123,66 +86,15 @@ class CoarseningRegularizer(nn.Module):
         other : dict
             Additional values to return.
         """
-        if self.is_distributions:
-            in_x = p_Zlx
-            in_a = parent.p_ZlX(a)
-        else:
-            in_x = z
-            in_a = z_a
+        z_x, z_a = z.chunk(2, dim=0)
 
         # shape : [batch]
-        loss = self.loss_f(in_x, in_a)
+        loss = self.loss_f(z_x, z_a)
         loss = einops.reduce(loss, "b ... -> b", "sum")
 
         logs = dict()
         other = dict()
         return loss, logs, other
-
-class PriorRegularizer(nn.Module):
-    """Regularizer of the mutual information I[Z,X] by using a  prior."""
-
-    def __init__(self, family: str, z_shape: Sequence[int]):
-        super().__init__()
-        # TODO: make it work with z_shape instead of z_dim
-        self.q_Z = get_marginalDist(family, z_shape)
-
-    def forward(
-        self, z, z_a, a, p_Zlx: torch.distributions.TransformedDistribution, parent,
-    ) -> tuple[torch.Tensor, dict, dict]:
-        """Contrast examples and compute the upper bound on R[A|Z].
-
-        Parameters
-        ----------
-        z : Tensor shape=[batch_size, z_dim]
-            Samples from the encoder.
-            
-        p_Zlx : torch.Distribution
-            Encoded distribution.
-
-        Returns
-        -------
-        kl : torch.Tensor shape=[batch_shape]
-            Estimate of the kl divergence.
-
-        logs : dict
-            Additional values to log.
-
-        other : dict
-            Additional values to return.
-        """
-        # batch shape: [] ; event shape: [z_shape]
-        q_Z = self.q_Z()
-
-        # E_x[KL[p(Z|x) || q(Z)]]. shape: [batch_size]
-        kl = kl_divergence(p_Zlx, q_Z, z_samples=z)
-
-        logs = dict(I_q_ZX=kl.mean(), H_ZlX=p_Zlx.entropy().mean(0))
-
-        # upper bound on H[Z] (cross entropy)
-        logs["H_q_Z"] = logs["I_q_ZX"] + logs["H_ZlX"]
-        other = dict()
-        return kl, logs, other
-
 
 class CoarseningRegularizerMx(nn.Module):
     """Similar to CoarseningRegularizer but the input is Mx (which can generally not be encoded with p(Z|X)) rather than
@@ -199,7 +111,7 @@ class CoarseningRegularizerMx(nn.Module):
         self.loss = loss
 
     def forward(
-        self, z: torch.Tensor, z_a: torch.Tensor, Mx: torch.Tensor, _, __,
+        self, z: torch.Tensor, Mx: torch.Tensor, _,
     ) -> tuple[torch.Tensor, dict, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
 
@@ -207,9 +119,6 @@ class CoarseningRegularizerMx(nn.Module):
         ----------
         z : Tensor shape=[batch_size, z_dim]
             Samples from the encoder.
-
-        z_a : Tensor shape=[batch_size, z_dim]
-            Augmented samples from the encoder.
 
         Mx : Tensor shape=[batch_size, *Mx_shape]
             Maximal invariants.
@@ -266,7 +175,7 @@ class CoarseningRegularizerMx(nn.Module):
 
 
 class EffdimRegularizer(nn.Module):
-    """Increases effective dimensionality by each diemnsion independent..
+    """Increases effective dimensionality by each dimension independent.
 
     Parameters
     ---------
@@ -290,17 +199,14 @@ class EffdimRegularizer(nn.Module):
         self.corr_coef_bn = torch.nn.BatchNorm1d(z_dim, affine=False)
 
     def forward(
-        self,
-        z: torch.Tensor,
-        z_a: torch.Tensor,
-        a: torch.Tensor,
-        p_Zlx: torch.distributions.TransformedDistribution,
-        parent: Any,
+        self, z: torch.Tensor, _, __
     ) -> tuple[torch.Tensor, dict, dict]:
-        batch_size, dim = z.shape
-        z_a = z_a if self.is_use_augmented else z
+        z_x, z_a = z.chunk(2, dim=0)
 
-        corr_coeff = (self.corr_coef_bn(z).T @ self.corr_coef_bn(z_a)) / batch_size
+        batch_size, dim = z_x.shape
+        z_a = z_a if self.is_use_augmented else z_x
+
+        corr_coeff = (self.corr_coef_bn(z_x).T @ self.corr_coef_bn(z_a)) / batch_size
 
         pos_loss = (corr_coeff.diagonal() - 1).pow(2)
         neg_loss = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(dim, dim - 1).pow(2).mean(1)

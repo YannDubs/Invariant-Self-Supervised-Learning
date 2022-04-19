@@ -127,11 +127,6 @@ class NamespaceMap(Namespace, MutableMapping):
         return iter(self.__dict__)
 
 
-def replicate_shape(shape: Sequence[int], n_rep: int) -> Sequence[int]:
-    """Replicate the last dimension of a shape `n_rep` times."""
-    T = type(shape)
-    out_tuple = tuple(shape[:-1]) + (shape[-1] * n_rep,)
-    return T(out_tuple)
 
 
 def cont_tuple_to_tuple_cont(container):
@@ -433,46 +428,6 @@ class OrderedSet(MutableSet):
 
     def __iter__(self):
         return self._d.__iter__()
-
-
-class UnNormalizer(torch.nn.Module):
-    def __init__(self, dataset, is_raise=True):
-        super().__init__()
-        self.dataset = dataset.lower()
-        try:
-            mean, std = MEANS[self.dataset], STDS[self.dataset]
-            self.unnormalizer = transform_lib.Normalize(
-                [-m / s for m, s in zip(mean, std)], std=[1 / s for s in std]
-            )
-        except KeyError:
-            if is_raise:
-                raise KeyError(
-                    f"dataset={self.dataset} wasn't found in MEANS={MEANS.keys()} or"
-                    f"STDS={STDS.keys()}. Please add mean and std."
-                )
-            else:
-                self.normalizer = None
-
-    def forward(self, x):
-        if self.unnormalizer is None:
-            return x
-
-        return self.unnormalizer(x)
-
-
-def is_img_shape(shape):
-    """Whether a shape is from an image."""
-    try:
-        return len(shape) == 3 and (shape[-3] in [1, 3])
-    except TypeError:
-        return False  # if shape is not list
-
-
-def is_colored_img(x: torch.Tensor) -> bool:
-    """Check if an image or batch of image is colored."""
-    if x.shape[-3] not in [1, 3]:
-        raise ValueError(f"x doesn't seem to be a (batch of) image as shape={x.shape}.")
-    return x.shape[-3] == 3
 
 
 def at_least_ndim(x: torch.Tensor, ndim: int) -> torch.Tensor:
@@ -1044,115 +999,6 @@ def plot_config(
             # reset defaults
             plt.rcParams.update(defaults)
 
-
-class Annealer:
-    """Helper class to perform annealing
-
-    Parameter
-    ---------
-    initial_value : float
-        Start of annealing.
-
-    final_value : float
-        Final value after annealing.
-
-    n_steps_anneal : int
-        Number of steps before reaching `final_value`. If negative, will swap final and initial.
-
-    start_step : int, optional
-        Number of steps to wait for before starting annealing. During the waiting time, the
-        hyperparameter will be `default`.
-
-    default : float, optional
-        Default hyperparameter value that will be used for the first `start_step`s. If `None` uses
-        `initial_value`.
-
-    mode : {"linear", "geometric", "constant"}, optional
-        Interpolation mode.
-    """
-
-    def __init__(
-        self,
-        initial_value: float,
-        final_value: float,
-        n_steps_anneal: int,
-        start_step: int = 0,
-        default: Optional[float] = None,
-        mode: str = "geometric",
-    ) -> None:
-        if n_steps_anneal < 0:
-            # quick trick to swap final / initial
-            n_steps_anneal *= -1
-            initial_value, final_value = final_value, initial_value
-
-        self.initial_value = initial_value
-        self.final_value = final_value
-        self.n_steps_anneal = n_steps_anneal
-        self.start_step = start_step
-        self.default = default if default is not None else self.initial_value
-        self.mode = mode.lower()
-
-        if self.mode == "linear":
-            delta = self.final_value - self.initial_value
-            self.factor = delta / self.n_steps_anneal
-        elif self.mode == "constant":
-            pass  # nothing to do
-        elif self.mode == "geometric":
-            delta = self.final_value / self.initial_value
-            self.factor = delta ** (1 / self.n_steps_anneal)
-        else:
-            raise ValueError(f"Unknown mode : {mode}.")
-
-        self.reset_parameters()
-
-    def reset_parameters(self) -> None:
-        """Reset the interpolator."""
-        self.n_training_calls = 0
-
-    def is_annealing(self, n_update_calls: int) -> bool:
-        not_const = self.mode != "constant"
-        is_not_finished = n_update_calls < (self.n_steps_anneal + self.start_step)
-        return not_const and is_not_finished
-
-    def __call__(
-        self, is_update: bool = False, n_update_calls: Optional[int] = None
-    ) -> float:
-        """Return the current value of the hyperparameter.
-
-        Parameter
-        ---------
-        is_update : bool, optional
-            Whether to update the value.
-
-        n_update_calls : int, optional
-            Number of updated calls. If given then will override the default counter.
-        """
-        if is_update:
-            self.n_training_calls += 1
-
-        if n_update_calls is None:
-            n_update_calls = self.n_training_calls
-
-        if self.start_step > n_update_calls:
-            return self.default
-
-        n_actual_training_calls = n_update_calls - self.start_step
-
-        if self.is_annealing(n_update_calls):
-            current = self.initial_value
-            if self.mode == "geometric":
-                current *= self.factor ** n_actual_training_calls
-            elif self.mode == "linear":
-                current += self.factor * n_actual_training_calls
-            else:
-                raise ValueError(f"Unknown mode : {self.mode}.")
-        else:
-            current = self.final_value
-
-        return current
-
-
-
 class BatchNorm1d(nn.BatchNorm1d):
     def __init__(self, *args, is_bias=True, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1260,96 +1106,6 @@ def sinkhorn_knopp(
         Q.scatter_(1, index_max.unsqueeze(1), 1)
 
     return Q
-
-class LearnedSoftmax(nn.Module):
-    """Softmax with learned temperature.
-
-    Parameters
-    ----------
-    dim : int, optional
-        Dimension over which to softmax.
-
-    temperature : float, optional
-        Temperature for the softmax. Initialization if training, and actual if fixed.
-
-    temperature_mode : {"train", "anneal", "constant"}, optional
-        Whether to train the temperature, anneal it, or fix ti to a constant.
-
-    is_gumbel : bool, optional
-        Whether to use gumbel softmax.
-
-    is_hard : bool, optional
-        Whether to use a one hot encoding for the forward pass (straight through estimation). Only if gumbel.
-
-    n_steps : int, optional
-        Number of training steps, only used if temperature_mode="anneal".
-
-    min_temperature : float, optional
-        Minimal temperature. Used for lower clipping if training temperature and as final temperature when annealing.
-
-    max_temperature : float, optional
-        Maximal temperature. Used for upper clipping if training temperature and as init temperature when annealing.
-    """
-    def __init__(self, dim: int=-1, temperature: float=1, temperature_mode: str="train",  is_gumbel: bool=False,
-                 is_hard: bool=False, n_steps : Optional[int]=None, min_temperature: float=0.1, max_temperature=10):
-        super().__init__()
-
-        self.dim = dim
-        self.is_gumbel = is_gumbel
-        self.is_hard = is_hard
-
-        self.init_temperature = temperature
-        self.temperature_mode = temperature_mode.lower()
-        self.min_temperature = min_temperature
-        self.max_temperature = max_temperature
-
-        if self.temperature_mode == "train":
-            self.log_temperature = nn.Parameter(
-                torch.log(torch.tensor(self.init_temperature))
-            )
-        elif self.temperature_mode == "anneal":
-            self.annealer = Annealer(
-                self.max_temperature,
-                self.min_temperature,
-                n_steps_anneal=n_steps,
-                mode="linear",
-            )
-        elif self.temperature_mode == "constant":
-            pass
-        else:
-            raise ValueError(f"Unknown temperature_mode={self.temperature_mode}.")
-
-        self.reset_parameters()
-
-    def reset_parameters(self) -> None:
-        weights_init(self)
-
-        if self.temperature_mode == "train":
-            self.log_temperature = nn.Parameter(
-                torch.log(torch.tensor(self.init_temperature))
-            )
-
-    def get_temperature(self, is_update=False):
-        if self.temperature_mode == "train":
-            temperature = torch.clamp(
-                self.log_temperature.exp(), min=self.min_temperature, max=self.max_temperature
-            )
-        elif self.temperature_mode == "anneal":
-            temperature = self.annealer(is_update=is_update)
-        elif self.temperature_mode == "constant":
-            temperature = self.init_temperature
-        return temperature
-
-    def forward(self, logits):
-        temperature = self.get_temperature(is_update=True)
-
-        if self.is_gumbel:
-            y_hat = F.gumbel_softmax(logits, tau=temperature, hard=self.is_hard)
-        else:
-            y_hat = self.softmax(logits / temperature)
-
-        return y_hat
-
 
 def warmup_cosine_scheduler(step, warmup_steps, total_steps, boundary=0, optima=1):
     """Computes scheduler for cosine with warmup."""

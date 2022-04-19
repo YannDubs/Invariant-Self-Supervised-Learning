@@ -3,6 +3,7 @@ defaults:
   - base
 
 decodability:
+  is_encode_aux : False
   kwargs:
     mode: exact
     z_shape: ${encoder.z_shape}

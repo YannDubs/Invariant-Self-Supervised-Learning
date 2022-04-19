@@ -9,4 +9,4 @@ callbacks:
   Freezer:
     is_use: true
     kwargs:
-      model_name: p_ZlX.mapper
+      model_name: encoder

@@ -52,7 +52,7 @@ class ExactISSL(nn.Module):
         is_to_one_hot: bool = False,
         predictor_kwargs: dict[str, Any] = {"architecture": "linear"},
         is_classification: bool = True,
-        p_ZlX: Optional[nn.Module] = None  # only used for DINO
+        encoder: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = z_shape
@@ -73,7 +73,7 @@ class ExactISSL(nn.Module):
         weights_init(self)
 
     def forward(
-        self, z: torch.Tensor, z_a: torch.Tensor, m: torch.Tensor, _
+        self, z: torch.Tensor, _, __, m: torch.Tensor, parent
     ) -> tuple[torch.Tensor, dict, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 

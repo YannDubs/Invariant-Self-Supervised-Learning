@@ -37,8 +37,8 @@ from pytorch_lightning.utilities import parsing
 import issl
 from issl import ISSLModule, Predictor
 from issl.callbacks import (
-    EffectiveDim, LatentDimInterpolator,
-    MAWeightUpdate, ReconstructImages, ReconstructMx, RepresentationUMAP
+    EffectiveDim,
+    MAWeightUpdate, RepresentationUMAP
 )
 from issl.helpers import check_import, prod
 from issl.predictors import SklearnPredictor, get_representor_predictor
@@ -463,7 +463,7 @@ def initialize_representor_(
     elif cfg.paths.pretrained.init_enc is not None:
         logger.info(f"Initializing the encoder from {cfg.paths.pretrained.init_enc}.")
         repr = module.load_from_checkpoint(cfg.paths.pretrained.init_enc, hparams=cfg)
-        module.p_ZlX.load_state_dict(repr.p_ZlX.state_dict())
+        module.encoder.load_state_dict(repr.encoder.state_dict())
         try:  # also try to initialize online eval head
             module.evaluator.load_state_dict(repr.evaluator.state_dict())
         except:
@@ -496,22 +496,6 @@ def get_callbacks(
         if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval and dm is not None:
             # can only plot if you have labels
             callbacks += [RepresentationUMAP(dm)]
-
-        is_reconstruct = cfg.decodability.is_reconstruct
-        if cfg.logger.is_can_plot_img and is_img_aux_target and is_reconstruct:
-            # TODO will not currently work with latent images
-            z_dim = cfg.encoder.z_shape
-            if not isinstance(z_dim, int):
-                z_dim = prod(z_dim)
-            callbacks += [LatentDimInterpolator(z_dim)]
-
-            if cfg.trainer.gpus <= 1:
-                # TODO does not work (D)DP because of self.store
-                callbacks += [ReconstructImages()]
-
-            # todo: Removing for now because memory issue if huge n_Mx
-            # if "predecode_n_Mx" in cfg.decodability.kwargs and cfg.decodability.kwargs.predecode_n_Mx is not None:
-            #     callbacks += [ReconstructMx()]
 
         if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
             # use momentum contrastive teacher, e.g. DINO
