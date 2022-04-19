@@ -143,7 +143,7 @@ class EffectiveDim(PlottingCallback):
             rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True).float()
             pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
         except:
-            logger.warning("could not compute rank")
+            logger.exception("could not compute rank:")
 
         super().on_train_epoch_end(trainer, pl_module, *args, **kwargs)
 
@@ -157,7 +157,7 @@ class EffectiveDim(PlottingCallback):
             rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True).float()
             pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
         except:
-            logger.warning("could not compute rank")
+            logger.exception("could not compute rank:")
 
         self.n_val_steps = 0
         self.val_corr_coef = 0
