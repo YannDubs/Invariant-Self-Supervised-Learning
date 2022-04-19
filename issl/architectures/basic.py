@@ -64,6 +64,7 @@ class MLP(nn.Module):
         is_cosine: bool= False,
         kwargs_prelinear: dict = {},
         MLP_bottleneck_prelinear : int =None,
+        MLP_bottleneck_postlinear: int = None,
         **kwargs
     ) -> None:
         super().__init__()
@@ -80,6 +81,7 @@ class MLP(nn.Module):
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine = is_cosine
         self.MLP_bottleneck_prelinear = MLP_bottleneck_prelinear
+        self.MLP_bottleneck_postlinear = MLP_bottleneck_postlinear
 
         if self.MLP_bottleneck_prelinear is not None:  # TODO if use that then can remove pre block
             self.pre_block = nn.Sequential(
@@ -112,9 +114,19 @@ class MLP(nn.Module):
             ]
         self.hidden_block = nn.Sequential(*layers)
 
-        # using flatten linear to have bottleneck size
-        PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
-        self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
+
+        if self.MLP_bottleneck_postlinear is not None:  # TODO if use that then can remove post block
+            self.post_block = nn.Sequential(
+                nn.Linear(hid_dim, self.MLP_bottleneck_postlinear, bias=bias_hidden),
+                Norm(self.MLP_bottleneck_postlinear),
+                Activation(),
+                nn.Linear(self.MLP_bottleneck_postlinear, out_dim),
+            )
+
+        else:
+            # using flatten linear to have bottleneck size
+            PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
+            self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
 
         self.reset_parameters()
 
@@ -138,6 +150,9 @@ class MLP(nn.Module):
         
         if self.MLP_bottleneck_prelinear is not None:
             johnson_lindenstrauss_init_(self.pre_block[0])
+
+        if self.MLP_bottleneck_postlinear is not None:
+            johnson_lindenstrauss_init_(self.post_block[0])
 
 
 class FlattenMLP(MLP):
