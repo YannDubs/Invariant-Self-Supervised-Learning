@@ -112,7 +112,6 @@ class ISSLModule(pl.LightningModule):
         z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
 
         try:
-            breakpoint()
             # TODO if keeping rm_out_chan then for regularizer will need to give the augmentation after out chan
             z_a = self(aux_target, is_sample=False, rm_out_chan=self.hparams.encoder.rm_out_chan_aug)
         except:
