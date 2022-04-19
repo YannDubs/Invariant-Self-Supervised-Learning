@@ -1,0 +1,49 @@
+# @package _global_
+
+# check that everything is running correctly (2 epochs small data)
+
+timeout: 60
+
+other:
+  is_quick: True
+
+trainer:
+  max_epochs: 3
+  log_every_n_steps: 10
+  num_sanity_val_steps: 0 # was giving error
+  # uses 5 % of data
+  limit_val_batches: 0.2
+  limit_train_batches: 0.05
+  limit_test_batches: 0.05
+  limit_predict_batches: 0.1
+  gpus: 0
+  precision: 32 # 16 does not work for cpu
+
+update_trainer_repr:
+  max_epochs: 3
+
+update_trainer_pred:
+  max_epochs: 3
+
+data_repr:
+  kwargs:
+    # decreased because it was giving an error
+    batch_size: 128
+    val_batch_size: 128
+    is_data_in_memory: False
+
+data_pred:
+  kwargs:
+    # decreased because it was giving an error
+    batch_size: 128
+    val_batch_size: 128
+
+logger:
+  wandb_kwargs:
+    tags: [dev, quick]
+    anonymous: true
+    project: tmp
+
+callbacks:
+  GPUStatsMonitor:
+    is_use : False

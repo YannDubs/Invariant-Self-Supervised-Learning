@@ -154,7 +154,7 @@ class DistillatingISSL(BaseDistillationISSL):
         ema_weight_prior: Optional[float] = None,
         is_batchnorm_pre: bool=True,
         is_reweight_ema: bool=True,
-        bottleneck_kwargs: dict = {},
+        batchnorm_kwargs: dict = {},
         predictor_kwargs: dict[str, Any] = {
                                "architecture": "linear",
                            },
@@ -184,10 +184,13 @@ class DistillatingISSL(BaseDistillationISSL):
         self.predictor = Predictor()
 
         if self.is_batchnorm_pre:
+            z_shape_a = self.projector_kwargs.get("in_shape", self.z_dim)
+            z_dim_a = z_shape_a if isinstance(z_shape_a, int) else prod(z_shape_a)
+
             # not sure that you want to use batchnorm_pre in the case where using bn in the linear layer
             # and even less sure about learning a bias term for those
-            self.predictor = nn.Sequential(BatchNorm1d(self.z_dim, **bottleneck_kwargs), self.predictor)
-            self.projector = nn.Sequential(BatchNorm1d(self.z_dim, **bottleneck_kwargs), self.projector)
+            self.predictor = nn.Sequential(BatchNorm1d(self.z_dim, **batchnorm_kwargs), self.predictor)
+            self.projector = nn.Sequential(BatchNorm1d(z_dim_a, **batchnorm_kwargs), self.projector)
 
         if self.ema_weight_prior is not None:
             # moving average should depend on predictor or projector => do not share

@@ -28,9 +28,8 @@ update_trainer_repr.max_epochs=2000,1000,500,200,100,50
 "
 
 kwargs_multi="
-update_trainer_repr.max_epochs=200,100,50
+update_trainer_repr.max_epochs=200,100
 "
-# WHY NOT WORKING WELL ANYMORE ?
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

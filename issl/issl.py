@@ -55,7 +55,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False, p_ZlX=None
+        self, x: torch.Tensor, is_sample: bool = False, is_return_p_ZlX: bool = False, p_ZlX=None, rm_out_chan: bool = False,
     ):
         """Represents the data `x`.
 
@@ -83,7 +83,10 @@ class ISSLModule(pl.LightningModule):
             p_ZlX = self.p_ZlX
 
         # batch shape: [batch_size, *z_shape[:-1]] ; event shape: [z_dim]
-        p_Zlx = p_ZlX(x)
+        if rm_out_chan:
+            p_Zlx = p_ZlX(x, rm_out_chan=True)
+        else:
+            p_Zlx = p_ZlX(x)
 
         # shape: [batch_size, *z_shape]
         if is_sample:
@@ -101,7 +104,7 @@ class ISSLModule(pl.LightningModule):
         x, (_, aux_target) = batch
 
         if self.hparams.representor.is_switch_x_aux_trgt and self.stage == "repr":
-            # switch x and aux_target. Useful if want augmentations as inputs. Only turing representations.
+            # switch x and aux_target. Useful if want augmentations as inputs. Only during representations.
             x, aux_target = aux_target, x
 
         # z shape: [batch_size, *z_shape]
@@ -109,7 +112,9 @@ class ISSLModule(pl.LightningModule):
         z, p_Zlx = self(x, is_sample=True, is_return_p_ZlX=True)
 
         try:
-            z_a = self(aux_target, is_sample=False)
+            breakpoint()
+            # TODO if keeping rm_out_chan then for regularizer will need to give the augmentation after out chan
+            z_a = self(aux_target, is_sample=False, rm_out_chan=self.hparams.encoder.rm_out_chan_aug)
         except:
             z_a = None
 

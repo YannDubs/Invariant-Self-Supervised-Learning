@@ -152,6 +152,7 @@ data_repr:
 encoder:
   name: ???
   z_shape: 1024
+  rm_out_chan_aug: False
   kwargs:
     in_shape: ${data.shape}
     out_shape: ${encoder.z_shape} # do not change that

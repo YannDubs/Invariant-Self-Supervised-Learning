@@ -19,13 +19,11 @@ representor=dstl
 data_repr.kwargs.batch_size=256
 architecture@encoder=resnet50
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
-encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 +decodability.kwargs.projector_kwargs.kwargs_prelinear.bottleneck_size=512
-encoder.z_shape=8192
-regularizer=huber
-representor.loss.beta=1e-4
 timeout=$time
+update_trainer_repr.max_epochs=200
+encoder.z_shape=2048
 "
 
 kwargs_multi="
@@ -34,7 +32,7 @@ seed=1
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "regularizer=none"#  "encoder.z_shape=4096,8192,16384"#  "representor.loss.beta=1e-5" #
+  for kwargs_dep in  "" "encoder.z_shape=8192 encoder.kwargs.arch_kwargs.is_channel_out_dim=True" #  "encoder.z_shape=4096,8192,16384"#  "representor.loss.beta=1e-5" #
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &

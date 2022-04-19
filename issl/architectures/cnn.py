@@ -67,7 +67,9 @@ class ResNet(nn.Module):
         is_pretrained: bool = False,
         is_no_linear: bool= False,
         is_channel_out_dim: bool=False,
-        bottleneck_channel: Optional[int] = None
+        bottleneck_channel: Optional[int] = None,
+        is_bn_bttle_channel: bool = False,  # TODO remove after chose better
+        bottleneck_mode : str = "linear"  # linear / cnn / mlp
     ):
         super().__init__()
         kwargs = {}
@@ -78,6 +80,8 @@ class ResNet(nn.Module):
         self.is_no_linear = is_no_linear
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
+        self.is_bn_bttle_channel = is_bn_bttle_channel
+        self.bottleneck_mode = bottleneck_mode
 
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
@@ -102,20 +106,63 @@ class ResNet(nn.Module):
     def update_out_chan_(self):
         if self.bottleneck_channel is None:
             conv1 = nn.Conv2d(self.resnet.fc.in_features, self.out_dim, kernel_size=1, bias=False)
-            nn.init.kaiming_normal_(conv1.weight, mode="fan_out", nonlinearity="relu")
-        else:  # TODO rm if not used
-            # low rank linear
-            conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features, self.bottleneck_channel, kernel_size=1, bias=False)
-            conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim, kernel_size=1, bias=False)
-            nn.init.kaiming_normal_(conv1_to_bttle.weight, mode="fan_out", nonlinearity="relu")
-            nn.init.kaiming_normal_(conv1_from_bttle.weight, mode="fan_out", nonlinearity="relu")
-            conv1 = nn.Sequential(conv1_to_bttle, conv1_from_bttle)
+
+        else:  # TODO chose best
+            if self.bottleneck_mode == "linear":
+                # low rank linear
+                conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features, self.bottleneck_channel, kernel_size=1, bias=False)
+                conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim, kernel_size=1, bias=False)
+
+                if self.is_bn_bttle_channel:
+                    bn = torch.nn.BatchNorm2d(self.bottleneck_channel, affine=False)
+                    conv1 = nn.Sequential(conv1_to_bttle, bn, conv1_from_bttle)
+                else:
+                    conv1 = nn.Sequential(conv1_to_bttle, conv1_from_bttle)
+
+            elif self.bottleneck_mode == "mlp":
+                conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                                           self.bottleneck_channel,
+                                           kernel_size=1,
+                                           bias=False) # will use batchnorm
+                conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim,
+                                             kernel_size=1, bias=False)
+                bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
+                conv1 = nn.Sequential(conv1_to_bttle, bn, nn.ReLU(), conv1_from_bttle)
+
+            elif self.bottleneck_mode == "cnn":
+                # use depth wise seprable convolutions to be more efficient parameter wise
+                depthconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                                                self.resnet.fc.in_features,
+                                                groups=self.resnet.fc.in_features,
+                                                stride=1,  padding=1, kernel_size=3,
+                                                bias=False)  # will use batchnorm
+                pointconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
+                                               self.bottleneck_channel,
+                                               kernel_size=1, bias=False)  # will use batchnorm
+
+                bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
+
+                depthconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
+                                                self.bottleneck_channel,
+                                                groups=self.bottleneck_channel,
+                                                stride=1, padding=1, kernel_size=3,
+                                                bias=False)  # will use batchnorm
+                pointconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
+                                                self.out_dim,
+                                                kernel_size=1, bias=False)  # will use batchnorm
+
+                conv1 = nn.Sequential(depthconv1_to_bttle, pointconv1_to_bttle,
+                                      bn, nn.ReLU(),
+                                      depthconv1_from_bttle, pointconv1_from_bttle)
+
+            else:
+                raise ValueError(f"Unknown self.bottleneck_mode={self.bottleneck_mode}.")
 
         bn = torch.nn.BatchNorm2d(self.out_dim)
-        nn.init.constant_(bn.weight, 1)
-        nn.init.constant_(bn.bias, 0)
 
         resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
+
+        weights_init(resizer)
 
         self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
 
@@ -138,9 +185,18 @@ class ResNet(nn.Module):
             # this should only be removed for cifar
             self.resnet.maxpool = nn.Identity()
 
-    def forward(self, X):
-        Y_pred = self.resnet(X)
-        Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
+    def forward(self, X, rm_out_chan=False):
+        if rm_out_chan:  # TODO test if works and worth keeping
+            assert self.is_channel_out_dim
+            breakpoint()
+            old_avg_pool = self.resnet.avgpool
+            self.resnet.avgpool = self.resnet.avgpool[1]
+            Y_pred = self.resnet(X)
+            self.resnet.avgpool = old_avg_pool
+
+        else:
+            Y_pred = self.resnet(X)
+            Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
         return Y_pred
 
     def reset_parameters(self):

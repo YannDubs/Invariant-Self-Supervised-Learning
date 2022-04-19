@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="losses_tin"
+experiment="losses_tin_final"
 notes="
 **Goal**: understanding effect of using different losses that do not imply invariance.
 "
@@ -18,6 +18,7 @@ $base_kwargs_tin
 representor=cntr
 timeout=$time
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+update_trainer_repr.max_epochs=200
 "
 
 # every arguments that you are sweeping over

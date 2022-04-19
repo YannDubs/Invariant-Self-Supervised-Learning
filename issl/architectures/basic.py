@@ -62,6 +62,7 @@ class MLP(nn.Module):
         is_skip_hidden: bool = False,
         is_cosine: bool= False,
         kwargs_prelinear: dict = {},
+        MLP_bttle_prelinear : int =None,
         **kwargs
     ) -> None:
         super().__init__()
@@ -77,14 +78,28 @@ class MLP(nn.Module):
         bias_hidden = Norm == nn.Identity
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine = is_cosine
+        self.MLP_bttle_prelinear = MLP_bttle_prelinear
 
-        PreLinear = FlattenLinear if len(kwargs_prelinear) > 0 else nn.Linear # TODO use only FlattenLinear (currently backward compatibility)
-        self.pre_block = nn.Sequential(
-            PreLinear(in_dim, hid_dim, bias=bias_hidden, **kwargs_prelinear),
-            Norm(hid_dim),
-            Activation(),
-            Dropout(p=dropout_p),
-        )
+        if self.MLP_bttle_prelinear is not None:  # TODO if use that then can remove pre block
+            self.pre_block = nn.Sequential(
+                nn.Linear(in_dim, self.MLP_bttle_prelinear, bias=bias_hidden),
+                Norm(self.MLP_bttle_prelinear),
+                Activation(),
+                nn.Linear(self.MLP_bttle_prelinear, hid_dim, bias=bias_hidden),
+                Norm(hid_dim),
+                Activation(),
+                Dropout(p=dropout_p),
+            )
+
+        else:
+            PreLinear = FlattenLinear if len(kwargs_prelinear) > 0 else nn.Linear # TODO use only FlattenLinear (currently backward compatibility)
+            self.pre_block = nn.Sequential(
+                PreLinear(in_dim, hid_dim, bias=bias_hidden, **kwargs_prelinear),
+                Norm(hid_dim),
+                Activation(),
+                Dropout(p=dropout_p),
+            )
+
         layers = []
         # start at 1 because pre_block
         for _ in range(1, self.n_hid_layers):
@@ -197,7 +212,7 @@ class FlattenLinear(nn.Module):
     def __init__(
         self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
         bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True,
-            bottleneck_kwargs : dict = {}, **kwargs
+            batchnorm_kwargs : dict = {}, **kwargs
     ) -> None:
         super().__init__()
 
@@ -214,14 +229,16 @@ class FlattenLinear(nn.Module):
         kwargs = {k: v for k, v in kwargs.items() if k != "is_batchnorm"}
 
         if self.is_batchnorm_pre:
-            self.normalizer_pre = BatchNorm1d(in_dim, **bottleneck_kwargs)
+            self.normalizer_pre = BatchNorm1d(in_dim, **batchnorm_kwargs)
 
         if self.bottleneck_size is not None:
             self.bottleneck = nn.Linear(in_dim, self.bottleneck_size, bias=False)
             in_dim = self.bottleneck_size
 
             if self.is_batchnorm_bottleneck:
-                self.normalizer = BatchNorm1d(self.bottleneck_size, **bottleneck_kwargs)
+                # TODO after tuning should probably just set affine false
+                # and remove batchnorm_kwargs
+                self.normalizer = BatchNorm1d(self.bottleneck_size, **batchnorm_kwargs)
 
         self.linear = nn.Linear(in_dim, out_dim, **kwargs)
 

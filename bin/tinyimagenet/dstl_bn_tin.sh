@@ -2,7 +2,7 @@
 
 experiment="dstl_bn_tin"
 notes="
-**Goal**: understand effect of batchnorm after the representation.
+**Goal**: understand effect of batchnorm after the representation. If affine false always better change default.
 "
 
 # parses special mode for running the script
@@ -26,10 +26,11 @@ timeout=$time
 
 kwargs_multi="
 decodability.kwargs.predictor_kwargs.bottleneck_size=128
+decodability.kwargs.is_batchnorm_pre=True
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "+decodability.kwargs.bottleneck_kwargs.is_bias=False" "+decodability.kwargs.bottleneck_kwargs.affine=False" "decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck=False" "+decodability.kwargs.predictor_kwargs.bottleneck_kwargs.is_bias=False" "+decodability.kwargs.predictor_kwargs.bottleneck_kwargs.affine=False"
+  for kwargs_dep in "" "decodability.kwargs.is_batchnorm_pre=False" "+decodability.kwargs.batchnorm_kwargs.is_bias=False" "+decodability.kwargs.batchnorm_kwargs.affine=False" # "decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck=False" "+decodability.kwargs.predictor_kwargs.batchnorm_kwargs.is_bias=False" "+decodability.kwargs.predictor_kwargs.batchnorm_kwargs.affine=False"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &

@@ -11,14 +11,15 @@ kwargs:
   temperature_assign: null # by default half of temperature
   is_batchnorm_pre: False
   is_reweight_ema: True
-  bottleneck_kwargs: {}
+  batchnorm_kwargs: {}
   projector_kwargs:
     architecture: "mlp"
     bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
     is_batchnorm_bottleneck: ${decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck}
-    bottleneck_kwargs: ${decodability.kwargs.predictor_kwargs.bottleneck_kwargs}
+    batchnorm_kwargs: ${decodability.kwargs.predictor_kwargs.batchnorm_kwargs}
   predictor_kwargs:
     architecture: "linear"
     bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx
-    is_batchnorm_bottleneck: True
-    bottleneck_kwargs: {}
+    is_batchnorm_bottleneck: False # can improve a little
+    batchnorm_kwargs:
+      affine: False # don't train as will be sandwiched around linear layers => useless param
