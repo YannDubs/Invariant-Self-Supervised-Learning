@@ -276,6 +276,9 @@ def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
 
     return True
 
+def johnson_lindenstrauss_init_(m):
+    """Initialization for low dimension projection => johnson lindenstrauss lemma."""
+    torch.nn.init.normal_(m.weight, std=1 / math.sqrt(m.weight.shape[0]))
 
 def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
     """Initialize a module and all its descendents.

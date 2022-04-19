@@ -44,6 +44,11 @@ class ISSLModule(pl.LightningModule):
 
         self._save = dict()
 
+    def load_state_dict(self, state_dict):
+        # TODO rm this is just for backward compatibility
+        new_state_dict = {k.replace("p_ZlX.mapper","encoder"): v for k,v in state_dict.items()}
+        super().load_state_dict(new_state_dict)
+
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         """

@@ -8,7 +8,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from issl.architectures.helpers import get_Activation, get_Normalization
-from issl.helpers import batch_flatten, batch_unflatten, prod, weights_init, BatchNorm1d
+from issl.helpers import (batch_flatten, batch_unflatten, freeze_module_, johnson_lindenstrauss_init_, prod,
+                          weights_init, BatchNorm1d)
 
 __all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine", "FlattenMLL"]
 
@@ -62,7 +63,7 @@ class MLP(nn.Module):
         is_skip_hidden: bool = False,
         is_cosine: bool= False,
         kwargs_prelinear: dict = {},
-        MLP_bttle_prelinear : int =None,
+        MLP_bottleneck_prelinear : int =None,
         **kwargs
     ) -> None:
         super().__init__()
@@ -78,14 +79,14 @@ class MLP(nn.Module):
         bias_hidden = Norm == nn.Identity
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine = is_cosine
-        self.MLP_bttle_prelinear = MLP_bttle_prelinear
+        self.MLP_bottleneck_prelinear = MLP_bottleneck_prelinear
 
-        if self.MLP_bttle_prelinear is not None:  # TODO if use that then can remove pre block
+        if self.MLP_bottleneck_prelinear is not None:  # TODO if use that then can remove pre block
             self.pre_block = nn.Sequential(
-                nn.Linear(in_dim, self.MLP_bttle_prelinear, bias=bias_hidden),
-                Norm(self.MLP_bttle_prelinear),
+                nn.Linear(in_dim, self.MLP_bottleneck_prelinear, bias=bias_hidden),
+                Norm(self.MLP_bottleneck_prelinear),
                 Activation(),
-                nn.Linear(self.MLP_bttle_prelinear, hid_dim, bias=bias_hidden),
+                nn.Linear(self.MLP_bottleneck_prelinear, hid_dim, bias=bias_hidden),
                 Norm(hid_dim),
                 Activation(),
                 Dropout(p=dropout_p),
@@ -134,6 +135,9 @@ class MLP(nn.Module):
 
     def reset_parameters(self):
         weights_init(self)
+        
+        if self.MLP_bottleneck_prelinear is not None:
+            johnson_lindenstrauss_init_(self.pre_block[0])
 
 
 class FlattenMLP(MLP):
@@ -212,7 +216,7 @@ class FlattenLinear(nn.Module):
     def __init__(
         self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
         bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True,
-            batchnorm_kwargs : dict = {}, **kwargs
+        batchnorm_kwargs : dict = {}, is_train_bottleneck : bool =True, **kwargs
     ) -> None:
         super().__init__()
 
@@ -221,6 +225,7 @@ class FlattenLinear(nn.Module):
         self.bottleneck_size = bottleneck_size
         self.is_batchnorm_pre = is_batchnorm_pre
         self.is_batchnorm_bottleneck = is_batchnorm_bottleneck
+        self.is_train_bottleneck = is_train_bottleneck  # TODO eval and chose best
 
         in_dim = prod(self.in_shape)
         out_dim = prod(self.out_shape)
@@ -246,6 +251,12 @@ class FlattenLinear(nn.Module):
 
     def reset_parameters(self):
         weights_init(self)
+        if self.bottleneck_size is not None:
+            johnson_lindenstrauss_init_(self.bottleneck)
+
+            if not self.is_train_bottleneck:
+                freeze_module_(self.bottleneck)
+
 
     def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:
 

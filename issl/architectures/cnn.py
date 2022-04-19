@@ -17,7 +17,7 @@ from issl.architectures.helpers import (
     get_Normalization,
     is_pow2,
 )
-from issl.helpers import check_import, prod, weights_init
+from issl.helpers import check_import, johnson_lindenstrauss_init_, prod, weights_init
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +119,9 @@ class ResNet(nn.Module):
                 else:
                     conv1 = nn.Sequential(conv1_to_bttle, conv1_from_bttle)
 
+                weights_init(conv1)
+                johnson_lindenstrauss_init_(conv1[0])
+
             elif self.bottleneck_mode == "mlp":
                 conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
                                            self.bottleneck_channel,
@@ -128,6 +131,9 @@ class ResNet(nn.Module):
                                              kernel_size=1, bias=False)
                 bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
                 conv1 = nn.Sequential(conv1_to_bttle, bn, nn.ReLU(), conv1_from_bttle)
+
+                weights_init(conv1)
+                johnson_lindenstrauss_init_(conv1[0])
 
             elif self.bottleneck_mode == "cnn":
                 # use depth wise seprable convolutions to be more efficient parameter wise
@@ -155,14 +161,16 @@ class ResNet(nn.Module):
                                       bn, nn.ReLU(),
                                       depthconv1_from_bttle, pointconv1_from_bttle)
 
+                weights_init(conv1)
+                johnson_lindenstrauss_init_(conv1[1])
+
             else:
                 raise ValueError(f"Unknown self.bottleneck_mode={self.bottleneck_mode}.")
 
         bn = torch.nn.BatchNorm2d(self.out_dim)
+        weights_init(bn)
 
         resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
-
-        weights_init(resizer)
 
         self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
 
@@ -191,17 +199,24 @@ class ResNet(nn.Module):
     def forward(self, X, is_return_no_out_chan=False):
         if is_return_no_out_chan:  # TODO test if works and worth keeping
             assert self.is_channel_out_dim
-            breakpoint()
-            old_avg_pool = self.resnet.avgpool
-            self.resnet.avgpool = nn.Identity()
-            Y_pred = self.resnet(X)
-            self.resnet.avgpool = old_avg_pool
 
-            Y_pred_no_out_chan = self.resnet.avgpool[1](Y_pred)
-            Y_pred_out_chan = self.resnet.avgpool(Y_pred)
+            # need to recode everything to remove the flattening
+            x = self.resnet.conv1(X)
+            x = self.resnet.bn1(x)
+            x = self.resnet.relu(x)
+            x = self.resnet.maxpool(x)
 
-            # also return the representation without ourt channel
-            return Y_pred_out_chan, Y_pred_no_out_chan
+            x = self.resnet.layer1(x)
+            x = self.resnet.layer2(x)
+            x = self.resnet.layer3(x)
+            Y_pred_nopool = self.resnet.layer4(x)
+
+            Y_pred_no_out_chan = self.resnet.avgpool[1](Y_pred_nopool).flatten(1)
+            Y_pred_out_chan = self.resnet.avgpool(Y_pred_nopool).flatten(1)
+            Y_pred = Y_pred_out_chan.unflatten(dim=-1, sizes=self.out_shape)
+
+            # also return the representation without out channel
+            return Y_pred, Y_pred_no_out_chan
 
         else:
             Y_pred = self.resnet(X)

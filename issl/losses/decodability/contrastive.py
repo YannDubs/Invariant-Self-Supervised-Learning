@@ -110,13 +110,13 @@ class ContrastiveISSL(nn.Module):
             self.is_self_contrastive = False
 
         Projector = get_Architecture(**self.projector_kwargs)
-        self.projector = self.add_batchnorms(Projector(), projector_kwargs["architecture"])
+        self.projector = self.add_batchnorms(Projector(), projector_kwargs)
 
         if self.is_pred_proj_same:
             self.predictor = self.projector
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
-            self.predictor = self.add_batchnorms(Predictor(), predictor_kwargs["architecture"])
+            self.predictor = self.add_batchnorms(Predictor(), predictor_kwargs)
 
         if self.is_train_temperature:
             self.init_temperature = temperature
@@ -136,12 +136,14 @@ class ContrastiveISSL(nn.Module):
 
         self.reset_parameters()
 
-    def add_batchnorms(self, head, arch):
+    def add_batchnorms(self, head, kwargs):
         if self.is_batchnorm_pre:
-            head = nn.Sequential(nn.BatchNorm1d(self.z_dim), head)
+            z_shape = kwargs.get("in_shape", self.z_dim)
+            z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
+            head = nn.Sequential(nn.BatchNorm1d(z_dim), head)
 
         if self.is_batchnorm_post:
-            if not (arch.lower() in ["identity", "flatten"]):
+            if not (kwargs["architecture"].lower() in ["identity", "flatten"]):
                 head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
 
         return head
@@ -156,7 +158,7 @@ class ContrastiveISSL(nn.Module):
 
     def process_kwargs(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
-        kwargs["in_shape"] = self.z_shape
+        kwargs["in_shape"] = kwargs.get("in_shape", self.z_shape)
 
         if "out_shape" not in kwargs:
             kwargs["out_shape"] = prod(self.z_shape)
