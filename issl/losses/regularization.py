@@ -46,10 +46,10 @@ class CoarseningRegularizer(nn.Module):
         elif loss == "huber":
             self.loss_f = nn.SmoothL1Loss(reduction="none")
         elif loss == "rel_l1_clamp":
-            # clamp to 0.1 to avoid distance of negatives to go to infty (numerically unstable)
-            # 0.1 means that relative distance of positive is 10% of negatives
+            # clamp to 0.01 to avoid distance of negatives to go to infty (numerically unstable)
+            # 0.01 means that relative distance of positive is 1% of negatives
             # TODO should only clamp gradients of the negatives. Positives should still be forced to collapse
-            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0).clamp(min=0.1)
+            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0).clamp(min=0.01)
         elif loss == "rel_l1":
             self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0)
         elif loss == "corrcoef":

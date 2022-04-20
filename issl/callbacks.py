@@ -137,9 +137,9 @@ class EffectiveDim(PlottingCallback):
         self.n_val_steps += 1
 
     def on_train_epoch_end(self, trainer, pl_module, *args, **kwargs):
-        corr_coef = self.train_corr_coef / self.n_train_steps
-
         try:
+            corr_coef = self.train_corr_coef / self.n_train_steps
+
             rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True).float()
             pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
         except:
@@ -151,9 +151,9 @@ class EffectiveDim(PlottingCallback):
         self.train_corr_coef = 0
 
     def on_validation_epoch_end(self, trainer, pl_module, *args, **kwargs):
-        corr_coef = self.val_corr_coef / self.n_val_steps
-
         try:
+            corr_coef = self.val_corr_coef / self.n_val_steps
+
             rank = torch.linalg.matrix_rank(corr_coef, atol=1e-4, rtol=0.01, hermitian=True).float()
             pl_module.log(f"train/{pl_module.stage}/{pl_module.hparams.task}/rank", rank, on_epoch=True)
         except:

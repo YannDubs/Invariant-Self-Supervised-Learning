@@ -70,7 +70,6 @@ class ResNet(nn.Module):
         is_channel_out_dim: bool=False,
         bottleneck_channel: Optional[int] = None,
         is_bn_bttle_channel: bool = False,  # TODO remove after chose better
-        bottleneck_mode : str = "linear"  # linear / cnn / mlp
     ):
         super().__init__()
         kwargs = {}
@@ -82,7 +81,6 @@ class ResNet(nn.Module):
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
         self.is_bn_bttle_channel = is_bn_bttle_channel
-        self.bottleneck_mode = bottleneck_mode
 
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
@@ -112,81 +110,13 @@ class ResNet(nn.Module):
             weights_init(bn)
             resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
 
-        else:  # TODO chose best
+        else:
 
-            if self.bottleneck_mode == "bttle_expand":
+            assert self.out_dim % self.resnet.fc.in_features == 0
 
-                assert self.out_dim % self.resnet.fc.in_features == 0
-
-                resizer = BottleneckExpand(self.resnet.fc.in_features,
-                                           self.bottleneck_channel,
-                                           expansion=self.out_dim // self.resnet.fc.in_features)
-
-            else:
-
-                if self.bottleneck_mode == "linear":
-                    # low rank linear
-                    conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features, self.bottleneck_channel, kernel_size=1, bias=False)
-                    conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim, kernel_size=1, bias=False)
-
-                    if self.is_bn_bttle_channel:
-                        bn = torch.nn.BatchNorm2d(self.bottleneck_channel, affine=False)
-                        conv1 = nn.Sequential(conv1_to_bttle, bn, conv1_from_bttle)
-                    else:
-                        conv1 = nn.Sequential(conv1_to_bttle, conv1_from_bttle)
-
-                    weights_init(conv1)
-                    johnson_lindenstrauss_init_(conv1[0])
-
-                elif self.bottleneck_mode == "mlp":
-                    conv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
-                                               self.bottleneck_channel,
-                                               kernel_size=1,
-                                               bias=False) # will use batchnorm
-                    conv1_from_bttle = nn.Conv2d(self.bottleneck_channel, self.out_dim,
-                                                 kernel_size=1, bias=False)
-                    bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
-                    conv1 = nn.Sequential(conv1_to_bttle, bn, nn.ReLU(), conv1_from_bttle)
-
-                    weights_init(conv1)
-                    johnson_lindenstrauss_init_(conv1[0])
-
-                elif self.bottleneck_mode == "cnn":
-                    # use depth wise seprable convolutions to be more efficient parameter wise
-                    depthconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
-                                                    self.resnet.fc.in_features,
-                                                    groups=self.resnet.fc.in_features,
-                                                    stride=1,  padding=1, kernel_size=3,
-                                                    bias=False)  # will use batchnorm
-                    pointconv1_to_bttle = nn.Conv2d(self.resnet.fc.in_features,
-                                                   self.bottleneck_channel,
-                                                   kernel_size=1, bias=False)  # will use batchnorm
-
-                    bn = torch.nn.BatchNorm2d(self.bottleneck_channel)
-
-                    depthconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
-                                                    self.bottleneck_channel,
-                                                    groups=self.bottleneck_channel,
-                                                    stride=1, padding=1, kernel_size=3,
-                                                    bias=False)  # will use batchnorm
-                    pointconv1_from_bttle = nn.Conv2d(self.bottleneck_channel,
-                                                    self.out_dim,
-                                                    kernel_size=1, bias=False)  # will use batchnorm
-
-                    conv1 = nn.Sequential(depthconv1_to_bttle, pointconv1_to_bttle,
-                                          bn, nn.ReLU(),
-                                          depthconv1_from_bttle, pointconv1_from_bttle)
-
-                    weights_init(conv1)
-                    johnson_lindenstrauss_init_(conv1[1])
-
-                else:
-                    raise ValueError(f"Unknown self.bottleneck_mode={self.bottleneck_mode}.")
-
-                bn = torch.nn.BatchNorm2d(self.out_dim)
-                weights_init(bn)
-
-                resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
+            resizer = BottleneckExpand(self.resnet.fc.in_features,
+                                       self.bottleneck_channel,
+                                       expansion=self.out_dim // self.resnet.fc.in_features)
 
         self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
 
