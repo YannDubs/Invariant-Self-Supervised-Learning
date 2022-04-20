@@ -42,9 +42,8 @@ kwargs_multi="
 seed=1
 "
 
-
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "+decodability.kwargs.projector_kwargs.MLP_bottleneck_postlinear=512" "encoder.rm_out_chan_aug=False" "encoder.rm_out_chan_aug=False +decodability.kwargs.projector_kwargs.MLP_bottleneck_prelinear=512" "+decodability.kwargs.predictor_kwargs.bottleneck_size=null,128" "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False" "decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck=True" "decodability.kwargs.predictor_kwargs.batchnorm_kwargs.affine=True"
+  for kwargs_dep in "update_trainer_repr.max_epochs=500" "regularizer=huber representor.loss.beta=1e-5,1e-6"  "regularizer=rel_l1_clamp,effdim representor.loss.beta=1e-1,1e-2" # "" "+decodability.kwargs.projector_kwargs.MLP_bottleneck_postlinear=512" "encoder.rm_out_chan_aug=False" "encoder.rm_out_chan_aug=False +decodability.kwargs.projector_kwargs.MLP_bottleneck_prelinear=512" "+decodability.kwargs.predictor_kwargs.bottleneck_size=null,128" "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False" "decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck=True" "decodability.kwargs.predictor_kwargs.batchnorm_kwargs.affine=True"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m >> logs/"$experiment".log 2>&1 &
