@@ -49,7 +49,7 @@ is_no_save: ${is_return} # if you are sure you don't want to save anything
 is_skip_pred: false # run predictor?
 is_sk_warm_start: False # whether to start from previous run for sklearn => quicker
 is_nlp_cluster: False # should the working directory be used as main
-is_rescale_lr: False # all lr will be given for bs 256 and then lienarly rescaled depending on bs. TODO: change to true (currently false for backward compatibility)
+is_rescale_lr: True # all lr will be given for bs 256 and then linearly rescaled depending on bs. # CHANGED
 
 paths: #! the best practice is not to modify those paths but to symlink them to the places you want
   relative_work: outputs/${now:%Y-%m-%d_%H-%M-%S}

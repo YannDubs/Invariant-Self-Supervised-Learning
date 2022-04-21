@@ -33,7 +33,7 @@ kwargs_multi="
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in   "regularizer=huber representor.loss.beta=1e-5"  "regularizer=rel_l1_clamp,effdim representor.loss.beta=1e-1"
+  for kwargs_dep in "regularizer=rel_l1_clamp,effdim representor.loss.beta=1e-1,1"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

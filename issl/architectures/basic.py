@@ -64,7 +64,6 @@ class MLP(nn.Module):
         is_cosine: bool= False,
         kwargs_prelinear: dict = {},
         MLP_bottleneck_prelinear : int =None,
-        MLP_bottleneck_postlinear: int = None,
         **kwargs
     ) -> None:
         super().__init__()
@@ -81,7 +80,6 @@ class MLP(nn.Module):
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine = is_cosine
         self.MLP_bottleneck_prelinear = MLP_bottleneck_prelinear
-        self.MLP_bottleneck_postlinear = MLP_bottleneck_postlinear
 
         if self.MLP_bottleneck_prelinear is not None:  # TODO if use that then can remove pre block
             self.pre_block = nn.Sequential(
@@ -114,19 +112,9 @@ class MLP(nn.Module):
             ]
         self.hidden_block = nn.Sequential(*layers)
 
-
-        if self.MLP_bottleneck_postlinear is not None:  # TODO if use that then can remove post block
-            self.post_block = nn.Sequential(
-                nn.Linear(hid_dim, self.MLP_bottleneck_postlinear, bias=bias_hidden),
-                Norm(self.MLP_bottleneck_postlinear),
-                Activation(),
-                nn.Linear(self.MLP_bottleneck_postlinear, out_dim),
-            )
-
-        else:
-            # using flatten linear to have bottleneck size
-            PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
-            self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
+        # using flatten linear to have bottleneck size
+        PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
+        self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
 
         self.reset_parameters()
 
@@ -150,9 +138,6 @@ class MLP(nn.Module):
         
         if self.MLP_bottleneck_prelinear is not None:
             johnson_lindenstrauss_init_(self.pre_block[0])
-
-        if self.MLP_bottleneck_postlinear is not None:
-            johnson_lindenstrauss_init_(self.post_block[0])
 
 
 class FlattenMLP(MLP):
@@ -231,7 +216,8 @@ class FlattenLinear(nn.Module):
     def __init__(
         self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
         bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True,
-        batchnorm_kwargs : dict = {}, is_train_bottleneck : bool =True, **kwargs
+        batchnorm_kwargs : dict = {}, is_train_bottleneck : bool =True,  is_JL_init: bool=True,
+        **kwargs
     ) -> None:
         super().__init__()
 
@@ -241,6 +227,7 @@ class FlattenLinear(nn.Module):
         self.is_batchnorm_pre = is_batchnorm_pre
         self.is_batchnorm_bottleneck = is_batchnorm_bottleneck
         self.is_train_bottleneck = is_train_bottleneck  # TODO eval and chose best
+        self.is_JL_init = is_JL_init
 
         in_dim = prod(self.in_shape)
         out_dim = prod(self.out_shape)
@@ -256,7 +243,6 @@ class FlattenLinear(nn.Module):
             in_dim = self.bottleneck_size
 
             if self.is_batchnorm_bottleneck:
-                # TODO after tuning should probably just set affine false
                 # and remove batchnorm_kwargs
                 self.normalizer = BatchNorm1d(self.bottleneck_size, **batchnorm_kwargs)
 
@@ -267,7 +253,8 @@ class FlattenLinear(nn.Module):
     def reset_parameters(self):
         weights_init(self)
         if self.bottleneck_size is not None:
-            johnson_lindenstrauss_init_(self.bottleneck)
+            if self.is_JL_init:
+                johnson_lindenstrauss_init_(self.bottleneck)
 
             if not self.is_train_bottleneck:
                 freeze_module_(self.bottleneck)

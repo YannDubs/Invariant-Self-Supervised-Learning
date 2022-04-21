@@ -16,12 +16,11 @@ kwargs:
     architecture: "mlp"
     bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
     is_batchnorm_bottleneck: ${decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck}
-    batchnorm_kwargs: ${decodability.kwargs.predictor_kwargs.batchnorm_kwargs}
     is_train_bottleneck: ${decodability.kwargs.predictor_kwargs.is_train_bottleneck}
+    is_JL_init: ${decodability.kwargs.predictor_kwargs.is_JL_init}
   predictor_kwargs:
     architecture: "linear"
     bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx
-    is_batchnorm_bottleneck: False # can improve a little
+    is_batchnorm_bottleneck: True # can improve a little #TODO decide
     is_train_bottleneck: True
-    batchnorm_kwargs:
-      affine: False # don't train as will be sandwiched around linear layers => useless param
+    is_JL_init: True

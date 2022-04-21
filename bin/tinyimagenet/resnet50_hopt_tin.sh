@@ -21,27 +21,29 @@ downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,to
 timeout=$time
 update_trainer_repr.max_epochs=200
 encoder.z_shape=2048
+decodability.kwargs.predictor_kwargs.bottleneck_size=256
+seed=1
 "
 
-kwargs_multi="
-seed=1
+kwargs_multi_large="
 encoder.z_shape=8192
-decodability.kwargs.predictor_kwargs.bottleneck_size=256
 encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=256
 +decodability.kwargs.projector_kwargs.in_shape=2048
 encoder.rm_out_chan_aug=True
-decodability.kwargs.predictor_kwargs.batchnorm_kwargs.affine=True
-decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck=True
 "
 
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "+decodability.kwargs.projector_kwargs.MLP_bottleneck_postlinear=256" "decodability.kwargs.predictor_kwargs.batchnorm_kwargs.affine=False" "regularizer=effdim representor.loss.beta=1e-1,1e-2" "regularizer=huber representor.loss.beta=1e-6" #"" "regularizer=huber representor.loss.beta=1e-5"  "decodability.kwargs.predictor_kwargs.bottleneck_size=128,512" "++encoder.kwargs.arch_kwargs.bottleneck_channel=128,512"  "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False,True decodability.kwargs.predictor_kwargs.is_batchnorm_bottleneck=True,False"
+  for kwargs_dep in "" "decodability.kwargs.predictor_kwargs.bottleneck_size=512" "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False" "regularizer=effdim,rel_l1_clamp representor.loss.beta=1e-1"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs kwargs_multi_large $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &
+
+    sleep 10
+
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &
 
     sleep 10
 
