@@ -1,24 +1,15 @@
 from __future__ import annotations
 
 import logging
-import math
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Optional
 import einops
 
 import torchvision
-from torchvision import transforms as transform_lib
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from issl.architectures.helpers import (
-    closest_pow,
-    get_Activation,
-    get_Normalization,
-    is_pow2,
-)
-from issl.helpers import check_import, johnson_lindenstrauss_init_, prod, weights_init
+from issl.helpers import prod, weights_init
 
 logger = logging.getLogger(__name__)
 
@@ -103,20 +94,22 @@ class ResNet(nn.Module):
         self.reset_parameters()
 
     def update_out_chan_(self):
+        current_nchan = self.resnet.fc.in_features
+        target_nchan = self.out_dim
 
         if self.bottleneck_channel is None:
-            conv1 = nn.Conv2d(self.resnet.fc.in_features, self.out_dim, kernel_size=1, bias=False)
-            bn = torch.nn.BatchNorm2d(self.out_dim)
+            conv1 = nn.Conv2d(current_nchan, target_nchan, kernel_size=1, bias=False)
+            bn = torch.nn.BatchNorm2d(target_nchan)
             weights_init(bn)
             resizer = nn.Sequential(conv1, bn, torch.nn.ReLU(inplace=True))
 
         else:
 
-            assert self.out_dim % self.resnet.fc.in_features == 0
+            assert target_nchan % current_nchan == 0
 
-            resizer = BottleneckExpand(self.resnet.fc.in_features,
+            resizer = BottleneckExpand(current_nchan,
                                        self.bottleneck_channel,
-                                       expansion=self.out_dim // self.resnet.fc.in_features)
+                                       expansion=target_nchan // current_nchan)
 
         self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
 

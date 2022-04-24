@@ -45,7 +45,7 @@ class CoarseningRegularizer(nn.Module):
             self.loss_f = nn.SmoothL1Loss(reduction="none")
         elif loss == "rel_var":
             # detach negatives if rel distance is smaller than threshold to avoid negatives to infty
-            self.loss_f = lambda x1,x2: rel_variance(x1, x2, detach_at=0.01)
+            self.loss_f = lambda x1,x2: rel_variance(x1, x2, detach_at=0.001)
         elif loss == "rel_l1":
             # detach negatives if rel distance is smaller than threshold to avoid negatives to infty
             self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0, detach_at=0.01)
