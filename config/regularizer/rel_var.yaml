@@ -2,4 +2,4 @@ defaults:
   - base_coarsener
 
 kwargs:
-  loss: rel_l1_clamp
+  loss: rel_var

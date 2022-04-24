@@ -53,6 +53,9 @@ class ContrastiveISSL(nn.Module):
     is_batchnorm_pre : bool, optional
         Whether to add a batchnorm layer pre the predictor / projector.
 
+    loss : {"ce","mse","margin"}, optional
+        Which loss to use for classifying the positive in the batch.
+
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
         it will be a percentage of z_dim. To use no projector set `mode=Flatten`.
@@ -72,14 +75,13 @@ class ContrastiveISSL(nn.Module):
         z_shape: Sequence[int],
         temperature: float = 0.07,
         is_train_temperature: bool = False,
-        is_cosine_pos_temperature: bool = False,
-        is_cosine_neg_temperature: bool = False,
         n_epochs: Optional[int] = None,
         min_temperature: float = 0.01,
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
         is_batchnorm_pre: bool = False,
         is_batchnorm_post: bool = True,
+        loss: str = "ce",
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -87,15 +89,12 @@ class ContrastiveISSL(nn.Module):
             "norm_layer": "batch",
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
-        is_margin_loss: bool = False,  # DEV
         encoder: Optional[nn.Module] = None  # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
         self.is_train_temperature = is_train_temperature
-        self.is_cosine_neg_temperature = is_cosine_neg_temperature
-        self.is_cosine_pos_temperature = is_cosine_pos_temperature
         self.n_epochs = n_epochs
         self.min_temperature = min_temperature
         self.is_pred_proj_same = is_pred_proj_same
@@ -104,7 +103,8 @@ class ContrastiveISSL(nn.Module):
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
-        self.is_margin_loss = is_margin_loss
+        self.loss = loss.lower()
+        assert self.loss in ["ce","mse","margin"]
 
         if self.is_pred_proj_same:
             self.is_self_contrastive = False
@@ -123,14 +123,6 @@ class ContrastiveISSL(nn.Module):
             self.log_temperature = nn.Parameter(
                 torch.log(torch.tensor(self.init_temperature))
             )
-        elif self.is_cosine_neg_temperature:
-            self.precomputed_temperature = [warmup_cosine_scheduler(i, (self.n_epochs // 50) + 1, self.n_epochs,
-                                                                    boundary=1, optima=self.min_temperature)
-                                            for i in range(1000)]
-        elif self.is_cosine_pos_temperature:
-            self.precomputed_temperature = [warmup_cosine_scheduler(i, (self.n_epochs // 50) + 1, self.n_epochs,
-                                                                    boundary=self.min_temperature, optima=1)
-                                            for i in range(1000)]
         else:
             self._temperature = temperature
 
@@ -247,10 +239,6 @@ class ContrastiveISSL(nn.Module):
             temperature = torch.clamp(
                 self.log_temperature.exp(), min=self.min_temperature
             )
-
-        elif self.is_cosine_neg_temperature or self.is_cosine_pos_temperature:
-            temperature = self.precomputed_temperature[self.current_epoch]
-
         else:
             temperature = self._temperature
         return temperature
@@ -278,13 +266,16 @@ class ContrastiveISSL(nn.Module):
             pos_idx = torch.cat([arange + batch_size - 1, arange], dim=0)
 
             logits = logits[mask].view(new_batch_size, n_classes)
-            if not self.is_margin_loss:
+            if self.loss == "ce" :
                 hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
-            else:
+            elif self.loss == "margin" :
                 hat_H_mlz = F.multi_margin_loss(logits, pos_idx, reduction="none")
+            elif self.loss == "mse" :
+                onehot_labels = F.one_hot(pos_idx, num_classes=n_classes).float()
+                hat_H_mlz = F.mse_loss(logits, onehot_labels, reduction="none").mean(-1)
 
         else:
-            if not self.is_margin_loss:
+            if self.loss == "ce" :
                 # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
                 # all the add examples have 0 probability under p
                 log_q = logits.log_softmax(-1)[:, :new_batch_size]
@@ -294,11 +285,22 @@ class ContrastiveISSL(nn.Module):
                 log_q = log_q[mask].view(new_batch_size, 2)
                 hat_H_mlz = - log_q.sum(1) / 2
 
-            else:  # TODO rm if do not use
+            elif self.loss == "margin":
+                # works terribly
                 pos_idx = torch.eye(batch_size, device=device).repeat(2, 2).long()
                 hat_H_mlz = F.multilabel_margin_loss(logits, pos_idx, reduction="none")
 
-        hat_H_m = math.log(n_classes)
+            elif self.loss == "mse" :
+                onehot_labels = torch.eye(batch_size, device=device).repeat(2, 2).float()
+                hat_H_mlz = F.mse_loss(logits, onehot_labels, reduction="none").mean(-1)
+
+        if self.loss == "ce":
+            hat_H_m = math.log(n_classes)
+        elif self.loss == "margin":
+            hat_H_m = 1  # not sure what it should be (but not important)
+        elif self.loss == "mse":
+            hat_H_m = onehot_labels[0].var(unbiased=False)
+
         logs = dict(
             I_q_zm=(hat_H_m - hat_H_mlz.mean()),
             hat_H_m=hat_H_m,

@@ -1,5 +1,0 @@
-defaults:
-  - base_coarsenerMx
-
-kwargs:
-  loss: cosine

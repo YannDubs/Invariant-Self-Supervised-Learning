@@ -16,18 +16,23 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 representor=cntr
+data_repr.kwargs.batch_size=512
 timeout=$time
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
-update_trainer_repr.max_epochs=200
 "
 
 # every arguments that you are sweeping over
 kwargs_multi="
 seed=1
-decodability.kwargs.is_margin_loss=True,False
+decodability.kwargs.loss=mse,ce,margin
 decodability.kwargs.is_self_contrastive=True,False
 "
-# TODO run 3 seeds
+
+kwargs_multi="
+seed=1
+decodability.kwargs.loss=mse
+decodability.kwargs.is_self_contrastive=True,False
+"
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

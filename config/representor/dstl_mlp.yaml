@@ -5,7 +5,7 @@ defaults:
   - override /decodability: distillating
 
 representor:
-  name: dstl
+  name: dstl_mlp
 
 data_repr:
   kwargs:
@@ -20,10 +20,9 @@ decodability:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
-      norm_layer: "batch" # mlp batchnorm
-
+      norm_layer: "batch"
     predictor_kwargs:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
-      norm_layer: "batch" # mlp batchnorm
+      norm_layer: "batch"

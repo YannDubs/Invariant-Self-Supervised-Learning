@@ -9,7 +9,7 @@ import pytorch_lightning as pl
 import torch
 
 from issl import get_Architecture
-from issl.helpers import OrderedSet, append_optimizer_scheduler_, rel_distance
+from issl.helpers import OrderedSet, append_optimizer_scheduler_, rel_distance, rel_variance
 from issl.losses import get_loss_decodability, get_regularizer
 from issl.predictors import OnlineEvaluator
 
@@ -131,7 +131,9 @@ class ISSLModule(pl.LightningModule):
 
         z_x, z_a = z.detach().chunk(2, dim=0)
         if self.hparams.decodability.is_encode_aux:
-            logs["rel_distance"] = rel_distance(z_x, z_a).mean()  # estimate neural collapse
+            # estimate neural collapse
+            logs["rel_variance"] = rel_variance(z_x, z_a).mean()
+            logs["rel_distance_l1"] = rel_distance(z_x, z_a, p=1).mean()
 
         # any additional information that can be useful (dict)
         other.update(d_other)

@@ -7,8 +7,8 @@ import einops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from issl.helpers import (BatchRMSELoss, at_least_ndim, eye_like, prod, rel_distance,
-                          corrcoeff_to_eye_loss, rayleigh_coeff)
+from issl.helpers import (at_least_ndim, eye_like, prod, rel_distance,
+                          corrcoeff_to_eye_loss, rel_variance)
 
 
 def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
@@ -41,25 +41,16 @@ class CoarseningRegularizer(nn.Module):
     ) -> None:
         super().__init__()
 
-        if loss == "rmse":
-            self.loss_f = BatchRMSELoss()
-        elif loss == "huber":
+        if loss == "huber":
             self.loss_f = nn.SmoothL1Loss(reduction="none")
-        elif loss == "rel_l1_clamp":
-            # clamp to 0.01 to avoid distance of negatives to go to infty (numerically unstable)
-            # 0.01 means that relative distance of positive is 1% of negatives
-            # TODO should only clamp gradients of the negatives. Positives should still be forced to collapse
-            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0).clamp(min=0.01)
+        elif loss == "rel_var":
+            # detach negatives if rel distance is smaller than threshold to avoid negatives to infty
+            self.loss_f = lambda x1,x2: rel_variance(x1, x2, detach_at=0.01)
         elif loss == "rel_l1":
-            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0)
+            # detach negatives if rel distance is smaller than threshold to avoid negatives to infty
+            self.loss_f = lambda x1,x2: rel_distance(x1,x2, p=1.0, detach_at=0.01)
         elif loss == "corrcoef":
             self.loss_f = corrcoeff_to_eye_loss
-        elif loss == "rayleigh":
-            self.loss_f = rayleigh_coeff
-        elif loss == "cosine":
-            self.loss_f = lambda z, z_a: - F.cosine_similarity(
-                z.flatten(1, -1), z_a.flatten(1, -1), dim=-1, eps=1e-08
-            )
         elif not isinstance(loss, str):
             self.loss_f = loss
         else:
@@ -88,9 +79,11 @@ class CoarseningRegularizer(nn.Module):
         """
         z_x, z_a = z.chunk(2, dim=0)
 
-        # shape : [batch]
+        # shape : [batch] or []
         loss = self.loss_f(z_x, z_a)
-        loss = einops.reduce(loss, "b ... -> b", "sum")
+        if loss.ndim > 0:
+            # some losses already return after avg
+            loss = einops.reduce(loss, "b ... -> b", "sum")
 
         logs = dict()
         other = dict()

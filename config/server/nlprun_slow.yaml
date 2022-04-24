@@ -1,0 +1,7 @@
+# @package _global_
+defaults:
+  - nlprun
+
+hydra:
+  launcher:
+    exclude: jagupard10,jagupard11,jagupard12

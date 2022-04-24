@@ -69,20 +69,6 @@ def int_or_ratio(alpha: float, n: int) -> int:
     return int(alpha * n)
 
 
-class BatchRMSELoss(nn.Module):
-    """Batch root mean squared error."""
-
-    def __init__(self, eps=1e-6):
-        super().__init__()
-        self.mse = nn.MSELoss(reduction="none")
-        self.eps = eps
-
-    def forward(self, yhat, y):
-        batch_mse = self.mse(yhat, y).flatten(1, -1).mean(-1)
-        loss = torch.sqrt(batch_mse + self.eps)
-        return loss
-
-
 def namespace2dict(namespace):
     """
     Converts recursively namespace to dictionary. Does not work if there is a namespace whose
@@ -1123,21 +1109,36 @@ def eye_like(x):
     """Return an identity like `x`."""
     return torch.eye(*x.size(), out=torch.empty_like(x))
 
-def rel_distance(x1, x2, **kwargs):
+def rel_distance(x1, x2, detach_at=None, **kwargs):
     """
     Return the relative distance of positive examples compaired to negative.
     ~0 means that positives are essentially the same compared to negatives.
     ~1 means that positives and negatives are essentially indistinguishable.
     """
-    batch_size = x1.shape[0]
     dist = torch.cdist(x1, x2, **kwargs)
-    dist_no_diag = dist * (1 - eye_like(dist))
-    dist_neg_row = dist_no_diag.sum(0) / (batch_size - 1)
-    dist_neg_col = dist_no_diag.sum(1) / (batch_size - 1)
-    dist_neg = (dist_neg_row + dist_neg_col) / 2
-    dist_pos = dist.diag()
-    dist_rel = dist_pos / (dist_neg + 1e-5)
-    return dist_rel
+    dist_inter_class = dist[~eye_like(dist).bool()].mean()
+    dist_intra_class = dist.diag().mean()
+    rel_dist = dist_intra_class / (dist_inter_class + 1e-5)
+    if detach_at is not None and detach_at > rel_dist:
+        # only detach negatives, positives can still go to 0 var
+        rel_dist = dist_intra_class / (dist_inter_class.detach() + 1e-5)
+    return rel_dist
+
+def rel_variance(x1, x2, detach_at=None):
+    """
+    Return the relative distance of positive examples compaired to negative.
+    ~0 means that positives are essentially the same compared to negatives.
+    ~1 means that positives and negatives are essentially indistinguishable.
+    """
+    # Var[X] =  E[(X - X')^2] / 2 for iid X,X'
+    paired_variance = torch.cdist(x1, x2, p=2) ** 2 / 2
+    var_inter_class = paired_variance[~eye_like(paired_variance).bool()].mean()
+    var_intra_class = paired_variance.diag().mean()
+    rel_var = var_intra_class / (var_inter_class + 1e-5)
+    if detach_at is not None and detach_at > rel_var:
+        # only detach negatives, positives can still go to 0 var
+        rel_var = var_intra_class / (var_inter_class.detach() + 1e-5)
+    return rel_var
 
 def corrcoeff_to_eye_loss(x1,x2):
     batch_size, dim = x1.shape
@@ -1149,14 +1150,3 @@ def corrcoeff_to_eye_loss(x1,x2):
     neg_loss_2 = corr_coeff.T.masked_select(~eye_like(corr_coeff).bool()).view(batch_size, batch_size - 1).pow(2).mean(1)
     neg_loss = (neg_loss_1 + neg_loss_2) / 2  # symmetrize
     return pos_loss + neg_loss
-
-def rayleigh_coeff(x1,x2):
-    batch_size = x1.shape[0]
-    dist = x1 @ x2.T
-    dist_no_diag = dist * (1 - eye_like(dist))
-    dist_neg_row = dist_no_diag.sum(0) / (batch_size - 1)
-    dist_neg_col = dist_no_diag.sum(1) / (batch_size - 1)
-    dist_neg = (dist_neg_row + dist_neg_col) / 2
-    dist_pos = dist.diag()
-    dist_rel = dist_pos / (dist_neg + 1e-5)
-    return dist_rel

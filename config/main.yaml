@@ -58,7 +58,7 @@ paths: #! the best practice is not to modify those paths but to symlink them to 
   base_dir: ${hydra:runtime.cwd} # actual script where you are running from and want to save stuff
   tmp_dir: ${paths.base_dir} # main directory for all things that are only used when running script
 
-  data: ${paths.tmp_dir}/data
+  data: ${paths.base_dir}/data
   logs: ${paths.tmp_dir}/logs/${long_name}/jid_${job_id}
   checkpoint: ${paths.base_dir}/${paths.relative_checkpoint} # checkpoint to use during training
 
@@ -126,7 +126,7 @@ trainer:
   gradient_clip_algorithm: "value" # "norm" to clip by norm (problem is if one val is inf, then all is 0)
   log_every_n_steps: 100
   val_check_interval: 1.0 # less than 1 for subepoch validation.
-  check_val_every_n_epoch: 25
+  check_val_every_n_epoch: 10
   enable_checkpointing: True
 
   # ENGINEERING / SPEED #

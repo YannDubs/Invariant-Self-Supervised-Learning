@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="regularizer_tin"
+experiment="regularizer_tin_final"
 notes="
 **Goal**: effect of regularizer on computational efficiency.
 "
@@ -17,23 +17,23 @@ experiment=$experiment
 $base_kwargs_tin
 seed=1
 data_repr.kwargs.batch_size=256
+representor=dstl
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 timeout=$time
 "
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=dstl
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
-regularizer=huber
-representor.loss.beta=1e-5,1e-3
-update_trainer_repr.max_epochs=150,500
+update_trainer_repr.max_epochs=200,500
 "
-#  TODO 0,1e-6,1e-5,1e-4,1e-3
-#  TODO max_epochs=100,500
+
+kwargs_multi="
+update_trainer_repr.max_epochs=200
+"
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in  "regularizer=rel_l1,rel_var representor.loss.beta=1e-2,1e-1,1" #"regularizer=huber representor.loss.beta=1e-5" "regularizer=rel_l1_clamp representor.loss.beta=1e-1" ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -44,4 +44,4 @@ if [ "$is_plot_only" = false ] ; then
 fi
 
 # TODO
-# line plot. x = reg (or collapsing quanitified), y=acc, hue=epoch
+# line plot. x = number of downstream samples, y=acc, hue=epoch, style=beta / is_reg

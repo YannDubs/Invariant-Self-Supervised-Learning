@@ -1,0 +1,5 @@
+defaults:
+  - base
+
+data: data_repr_01_test
+predictor: torch_logistic

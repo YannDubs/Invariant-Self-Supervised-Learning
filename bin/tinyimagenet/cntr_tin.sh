@@ -21,12 +21,13 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-seed=1,2,3
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr,torchlogisticw1e-3_datarepr,torchlogisticw1e-5_datarepr001test,torchlogisticw1e-4_datarepr001test,torchlogisticw1e-3_datarepr001test,sklogistic_datarepr,sklogisticreg01_datarepr,sklogisticreg001_datarepr]
+seed=1
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 "
+# seed=1,2,3
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in  "++decodability.kwargs.projector_kwargs.hid_dim=1024 ++decodability.kwargs.projector_kwargs.n_hid_layers=1"  #""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
