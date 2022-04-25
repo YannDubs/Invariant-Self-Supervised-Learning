@@ -27,7 +27,7 @@ downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,to
 # seed=1,2,3
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "++decodability.kwargs.projector_kwargs.hid_dim=1024 ++decodability.kwargs.projector_kwargs.n_hid_layers=1"  #""
+  for kwargs_dep in  "++decodability.kwargs.projector_kwargs.hid_dim=2048 ++decodability.kwargs.projector_kwargs.n_hid_layers=1" # "++decodability.kwargs.projector_kwargs.hid_dim=1024 ++decodability.kwargs.projector_kwargs.n_hid_layers=1"  #""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

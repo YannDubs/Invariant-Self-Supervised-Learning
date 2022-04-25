@@ -27,6 +27,7 @@ scheduler@scheduler_issl=cosine
 optimizer_issl.kwargs.weight_decay=1e-6
 optimizer_issl.kwargs.lr=2e-3
 representor=dstl
+data_repr.kwargs.batch_size=256
 architecture@encoder=resnet50
 downstream_task.all_tasks=[torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 timeout=$time
@@ -55,7 +56,13 @@ representor.loss.beta=1e-2,1e-1
 decodability.kwargs.ema_weight_prior=0.7,0.9,null
 decodability.kwargs.beta_pM_unif=1.7,1.9
 "
-
+# decodability.kwargs.ema_weight_prior=0.5,0.7
+# +encoder.kwargs.arch_kwargs.bottleneck_channel=512,null
+# regularizer=rel_var,none (rel_var better)
+# decodability.kwargs.beta_pM_unif=1.9
+# decodability.kwargs.predictor_kwargs.bottleneck_size=256
+# decodability.kwargs.predictor_kwargs.is_train_bottleneck=False
+# representor.loss.beta=1e-1
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

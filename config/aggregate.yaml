@@ -10,6 +10,7 @@ col_cond_subset : {}
 fillna: {}
 cols_to_str: []
 replace: {}
+apply: {}
 merge_cols: {}
 sort: null
 base_path: results/exp_${experiment}

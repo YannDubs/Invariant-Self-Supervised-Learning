@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment="resnet50_hopt_tin"
+experiment="resnet50_cntr_tin"
 notes="
-**Goal**: tuning resnet50 on tinyimagenet.
+**Goal**: tuning cntr resnet50 on tinyimagenet.
 "
 
 # parses special mode for running the script
@@ -25,8 +25,8 @@ optimizer@optimizer_issl=Adam
 scheduler@scheduler_issl=cosine
 optimizer_issl.kwargs.weight_decay=1e-6
 optimizer_issl.kwargs.lr=2e-3
-representor=dstl
-data_repr.kwargs.batch_size=256
+representor=cntr
+data_repr.kwargs.batch_size=512
 architecture@encoder=resnet50
 downstream_task.all_tasks=[torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr,torchlogistic_datarepr]
 timeout=$time
@@ -42,45 +42,15 @@ hydra/sweeper/sampler=random
 hypopt=optuna
 monitor_direction=[maximize]
 monitor_return=[pred/torchlogistic_datarepr/acc]
-hydra.sweeper.study_name=new2
+hydra.sweeper.study_name=new1
 hydra.sweeper.n_trials=15
 hydra.sweeper.n_jobs=15
-decodability.kwargs.predictor_kwargs.bottleneck_size=256,512
-decodability.kwargs.predictor_kwargs.is_train_bottleneck=False,True
-decodability.kwargs.out_dim=8192,16384
-regularizer=rel_var,none
-representor.loss.beta=1e-2,1e-1
-decodability.kwargs.ema_weight_prior=0.7,0.9,null
-decodability.kwargs.beta_pM_unif=1.7,1.9
-decodability.kwargs.beta_HMlZ=1.5,1.6,1.4
-"
-# decodability.kwargs.ema_weight_prior=0.7,null
-# decodability.kwargs.out_dim=16384,32768
-# decodability.kwargs.beta_pM_unif=1.7
-# decodability.kwargs.beta_HMlZ=1.5,1.4
-# decodability.kwargs.predictor_kwargs.bottleneck_size=512
-# decodability.kwargs.predictor_kwargs.is_train_bottleneck=False
-# representor.loss.beta=1e-1
-
-kwargs_multi="
-hydra/sweeper=optuna
-hydra/sweeper/sampler=random
-hypopt=optuna
-monitor_direction=[maximize]
-monitor_return=[pred/torchlogistic_datarepr/acc]
-hydra.sweeper.study_name=new3
-hydra.sweeper.n_trials=10
-hydra.sweeper.n_jobs=10
-decodability.kwargs.predictor_kwargs.bottleneck_size=512
-decodability.kwargs.predictor_kwargs.is_train_bottleneck=False,True
-decodability.kwargs.out_dim=16384,32768
+decodability.kwargs.is_self_contrastive=True,False
+decodability.kwargs.is_use_bias=True,False
+decodability.kwargs.predictor_kwargs.out_shape=128,256,512
 regularizer=none,etf,huber
 representor.loss.beta=1e-1,1e-2
-decodability.kwargs.ema_weight_prior=0.5,0.7,null
-decodability.kwargs.beta_pM_unif=1.7,1.9
-decodability.kwargs.beta_HMlZ=1.5,1.4
 "
-
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in  ""

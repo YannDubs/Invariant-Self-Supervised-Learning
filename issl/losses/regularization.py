@@ -7,7 +7,7 @@ import einops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from issl.helpers import (at_least_ndim, eye_like, prod, rel_distance,
+from issl.helpers import (DistToEtf, at_least_ndim, eye_like, prod, rel_distance,
                           corrcoeff_to_eye_loss, rel_variance)
 
 
@@ -16,8 +16,8 @@ def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
         return CoarseningRegularizer(**kwargs)
     elif mode == "coarsenerMx":
         return CoarseningRegularizerMx(**kwargs)
-    elif mode == "effdim":
-        return EffdimRegularizer(**kwargs)
+    elif mode == "etf":
+        return ETFRegularizer(**kwargs)
     elif mode is None:
         return None
     else:
@@ -42,7 +42,7 @@ class CoarseningRegularizer(nn.Module):
         super().__init__()
 
         if loss == "huber":
-            self.loss_f = nn.SmoothL1Loss(reduction="none")
+            self.loss_f = nn.SmoothL1Loss()
         elif loss == "rel_var":
             # detach negatives if rel distance is smaller than threshold to avoid negatives to infty
             self.loss_f = lambda x1,x2: rel_variance(x1, x2, detach_at=0.001)
@@ -167,43 +167,47 @@ class CoarseningRegularizerMx(nn.Module):
         return loss, logs, other
 
 
-class EffdimRegularizer(nn.Module):
+class ETFRegularizer(nn.Module):
     """Increases effective dimensionality by each dimension independent.
 
     Parameters
     ---------
     z_shape : list or int
         Shape of representation.
-
-    is_use_augmented : bool, optional
-        Whether to compute the cross correlation between examples with different augmentations rather than same
-        augmentations, Both give optimal representations.
     """
 
     def __init__(
         self,
         z_shape,
-        is_use_augmented: bool = True,
-    ) -> None:
+        is_exact_etf=True,
+        batch_size=None,
+        how = "etf"  # corrcoef, both  # DEV
+    ) :
         super().__init__()
-        self.is_use_augmented = is_use_augmented
-
-        z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
-        self.corr_coef_bn = torch.nn.BatchNorm1d(z_dim, affine=False)
+        self.how = how.lower()
+        if self.how in ["etf","both"]:
+            self.etf_crit = DistToEtf(z_shape, is_exact_etf=is_exact_etf)
+        if self.how in ["cc","both"]:
+            self.cc_crit = DistToEtf(batch_size, is_exact_etf=is_exact_etf)
 
     def forward(
         self, z: torch.Tensor, _, __
     ) -> tuple[torch.Tensor, dict, dict]:
         z_x, z_a = z.chunk(2, dim=0)
 
-        batch_size, dim = z_x.shape
-        z_a = z_a if self.is_use_augmented else z_x
+        if self.how == "etf":
+            loss = self.etf_crit(z_x, z_a)
+        elif self.how == "cc":
+            loss = self.cc_crit(z_x.T, z_a.T)
+        elif self.how == "both":
+            loss = self.etf_crit(z_x, z_a) + self.cc_crit(z_x.T, z_a.T)
+        else:
+            raise ValueError(f"Unknown self.how={self.how}.")
 
-        corr_coeff = (self.corr_coef_bn(z_x).T @ self.corr_coef_bn(z_a)) / batch_size
-
-        pos_loss = (corr_coeff.diagonal() - 1).pow(2)
-        neg_loss = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(dim, dim - 1).pow(2).mean(1)
         logs = dict()
         other = dict()
 
-        return pos_loss + neg_loss, logs, other
+        return loss, logs, other
+
+
+

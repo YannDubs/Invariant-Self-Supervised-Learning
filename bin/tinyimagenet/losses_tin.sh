@@ -30,12 +30,11 @@ decodability.kwargs.is_self_contrastive=True,False
 
 kwargs_multi="
 seed=1
-decodability.kwargs.loss=mse
-decodability.kwargs.is_self_contrastive=True,False
+decodability.kwargs.is_use_bias=False
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  ""
+  for kwargs_dep in "decodability.kwargs.loss=weighted_mse,weighted_margin" # "decodability.kwargs.is_batchnorm_post=True decodability.kwargs.loss=ce decodability.kwargs.is_self_contrastive=True decodability.kwargs.is_use_bias=True,False" "decodability.kwargs.is_batchnorm_post=True decodability.kwargs.loss=ce decodability.kwargs.is_self_contrastive=False decodability.kwargs.is_use_bias=True"   # "decodability.kwargs.loss=mse,ce,margin" "decodability.kwargs.is_batchnorm_post=True decodability.kwargs.loss=ce decodability.kwargs.is_self_contrastive=True"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

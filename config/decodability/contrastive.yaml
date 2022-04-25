@@ -12,6 +12,7 @@ kwargs:
   is_batchnorm_post: True
   is_batchnorm_pre: False
   loss: ce
+  is_use_bias: False
   predictor_kwargs:
     architecture: "linear"
     out_shape: ${encoder.z_shape}

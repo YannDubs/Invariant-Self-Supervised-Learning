@@ -6,12 +6,15 @@ import math
 from collections.abc import Sequence
 from typing import Any, Optional
 
+import logging
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
 from issl.architectures import get_Architecture
-from issl.helpers import prod, warmup_cosine_scheduler, weights_init
+from issl.helpers import prod, weights_init
+
+logger = logging.getLogger(__name__)
 
 __all__ = ["ContrastiveISSL"]
 
@@ -82,6 +85,7 @@ class ContrastiveISSL(nn.Module):
         is_batchnorm_pre: bool = False,
         is_batchnorm_post: bool = True,
         loss: str = "ce",
+        is_use_bias : bool = False,  # DEV
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -89,9 +93,12 @@ class ContrastiveISSL(nn.Module):
             "norm_layer": "batch",
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
-        encoder: Optional[nn.Module] = None  # only used for DINO
+        encoder: Optional[nn.Module] = None,  # only used for DINO
+        **kwargs
     ) -> None:
         super().__init__()
+        logger.info(f"Unused arguments {kwargs}.")
+
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
         self.is_train_temperature = is_train_temperature
@@ -103,20 +110,25 @@ class ContrastiveISSL(nn.Module):
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
+        self.is_use_bias = is_use_bias
         self.loss = loss.lower()
-        assert self.loss in ["ce","mse","margin"]
+        assert self.loss in ["ce","mse","margin","weighted_margin","weighted_mse"]
+
+        if self.is_use_bias:
+            # the last output will be used as a bias => g also gives the bias
+            self.projector_kwargs["out_shape"] += 1
 
         if self.is_pred_proj_same:
             self.is_self_contrastive = False
 
         Projector = get_Architecture(**self.projector_kwargs)
-        self.projector = self.add_batchnorms(Projector(), projector_kwargs)
+        self.projector = self.add_batchnorms(Projector(), self.projector_kwargs)
 
         if self.is_pred_proj_same:
             self.predictor = self.projector
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
-            self.predictor = self.add_batchnorms(Predictor(), predictor_kwargs)
+            self.predictor = self.add_batchnorms(Predictor(), self.predictor_kwargs)
 
         if self.is_train_temperature:
             self.init_temperature = temperature
@@ -222,7 +234,19 @@ class ContrastiveISSL(nn.Module):
 
         # shape: [2*batch_size, out_shape]
         z_src = self.predictor(z_src)
-        z_tgt = self.projector(z_tgt)
+
+
+        if self.is_use_bias and self.is_batchnorm_post:
+            # don't apply batchnorm to the predicted bias
+            z_tgt = self.projector[0](z_tgt)
+            z_tgt, bias = z_tgt[:, :-1], z_tgt[:, -1]
+            z_tgt = self.projector[1](z_tgt)
+        else:
+            z_tgt = self.projector(z_tgt)
+
+            if self.is_use_bias:
+                z_tgt, bias = z_tgt[:, :-1], z_tgt[:, -1]
+
 
         # will use cosine similarity
         z_src = F.normalize(z_src, dim=1, p=2)
@@ -230,6 +254,24 @@ class ContrastiveISSL(nn.Module):
 
         # shape: [2*batch_size, 2*batch_size]
         logits = z_src @ z_tgt.T
+
+        # make sure 32 bits
+        logits = logits.float()
+
+        if self.loss == "ce":
+            # temperature scaling for cross entropy
+            logits = logits / self.temperature
+        else:
+            # rescaling logits to 0,1 (cosine sim in [-1,1]) as will be using as the prediction
+            logits = (logits + 1) / 2
+            if self.is_use_bias:
+                # make sure the bias cannot change by more than 1 => final logit is close to bounds [0,1]
+                # - 0.5 to ensure that intiialized around 0
+                bias = bias.sigmoid() - 0.5
+
+        # bias (should be after temperature)
+        if self.is_use_bias:
+            logits = logits + bias
 
         return logits
 
@@ -251,9 +293,6 @@ class ContrastiveISSL(nn.Module):
         device = logits.device
         arange = torch.arange(batch_size, device=device)
 
-        # make sure 32 bits
-        logits = logits.float() / self.temperature
-
         if not self.is_self_contrastive:
             # select all but current example.
             mask = ~torch.eye(new_batch_size, device=device).bool()
@@ -268,11 +307,23 @@ class ContrastiveISSL(nn.Module):
             logits = logits[mask].view(new_batch_size, n_classes)
             if self.loss == "ce" :
                 hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
-            elif self.loss == "margin" :
-                hat_H_mlz = F.multi_margin_loss(logits, pos_idx, reduction="none")
-            elif self.loss == "mse" :
-                onehot_labels = F.one_hot(pos_idx, num_classes=n_classes).float()
-                hat_H_mlz = F.mse_loss(logits, onehot_labels, reduction="none").mean(-1)
+
+            elif self.loss in ["weighted_margin", "weighted_mse"]:
+                onehot_labels =  F.one_hot(pos_idx, num_classes=n_classes).float()
+                # let labels and logits be in [-1,1]
+                scaled_logits = (logits * 2) - 1
+                scaled_labels = (onehot_labels * 2) - 1
+                dist = - scaled_logits * scaled_labels
+                if "margin" in self.loss:
+                    margin = 0.2  # margin of 1 doesn't make sense as |logit| < 1
+                    dist = (margin - dist).relu()  # squared hinge loss
+                else:
+                    dist = 1 - dist  # MSE loss (equivalent to squared hinge with margin -> infty)
+                squared_dist = dist ** 2
+                # there is 1 positive every batch_size so unbalanced classification task
+                # => but want to have same gradients for both => multiply pos by n_classes
+                balanced_dist = squared_dist * (1 + (onehot_labels * (n_classes - 1)))
+                hat_H_mlz = balanced_dist.mean(-1)
 
         else:
             if self.loss == "ce" :
@@ -285,21 +336,24 @@ class ContrastiveISSL(nn.Module):
                 log_q = log_q[mask].view(new_batch_size, 2)
                 hat_H_mlz = - log_q.sum(1) / 2
 
-            elif self.loss == "margin":
-                # works terribly
-                pos_idx = torch.eye(batch_size, device=device).repeat(2, 2).long()
-                hat_H_mlz = F.multilabel_margin_loss(logits, pos_idx, reduction="none")
-
-            elif self.loss == "mse" :
+            elif self.loss in ["weighted_margin","weighted_mse"]:
                 onehot_labels = torch.eye(batch_size, device=device).repeat(2, 2).float()
-                hat_H_mlz = F.mse_loss(logits, onehot_labels, reduction="none").mean(-1)
+                # let labels and logits be in [-1,1]
+                scaled_logits = (logits * 2) - 1
+                scaled_labels = (onehot_labels * 2) - 1
+                dist = - scaled_logits * scaled_labels
+                if "margin" in self.loss:
+                    margin = 0.2  # margin of 1 doesn't make sense as |logit| < 1
+                    dist = (margin - dist).relu()  # hinge loss
+                else:
+                    dist = 1 - dist  # MSE loss
+                squared_dist = dist ** 2
+                # there is 1 positive every batch_size so unbalanced classification task
+                # => but want to have same gradients for both => multiply pos by batch_size
+                balanced_dist = squared_dist * (1 + (onehot_labels * (batch_size - 1)))
+                hat_H_mlz = balanced_dist.mean(-1)
 
-        if self.loss == "ce":
-            hat_H_m = math.log(n_classes)
-        elif self.loss == "margin":
-            hat_H_m = 1  # not sure what it should be (but not important)
-        elif self.loss == "mse":
-            hat_H_m = onehot_labels[0].var(unbiased=False)
+        hat_H_m = math.log(n_classes)  # only correct for CE but not important in any case
 
         logs = dict(
             I_q_zm=(hat_H_m - hat_H_mlz.mean()),

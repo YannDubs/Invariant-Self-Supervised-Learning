@@ -108,6 +108,7 @@ def main(cfg):
     aggregator.fillna(**cfg.fillna)
     aggregator.cols_to_str(*cfg.cols_to_str)
     aggregator.replace(**cfg.replace)
+    aggregator.apply(**cfg.apply)
     aggregator.sort(cfg.sort)
     aggregator.subset(**cfg.col_val_subset)
     aggregator.subset_numeric(**cfg.col_cond_subset)
@@ -362,7 +363,7 @@ class ResultAggregator(PostPlotter):
             )
 
     def cols_to_str(self, *cols):
-        """Fill nans in all tables. Directly call `df.fillna`."""
+        """Convert column to string."""
         for k, df in self.tables.items():
             table = df.reset_index()
             for col in cols:
@@ -371,8 +372,18 @@ class ResultAggregator(PostPlotter):
 
             self.tables[k] = table.set_index(df.index.names)
 
+    def apply(self, **values):
+        """Apply function (given as string) to columns."""
+        for k, df in self.tables.items():
+            table = df.reset_index()
+            for col, func in values.items():
+                if col in table.columns:
+                    table[col] = table[col].apply(eval(func))
+
+            self.tables[k] = table.set_index(df.index.names)
+
     def replace(self, **values):
-        """Fill nans in all tables. Directly call `df.fillna`."""
+        """Replace values in table."""
         if len(values) > 0:
             for k, df in self.tables.items():
                 self.tables[k] = (
