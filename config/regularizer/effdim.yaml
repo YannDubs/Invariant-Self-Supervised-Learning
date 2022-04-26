@@ -1,0 +1,6 @@
+name: effdim
+
+kwargs:
+  mode: effdim
+  z_shape : ${encoder.z_shape}
+  is_use_augmented : True

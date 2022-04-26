@@ -1,0 +1,7 @@
+defaults:
+  - base
+
+kwargs:
+  mode: etf
+  z_shape: ${encoder.z_shape}
+  is_already_normalized : ${encoder.is_etf_rep}

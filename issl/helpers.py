@@ -1157,17 +1157,25 @@ class DistToEtf(nn.Module):
         self,
         z_shape,
         is_exact_etf=True,
+        is_already_normalized=False
     ) :
         super().__init__()
+        self.is_already_normalized = is_already_normalized
         self.is_exact_etf = is_exact_etf
         self.z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
         self.bn = torch.nn.BatchNorm1d(self.z_dim, affine=False)
 
+    def get_etf_rep(self, z):
+        return F.normalize(self.bn(z), dim=-1, p=2)
+
     def __call__(self, zx, za):
         z_dim = zx.shape[1]
-        zx_norm = F.normalize(self.bn(zx), dim=-1, p=2)
-        za_norm = F.normalize(self.bn(za), dim=-1, p=2)
-        MtM = zx_norm @ za_norm.T
+
+        if not self.is_already_normalized:
+            zx = self.get_etf_rep(zx)
+            za = self.get_etf_rep(za)
+
+        MtM = zx @ za.T
         if self.is_exact_etf:
             pos_loss = (MtM.diagonal() - 1).pow(2).mean()  # want it to be 1
             neg_loss = (1 / z_dim + MtM.masked_select(~eye_like(MtM).bool())).pow(2).mean()  # want it to be - 1 /dim

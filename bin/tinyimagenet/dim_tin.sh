@@ -32,9 +32,12 @@ kwargs_multi="
 encoder.z_shape=512,2048,8192
 "
 
+
 kwargs_multi="
-encoder.z_shape=8192
-+encoder.kwargs.arch_kwargs.bottleneck_channel=512,null
++encoder.kwargs.arch_kwargs.bottleneck_channel=512
+encoder.z_shape=512,2048,8192
+regularizer=etf
+representor.loss.beta=1e-2
 "
 
 if [ "$is_plot_only" = false ] ; then
@@ -53,57 +56,57 @@ fi
 
 
 
-
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       patterns.representor=null \
-       +col_val_subset.pred=["torch_logisticw1.0e-06","torch_logisticw1.0e-05","torch_logisticw1.0e-04"] \
-       +col_val_subset.datapred=["data_repr"] \
-       +col_val_subset.repr=["cntr"] \
-       +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="test/pred/acc" \
-       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-       +plot_scatter_lines.filename="lines_zdim_cntr" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.logbase_x=2 \
-        +plot_scatter_lines.legend=False \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
-
-
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       patterns.representor=null \
-       +col_val_subset.pred=["torch_logisticw1.0e-06","torch_logisticw1.0e-05","torch_logisticw1.0e-04"] \
-       +col_val_subset.datapred=["data_repr"] \
-       +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="test/pred/acc" \
-       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-       +plot_scatter_lines.filename="lines_zdim" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.logbase_x=2 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       patterns.representor=null \
-       +col_val_subset.pred=["torch_logisticw1.0e-03","torch_logisticw1.0e-05","torch_logisticw1.0e-04"] \
-       +col_val_subset.datapred=["data_repr_0.01_test"] \
-       +plot_scatter_lines.x="zdim" \
-       +plot_scatter_lines.y="test/pred/acc" \
-       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-       +plot_scatter_lines.filename="lines_zdim_001" \
-       +plot_scatter_lines.hue="repr" \
-       +plot_scatter_lines.logbase_x=2 \
-       +plot_scatter_lines.legend_out=False \
-       agg_mode=[plot_scatter_lines] \
-       $add_kwargs
-
-python utils/aggregate.py \
-       experiment=$experiment  \
-       agg_mode=[summarize_metrics] \
-       $add_kwargs
+#
+#
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       patterns.representor=null \
+#       +col_val_subset.pred=["torch_logisticw1.0e-06","torch_logisticw1.0e-05","torch_logisticw1.0e-04"] \
+#       +col_val_subset.datapred=["data_repr"] \
+#       +col_val_subset.repr=["cntr"] \
+#       +plot_scatter_lines.x="zdim" \
+#       +plot_scatter_lines.y="test/pred/acc" \
+#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+#       +plot_scatter_lines.filename="lines_zdim_cntr" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.logbase_x=2 \
+#        +plot_scatter_lines.legend=False \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
+#
+#
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       patterns.representor=null \
+#       +col_val_subset.pred=["torch_logisticw1.0e-06","torch_logisticw1.0e-05","torch_logisticw1.0e-04"] \
+#       +col_val_subset.datapred=["data_repr"] \
+#       +plot_scatter_lines.x="zdim" \
+#       +plot_scatter_lines.y="test/pred/acc" \
+#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+#       +plot_scatter_lines.filename="lines_zdim" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.logbase_x=2 \
+#       +plot_scatter_lines.legend_out=False \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       patterns.representor=null \
+#       +col_val_subset.pred=["torch_logisticw1.0e-03","torch_logisticw1.0e-05","torch_logisticw1.0e-04"] \
+#       +col_val_subset.datapred=["data_repr_0.01_test"] \
+#       +plot_scatter_lines.x="zdim" \
+#       +plot_scatter_lines.y="test/pred/acc" \
+#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+#       +plot_scatter_lines.filename="lines_zdim_001" \
+#       +plot_scatter_lines.hue="repr" \
+#       +plot_scatter_lines.logbase_x=2 \
+#       +plot_scatter_lines.legend_out=False \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       agg_mode=[summarize_metrics] \
+#       $add_kwargs

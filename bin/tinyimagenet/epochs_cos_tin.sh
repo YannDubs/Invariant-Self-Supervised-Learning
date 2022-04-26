@@ -22,14 +22,14 @@ downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,to
 timeout=$time
 is_rescale_lr=False
 "
-# could also run DISSL
+# 3665928 should be discarded because was chaning lr
 
 kwargs_multi="
 update_trainer_repr.max_epochs=2000,1000,500,200,100,50
 "
 
 kwargs_multi="
-update_trainer_repr.max_epochs=1500
+update_trainer_repr.max_epochs=500
 "
 
 if [ "$is_plot_only" = false ] ; then
@@ -49,27 +49,27 @@ wait
 # => show that training for logner is a way of getting ISSL loss closer to 0
 # then do that same with larger acrhctecture on sample plot (only DISSL)
 #
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       +col_val_subset.pred=["torch_logisticw1.0e-06"] \
-#       +col_val_subset.datapred=["data_repr"] \
-#       +col_val_subset.repr=["cntr"] \
-#       +collect_data.params_to_create.epochs=\[\["jobnum"\],\{0:50,1:100,2:200,3:500,4:1000,5:3000\}\] \
-#       +plot_scatter_lines.data="merged" \
-#       +plot_scatter_lines.hue="repr" \
-#       +plot_scatter_lines.x="test/repr/decodability" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-#       +plot_scatter_lines.filename="acc_vs_loss_epochs_w1e-6" \
-#       +plot_scatter_lines.multipy_y=100 \
-#       +plot_scatter_lines.y_tick_spacing=1 \
-#       +plot_scatter_lines.x_tick_spacing=0.05 \
-#       +plot_scatter_lines.is_invert_xaxis=true \
-#       +plot_scatter_lines.sharex=False \
-#        +plot_scatter_lines.legend=False \
-#       job_id_to_rm=\[3665928\] \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
+python utils/aggregate.py \
+       experiment=$experiment  \
+       +col_val_subset.pred=["torch_logisticw1.0e-06"] \
+       +col_val_subset.datapred=["data_repr"] \
+       +col_val_subset.repr=["cntr"] \
+       +collect_data.params_to_create.epochs=\[\["jobnum"\],\{0:50,1:100,2:200,3:500,4:1000,5:3000\}\] \
+       +plot_scatter_lines.data="merged" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.x="test/repr/decodability" \
+       +plot_scatter_lines.y="test/pred/acc" \
+       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+       +plot_scatter_lines.filename="acc_vs_loss_epochs_w1e-6" \
+       +plot_scatter_lines.multipy_y=100 \
+       +plot_scatter_lines.y_tick_spacing=1 \
+       +plot_scatter_lines.x_tick_spacing=0.05 \
+       +plot_scatter_lines.is_invert_xaxis=true \
+       +plot_scatter_lines.sharex=False \
+        +plot_scatter_lines.legend=False \
+       job_id_to_rm=\[3665928\] \
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
 
 
 #python utils/aggregate.py \

@@ -46,8 +46,7 @@ hydra.sweeper.study_name=new1
 hydra.sweeper.n_trials=15
 hydra.sweeper.n_jobs=15
 decodability.kwargs.is_self_contrastive=True,False
-decodability.kwargs.is_use_bias=True,False
-decodability.kwargs.predictor_kwargs.out_shape=128,256,512
+decodability.kwargs.predictor_kwargs.out_shape=128,512
 regularizer=none,etf,huber
 representor.loss.beta=1e-1,1e-2
 "

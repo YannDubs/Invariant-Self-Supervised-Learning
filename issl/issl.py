@@ -65,7 +65,7 @@ class ISSLModule(pl.LightningModule):
         return self(x).cpu(), y.cpu()
 
     def forward(
-        self, x: torch.Tensor, encoder=None, **kwargs
+        self, x: torch.Tensor, encoder=None, is_process=True, **kwargs
     ):
         """Represents the data `x`.
 
@@ -89,6 +89,9 @@ class ISSLModule(pl.LightningModule):
         # shape: [batch_size, *z_shape]
         z = encoder(x, **kwargs)
 
+        if is_process and self.hparams.encoder.is_etf_rep:
+            z = self.dist_to_etf.get_etf_rep(z)
+
         return z
 
     def step(self, batch: list) -> tuple[torch.Tensor, dict, dict]:
@@ -98,12 +101,15 @@ class ISSLModule(pl.LightningModule):
         if self.hparams.decodability.is_encode_aux:
             if self.hparams.encoder.rm_out_chan_aug:
                 # here we use a different transformation for the augmentations and the inputs
-                z, z_no_out_chan = self(x, is_return_no_out_chan=True)
-                z_a, z_a_no_out_chan = self(aux_target, is_return_no_out_chan=True)
+                z, z_no_out_chan = self(x, is_return_no_out_chan=True, is_process=False)
+                z_a, z_a_no_out_chan = self(aux_target, is_return_no_out_chan=True, is_process=False)
 
                 # z shape: [2 * batch_size, *z_shape]
                 z = torch.cat([z, z_a])
                 z_tgt = torch.cat([z_no_out_chan, z_a_no_out_chan])
+
+                z = self.dist_to_etf.get_etf_rep(z)
+                # TODO not sure it's great to use batchnorm on concat (augmented non indep examples screw estimates) ...
 
             else:
                 # z shape: [2 * batch_size, *z_shape]

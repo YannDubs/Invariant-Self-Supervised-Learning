@@ -29,11 +29,13 @@ update_trainer_repr.max_epochs=200,500
 
 kwargs_multi="
 update_trainer_repr.max_epochs=200
+data_repr.kwargs.batch_size=512
+representor=cntr
 "
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "regularizer=etf_approx,etf_cc,etf_both representor.loss.beta=1e-1"  # "regularizer=etf representor.loss.beta=1e-3,1e-2,1e-1,1,10" #"regularizer=huber representor.loss.beta=1e-5" "regularizer=rel_l1_clamp representor.loss.beta=1e-1" ""
+  for kwargs_dep in  "regularizer=effdim representor.loss.beta=1e-1,1e-2" "regularizer=etf representor.loss.beta=1e-3,1e-2"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

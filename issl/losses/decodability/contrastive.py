@@ -85,7 +85,6 @@ class ContrastiveISSL(nn.Module):
         is_batchnorm_pre: bool = False,
         is_batchnorm_post: bool = True,
         loss: str = "ce",
-        is_use_bias : bool = False,  # DEV
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -110,13 +109,8 @@ class ContrastiveISSL(nn.Module):
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
-        self.is_use_bias = is_use_bias
         self.loss = loss.lower()
         assert self.loss in ["ce","mse","margin","weighted_margin","weighted_mse"]
-
-        if self.is_use_bias:
-            # the last output will be used as a bias => g also gives the bias
-            self.projector_kwargs["out_shape"] += 1
 
         if self.is_pred_proj_same:
             self.is_self_contrastive = False
@@ -234,18 +228,7 @@ class ContrastiveISSL(nn.Module):
 
         # shape: [2*batch_size, out_shape]
         z_src = self.predictor(z_src)
-
-
-        if self.is_use_bias and self.is_batchnorm_post:
-            # don't apply batchnorm to the predicted bias
-            z_tgt = self.projector[0](z_tgt)
-            z_tgt, bias = z_tgt[:, :-1], z_tgt[:, -1]
-            z_tgt = self.projector[1](z_tgt)
-        else:
-            z_tgt = self.projector(z_tgt)
-
-            if self.is_use_bias:
-                z_tgt, bias = z_tgt[:, :-1], z_tgt[:, -1]
+        z_tgt = self.projector(z_tgt)
 
 
         # will use cosine similarity
@@ -264,14 +247,6 @@ class ContrastiveISSL(nn.Module):
         else:
             # rescaling logits to 0,1 (cosine sim in [-1,1]) as will be using as the prediction
             logits = (logits + 1) / 2
-            if self.is_use_bias:
-                # make sure the bias cannot change by more than 1 => final logit is close to bounds [0,1]
-                # - 0.5 to ensure that intiialized around 0
-                bias = bias.sigmoid() - 0.5
-
-        # bias (should be after temperature)
-        if self.is_use_bias:
-            logits = logits + bias
 
         return logits
 

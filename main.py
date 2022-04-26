@@ -265,7 +265,7 @@ def begin(cfg: Container) -> None:
 
     try:
         # if continuing from single job you shouldn't append run to the end
-        continue_job = cfg.continue_job  # used to trigger the try except
+        continue_job = cfg.continue_job  #! used to trigger the try except
         if cfg.is_rm_job_num:
             # in case the original job was actually without a job num
             cfg.job_id = "_".join(str(cfg.job_id).split("_")[:-1])

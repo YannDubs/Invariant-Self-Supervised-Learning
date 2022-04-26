@@ -18,6 +18,8 @@ def get_regularizer(mode: Optional[str], **kwargs) -> Optional[torch.nn.Module]:
         return CoarseningRegularizerMx(**kwargs)
     elif mode == "etf":
         return ETFRegularizer(**kwargs)
+    elif mode == "effdim":
+        return EffdimRegularizer(**kwargs)
     elif mode is None:
         return None
     else:
@@ -180,29 +182,19 @@ class ETFRegularizer(nn.Module):
         self,
         z_shape,
         is_exact_etf=True,
-        batch_size=None,
+        batch_size=None, # DEV rm
         how = "etf"  # corrcoef, both  # DEV
     ) :
         super().__init__()
-        self.how = how.lower()
-        if self.how in ["etf","both"]:
-            self.etf_crit = DistToEtf(z_shape, is_exact_etf=is_exact_etf)
-        if self.how in ["cc","both"]:
-            self.cc_crit = DistToEtf(batch_size, is_exact_etf=is_exact_etf)
+        self.how = how.lower() # DEV rm
+        self.etf_crit = DistToEtf(z_shape, is_exact_etf=is_exact_etf)
 
     def forward(
         self, z: torch.Tensor, _, __
     ) -> tuple[torch.Tensor, dict, dict]:
         z_x, z_a = z.chunk(2, dim=0)
 
-        if self.how == "etf":
-            loss = self.etf_crit(z_x, z_a)
-        elif self.how == "cc":
-            loss = self.cc_crit(z_x.T, z_a.T)
-        elif self.how == "both":
-            loss = self.etf_crit(z_x, z_a) + self.cc_crit(z_x.T, z_a.T)
-        else:
-            raise ValueError(f"Unknown self.how={self.how}.")
+        loss = self.etf_crit(z_x, z_a)
 
         logs = dict()
         other = dict()
@@ -210,4 +202,43 @@ class ETFRegularizer(nn.Module):
         return loss, logs, other
 
 
+
+class EffdimRegularizer(nn.Module):
+    """Increases effective dimensionality by each dimension independent.
+    Parameters
+    ---------
+    z_shape : list or int
+        Shape of representation.
+    is_use_augmented : bool, optional
+        Whether to compute the cross correlation between examples with different augmentations rather than same
+        augmentations, Both give optimal representations.
+    """
+
+    def __init__(
+        self,
+        z_shape,
+        is_use_augmented: bool = True,
+    ) -> None:
+        super().__init__()
+        self.is_use_augmented = is_use_augmented
+
+        z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
+        self.corr_coef_bn = torch.nn.BatchNorm1d(z_dim, affine=False)
+
+    def forward(
+        self, z: torch.Tensor, _, __
+    ) -> tuple[torch.Tensor, dict, dict]:
+        z_x, z_a = z.chunk(2, dim=0)
+
+        batch_size, dim = z_x.shape
+        z_a = z_a if self.is_use_augmented else z_x
+
+        corr_coeff = (self.corr_coef_bn(z_x).T @ self.corr_coef_bn(z_a)) / batch_size
+
+        pos_loss = (corr_coeff.diagonal() - 1).pow(2)
+        neg_loss = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(dim, dim - 1).pow(2).mean(1)
+        logs = dict()
+        other = dict()
+
+        return pos_loss + neg_loss, logs, other
 

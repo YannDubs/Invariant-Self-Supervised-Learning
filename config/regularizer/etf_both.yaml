@@ -1,8 +1,0 @@
-name: etf_both
-
-kwargs:
-  mode: etf
-  how: both
-  z_shape : ${encoder.z_shape}
-  is_exact_etf: True
-  batch_size : ${data_repr.kwargs.batch_size}
