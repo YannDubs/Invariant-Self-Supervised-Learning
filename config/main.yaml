@@ -15,7 +15,7 @@ defaults:
   - architecture@online_evaluator: linear
   - checkpoint@checkpoint_repr: last
   - optimizer@optimizer_issl: Adam_lr3e-3_w0 # larger learning rate will decrease I[Z,X] usually, so can be seen as regularizer
-  - scheduler@scheduler_issl: warm_unifmultistep
+  - scheduler@scheduler_issl: cosine
   - optimizer@optimizer_eval: Adam_lr3e-4_w0
   - scheduler@scheduler_eval: unifmultistep100 # ensure that can always keep up with the changing representation
   - decodability: contrastive
