@@ -17,6 +17,8 @@ kwargs:
     bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
     is_train_bottleneck: ${decodability.kwargs.predictor_kwargs.is_train_bottleneck}
     is_JL_init: ${decodability.kwargs.predictor_kwargs.is_JL_init}
+    hid_dim: 1024
+    n_hid_layers: 1
   predictor_kwargs:
     architecture: "linear"
     bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx

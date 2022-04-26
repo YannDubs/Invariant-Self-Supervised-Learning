@@ -21,10 +21,13 @@ representor=dstl
 data_repr.kwargs.batch_size=256
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 encoder.kwargs.arch_kwargs.is_channel_out_dim=True
++encoder.kwargs.arch_kwargs.bottleneck_channel=512
 update_trainer_repr.max_epochs=500
 seed=1
 +decodability.kwargs.projector_kwargs.in_shape=512
 encoder.rm_out_chan_aug=True
+++decodability.kwargs.projector_kwargs.n_hid_layers=1
+++decodability.kwargs.projector_kwargs.hid_dim=1024
 "
 #torchmlpw1e-5_datarepr
 
@@ -34,9 +37,24 @@ encoder.z_shape=512,2048,8192
 
 
 kwargs_multi="
-+encoder.kwargs.arch_kwargs.bottleneck_channel=512
 encoder.z_shape=512,2048,8192
 regularizer=etf
+representor.loss.beta=1e-2
+"
+
+
+kwargs_multi="
+encoder.z_shape=2048
+regularizer=none
+representor.loss.beta=1e-2
+"
+
+
+kwargs_multi="
+encoder.z_shape=2048
+regularizer=none
+++decodability.kwargs.projector_kwargs.in_shape=2048
+encoder.rm_out_chan_aug=False
 representor.loss.beta=1e-2
 "
 

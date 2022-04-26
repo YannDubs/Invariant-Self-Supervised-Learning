@@ -10,7 +10,7 @@ kwargs:
   freeze_Mx_epochs: 1
   projector_kwargs:
     architecture: "mlp"
-    hid_dim: 2048
+    hid_dim: 1024 # should be 2048 but for now wants the same head for all models
     n_hid_layers: 1
     norm_layer: batchnorm
     activation: GELU

@@ -18,3 +18,5 @@ kwargs:
   projector_kwargs:
     architecture: "mlp"
     out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
+    hid_dim: 1024
+    n_hid_layers: 1
