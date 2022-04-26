@@ -18,7 +18,7 @@ $base_kwargs_tin
 seed=1
 data_repr.kwargs.batch_size=256
 representor=dstl
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogistic_datarepr01test,torchlogistic_datarepr001test,torchlogistic_datarepr0002test,torchlogistic_datarepr05test]
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogistic_datarepr01test,torchlogistic_datarepr001test,torchlogistic_datarepr0002test,torchlogistic_datarepr03test,torchlogistic_datarepr003test]
 timeout=$time
 "
 
