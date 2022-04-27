@@ -27,9 +27,22 @@ seed=1,2,3
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr001test,torchlogisticw1e-4_datarepr001test,torchlogisticw1e-3_datarepr001test,sklogistic_datarepr,sklogisticreg01_datarepr,sklogisticreg001_datarepr]
 "
 
+kwargs_multi="
+seed=1
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+data_repr.kwargs.batch_size=256,512
+"
+
+kwargs_multi="
+seed=1
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+update_trainer_repr.max_epochs=300,500
+"
+
+
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in   "encoder.kwargs.arch_kwargs.is_channel_out_dim=True encoder.z_shape=2048"  ""
+  for kwargs_dep in    ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &

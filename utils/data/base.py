@@ -311,7 +311,7 @@ class ISSLDataModule(LightningDataModule):
         val_size: float = 0.1,
         test_size: int = None,
         num_workers: int = 8,
-        batch_size: int = 128,
+        batch_size: int = 512,
         val_batch_size: Optional[int] = None,
         seed: int = 123,
         subset_train_size: Optional[float] = None,

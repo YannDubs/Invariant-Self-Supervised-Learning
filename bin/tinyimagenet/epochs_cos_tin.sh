@@ -20,9 +20,9 @@ seed=1
 data_repr.kwargs.batch_size=512
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 timeout=$time
-is_rescale_lr=False
+is_rescale_lr=True
 "
-# 3665928 should be discarded because was chaning lr
+# messed up lr!
 
 kwargs_multi="
 update_trainer_repr.max_epochs=2000,1000,500,200,100,50

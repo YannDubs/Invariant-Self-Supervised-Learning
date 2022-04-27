@@ -18,9 +18,7 @@ $base_kwargs_tin
 seed=1
 timeout=$time
 representor=dstl
-data_repr.kwargs.batch_size=256
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
-update_trainer_repr.max_epochs=500
 seed=1
 ++decodability.kwargs.projector_kwargs.n_hid_layers=1
 ++decodability.kwargs.projector_kwargs.hid_dim=1024
@@ -37,7 +35,7 @@ cell_head="
 
 cell_reg_hopt="
 $cell_head
-regularizer=effdim,etf
+regularizer=effdim,etf,effdimunit
 representor.loss.beta=1e-2
 "
 

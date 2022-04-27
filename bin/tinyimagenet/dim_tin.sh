@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="dim_tin"
+experiment="dim_tin_final"
 notes="
 **Goal**: effect of using larger dimension Z.
 "
@@ -53,6 +53,14 @@ representor.loss.beta=1e-2
 kwargs_multi="
 encoder.z_shape=2048
 regularizer=none
+++decodability.kwargs.projector_kwargs.in_shape=2048
+encoder.rm_out_chan_aug=False
+representor.loss.beta=1e-2
+"
+
+kwargs_multi="
+encoder.z_shape=2048
+regularizer=effdimunit,etf,effdim,none
 ++decodability.kwargs.projector_kwargs.in_shape=2048
 encoder.rm_out_chan_aug=False
 representor.loss.beta=1e-2

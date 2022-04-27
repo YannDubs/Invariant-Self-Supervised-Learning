@@ -181,12 +181,9 @@ class ETFRegularizer(nn.Module):
     def __init__(
         self,
         z_shape,
-        is_exact_etf=True,
-        batch_size=None, # DEV rm
-        how = "etf"  # corrcoef, both  # DEV
+        is_exact_etf=True
     ) :
         super().__init__()
-        self.how = how.lower() # DEV rm
         self.etf_crit = DistToEtf(z_shape, is_exact_etf=is_exact_etf)
 
     def forward(
@@ -218,12 +215,14 @@ class EffdimRegularizer(nn.Module):
         self,
         z_shape,
         is_use_augmented: bool = True,
+        is_use_unit: bool=False,
     ) -> None:
         super().__init__()
         self.is_use_augmented = is_use_augmented
 
         z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
         self.corr_coef_bn = torch.nn.BatchNorm1d(z_dim, affine=False)
+        self.is_use_unit = is_use_unit
 
     def forward(
         self, z: torch.Tensor, _, __
@@ -233,7 +232,14 @@ class EffdimRegularizer(nn.Module):
         batch_size, dim = z_x.shape
         z_a = z_a if self.is_use_augmented else z_x
 
-        corr_coeff = (self.corr_coef_bn(z_x).T @ self.corr_coef_bn(z_a)) / batch_size
+        z_x = self.corr_coef_bn(z_x)
+        z_a = self.corr_coef_bn(z_a)
+
+        if self.is_use_unit:
+            z_x = F.normalize(z_x, dim=1, p=2)
+            z_a = F.normalize(z_a, dim=1, p=2)
+
+        corr_coeff = (z_x.T @ z_a) / batch_size
 
         pos_loss = (corr_coeff.diagonal() - 1).pow(2)
         neg_loss = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(dim, dim - 1).pow(2).mean(1)

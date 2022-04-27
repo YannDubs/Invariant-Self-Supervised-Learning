@@ -204,7 +204,7 @@ data_pred: {}
 dflt_data_pred:
   is_copy_repr: False
   kwargs:
-    batch_size: 256
+    batch_size: 512
     dataset_kwargs:
       aux_target: null
 
