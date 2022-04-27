@@ -18,6 +18,7 @@ representor=dstl
 seed=1
 data_repr.kwargs.batch_size=256
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+update_trainer_repr.max_epochs=500
 timeout=$time
 "
 
