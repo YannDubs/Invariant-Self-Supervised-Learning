@@ -236,8 +236,8 @@ class EffdimRegularizer(nn.Module):
         z_a = self.corr_coef_bn(z_a)
 
         if self.is_use_unit:
-            z_x = F.normalize(z_x, dim=1, p=2)
-            z_a = F.normalize(z_a, dim=1, p=2)
+            z_x = F.normalize(z_x, dim=0, p=2)
+            z_a = F.normalize(z_a, dim=0, p=2)
 
         corr_coeff = (z_x.T @ z_a) / batch_size
 
