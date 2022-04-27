@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+data: data_repr_002_test
+predictor: torch_logistic
+optimizer: SGD_w1e-5

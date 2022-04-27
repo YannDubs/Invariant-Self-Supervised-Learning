@@ -79,7 +79,7 @@ update_trainer_repr.max_epochs=1000
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in "" "decodability.kwargs.predictor_kwargs.architecture=identity"  "$cell_baseline"    "$cell_head" "$cell_reg_hopt" "$cell_dim_hopt1" "$cell_dim_hopt2" "$cell_aug" "$cell_epoch"
   do
-
+    # 3681265 - 3681273
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 
     sleep 10

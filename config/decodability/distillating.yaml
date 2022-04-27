@@ -11,6 +11,8 @@ kwargs:
   temperature_assign: null # by default half of temperature
   is_batchnorm_pre: False
   is_reweight_ema: True
+  freeze_Mx_epochs: 0
+  is_freeze_only_bottleneck: True
   batchnorm_kwargs: {}
   projector_kwargs:
     architecture: "mlp"

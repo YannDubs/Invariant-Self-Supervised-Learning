@@ -158,6 +158,8 @@ class DistillatingISSL(BaseDistillationISSL):
         is_batchnorm_pre: bool=True,
         is_reweight_ema: bool=True,
         batchnorm_kwargs: dict = {},
+        freeze_Mx_epochs: int=0,
+        is_freeze_only_bottleneck: bool=True,
         predictor_kwargs: dict[str, Any] = {
                                "architecture": "linear",
                            },
@@ -173,6 +175,8 @@ class DistillatingISSL(BaseDistillationISSL):
         self.temperature = temperature
         self.temperature_assign = temperature_assign or self.temperature / 2
         self.is_reweight_ema = is_reweight_ema
+        self.freeze_Mx_epochs = freeze_Mx_epochs
+        self.is_freeze_only_bottleneck = is_freeze_only_bottleneck
 
         # code ready for multi crops
         self.crops_assign = 2
@@ -209,6 +213,15 @@ class DistillatingISSL(BaseDistillationISSL):
         logits_assign = self.projector(z_tgt).float() / self.temperature_assign
         Mx = F.softmax(logits_assign, dim=-1)
         return Mx
+
+    @property
+    def to_freeze(self):
+        # only works for MLP
+        # will be frozen in ISSL if self.freeze_Mx_epochs > 0
+        if self.is_freeze_only_bottleneck:
+            return [self.projector.post_block.bottleneck]
+        else:
+            return [self.projector.post_block.linear, self.projector.post_block.bottleneck]
 
     def loss(
         self, z: torch.Tensor, z_tgt: torch.Tensor,
@@ -353,7 +366,7 @@ class SwavISSL(BaseDistillationISSL):
 
     @property
     def to_freeze(self):
-        return self.prototypes.linear  # will be frozen in ISSL if self.freeze_Mx_epochs > 0
+        return [self.prototypes.linear]  # will be frozen in ISSL if self.freeze_Mx_epochs > 0
 
     def reset_parameters(self) -> None:
         super().reset_parameters()
@@ -571,7 +584,7 @@ class DinoISSL(BaseDistillationISSL):
     @property
     def to_freeze(self):
         # only works for MLP
-        return self.projector.post_block.linear  # will be frozen in ISSL if self.freeze_Mx_epochs > 0
+        return [self.projector.post_block.linear]  # will be frozen in ISSL if self.freeze_Mx_epochs > 0
 
     @property
     def teacher_temperature(self):

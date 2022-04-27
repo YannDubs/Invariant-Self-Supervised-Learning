@@ -77,9 +77,9 @@ update_trainer_repr.max_epochs=1000
 
 
 if [ "$is_plot_only" = false ] ; then
-  #"" "$cell_baseline"    "$cell_head" "$cell_reg_hopt"
-  # 3681215 - 3681218
-  for kwargs_dep in   "$cell_dim_hopt1" "$cell_dim_hopt2" "$cell_aug" "$cell_epoch"
+  #  "" "$cell_baseline"    "$cell_head" "$cell_reg_hopt" #
+  # 3681247 - 3681252
+  for kwargs_dep in "decodability.kwargs.freeze_Mx_epochs=10" "decodability.kwargs.freeze_Mx_epochs=1 decodability.kwargs.is_freeze_only_bottleneck=False" # "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False" # "$cell_dim_hopt1" "$cell_dim_hopt2" "$cell_aug" "$cell_epoch"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

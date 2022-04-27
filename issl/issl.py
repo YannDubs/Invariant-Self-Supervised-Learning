@@ -296,5 +296,6 @@ class ISSLModule(pl.LightningModule):
     def on_after_backward(self):
         dec = self.loss_decodability
         if hasattr(dec, "to_freeze") and self.current_epoch < dec.freeze_Mx_epochs:
-            for name, p in dec.to_freeze.named_parameters():
-                p.grad = None
+            for to_freeze in dec.to_freeze:
+                for name, p in to_freeze.named_parameters():
+                    p.grad = None

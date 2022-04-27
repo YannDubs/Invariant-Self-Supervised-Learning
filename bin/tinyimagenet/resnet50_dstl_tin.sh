@@ -29,7 +29,7 @@ representor.loss.beta=1e-2
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "regularizer=etf representor.loss.beta=1e-1,1e-3" "regularizer=none,etf,huber,effdim" "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False,True" "decodability.kwargs.ema_weight_prior=0.7,null" "decodability.kwargs.beta_pM_unif=1.7,1.9" "decodability.kwargs.beta_HMlZ=1.5,1.4"
+  for kwargs_dep in  "decodability.kwargs.freeze_Mx_epochs=10" "decodability.kwargs.freeze_Mx_epochs=1 decodability.kwargs.is_freeze_only_bottleneck=False"  #"regularizer=etf representor.loss.beta=1e-1,1e-3" "regularizer=none,etf,huber,effdim" "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False,True" "decodability.kwargs.ema_weight_prior=0.7,null" "decodability.kwargs.beta_pM_unif=1.7,1.9" "decodability.kwargs.beta_HMlZ=1.5,1.4"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs  -m  >> logs/"$experiment".log 2>&1 &

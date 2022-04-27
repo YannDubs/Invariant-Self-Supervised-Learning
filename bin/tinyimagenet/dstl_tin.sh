@@ -18,7 +18,7 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 representor=dstl
-data_repr.kwargs.batch_size=256
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 timeout=$time
 "
 
@@ -36,6 +36,11 @@ data_repr.kwargs.batch_size=256,512
 kwargs_multi="
 seed=1
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+update_trainer_repr.max_epochs=300,500
+"
+
+kwargs_multi="
+seed=1
 update_trainer_repr.max_epochs=300,500
 "
 
