@@ -34,24 +34,25 @@ fi
 
 
 # make lien plot x : number of samples, and y : accuracy, and hue: aug strength
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       patterns.representor=null \
-#       +collect_data.params_to_add.augmentation_strength="data_repr.kwargs.dataset_kwargs.simclr_aug_strength" \
-#       +collect_data.params_to_add.n_samples="data_pred.kwargs.subset_train_size" \
-#       +fillna.n_samples=1 \
-#       +apply.n_samples="lambda x : x * 100000" \
-#       +col_val_subset.pred=["torch_logisticw1.0e-06"] \
-#       +col_val_subset.repr=["dstl"] \
-#       +plot_scatter_lines.x="n_samples" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-#       +plot_scatter_lines.filename="lines_acc_samples_aug_dstl" \
-#       +plot_scatter_lines.hue="augmentation_strength" \
-#       +plot_scatter_lines.logbase_x=10 \
-#       +plot_scatter_lines.legend_out=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
+python utils/aggregate.py \
+       experiment=$experiment  \
+       patterns.representor=null \
+       +collect_data.params_to_add.augmentation_strength="data_repr.kwargs.dataset_kwargs.simclr_aug_strength" \
+       +collect_data.params_to_add.n_downstream_samples="data_pred.kwargs.subset_train_size" \
+       +fillna.n_downstream_samples=1 \
+       +apply.n_downstream_samples="lambda x : x * 100000" \
+       +col_val_subset.pred=["torch_logisticw1.0e-06"] \
+       +col_val_subset.repr=["dstl"] \
+       +plot_scatter_lines.x="n_downstream_samples" \
+       +plot_scatter_lines.y="test/pred/acc" \
+       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+       +plot_scatter_lines.filename="lines_acc_samples_aug_card" \
+       +plot_scatter_lines.hue="augmentation_strength" \
+       +plot_scatter_lines.logbase_x=10 \
+       +plot_scatter_lines.legend_out=True \
+       +plot_scatter_lines.is_legend=False \
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
 #
 
 # TODO

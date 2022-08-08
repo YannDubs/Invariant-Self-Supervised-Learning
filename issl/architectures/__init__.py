@@ -29,8 +29,8 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
     if architecture == "mlp":
         return partial(FlattenMLP, **kwargs)
 
-    if architecture == "mll":
-        return partial(FlattenMLL, **kwargs)
+    elif architecture == "projhead":
+        return partial(OurProjectionHead, **kwargs)
 
     elif architecture == "identity":
         return partial(torch.nn.Identity, **kwargs)

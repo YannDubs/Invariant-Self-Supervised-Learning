@@ -65,9 +65,9 @@ python utils/aggregate.py \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.style="repr" \
        +plot_scatter_lines.logbase_x=10 \
-       +plot_scatter_lines.legend_out=False \
+       +plot_scatter_lines.legend_out=True \
        +plot_scatter_lines.is_no_legend_title=False \
-       +plot_scatter_lines.ylabel="" \
+       +plot_scatter_lines.ylabel="CIFAR10 Acc." \
        "+plot_scatter_lines.hue_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        "+plot_scatter_lines.style_order=[exact,exact_100A,exact_stdA,exact_noA,exact_coarserA,exact_1000A_shuffle]" \
        agg_mode=[plot_scatter_lines] \

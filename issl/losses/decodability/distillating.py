@@ -159,7 +159,6 @@ class DistillatingISSL(BaseDistillationISSL):
         is_reweight_ema: bool=True,
         batchnorm_kwargs: dict = {},
         freeze_Mx_epochs: int=0,
-        is_freeze_only_bottleneck: bool=True,
         predictor_kwargs: dict[str, Any] = {
                                "architecture": "linear",
                            },
@@ -176,7 +175,6 @@ class DistillatingISSL(BaseDistillationISSL):
         self.temperature_assign = temperature_assign or self.temperature / 2
         self.is_reweight_ema = is_reweight_ema
         self.freeze_Mx_epochs = freeze_Mx_epochs
-        self.is_freeze_only_bottleneck = is_freeze_only_bottleneck
 
         # code ready for multi crops
         self.crops_assign = 2
@@ -216,12 +214,20 @@ class DistillatingISSL(BaseDistillationISSL):
 
     @property
     def to_freeze(self):
-        # only works for MLP
-        # will be frozen in ISSL if self.freeze_Mx_epochs > 0
-        if self.is_freeze_only_bottleneck:
-            return [self.projector.post_block.bottleneck]
-        else:
-            return [self.projector.post_block.linear, self.projector.post_block.bottleneck]
+        to_freeze = []
+
+        for m in self.projector.modules():
+            if isinstance(m, nn.Linear):
+                # only bottleneck layers
+                if m.weight.shape[0] < m.weight.shape[1]:
+                    to_freeze.append(m)
+
+        for m in self.predictor.modules():
+            if isinstance(m, nn.Linear):
+                if m.weight.shape[0] < m.weight.shape[1]:
+                    to_freeze.append(m)
+
+        return to_freeze
 
     def loss(
         self, z: torch.Tensor, z_tgt: torch.Tensor,

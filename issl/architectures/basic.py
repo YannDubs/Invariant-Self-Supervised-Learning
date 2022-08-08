@@ -11,7 +11,7 @@ from issl.architectures.helpers import get_Activation, get_Normalization
 from issl.helpers import (batch_flatten, batch_unflatten, freeze_module_, johnson_lindenstrauss_init_, prod,
                           weights_init, BatchNorm1d)
 
-__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine", "FlattenMLL"]
+__all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine", "OurProjectionHead"]
 
 
 class MLP(nn.Module):
@@ -35,9 +35,6 @@ class MLP(nn.Module):
     activation : {any torch.nn activation}, optional
         Activation to use.
 
-    dropout_p : float, optional
-        Dropout rate.
-
     is_skip_hidden : bool, optional
         Whether to skip all the hidden layers with a residual connection.
 
@@ -59,11 +56,9 @@ class MLP(nn.Module):
         hid_dim: int = 2048,
         norm_layer: str = "batch",
         activation: str = "ReLU",
-        dropout_p: float = 0,
         is_skip_hidden: bool = False,
         is_cosine: bool= False,
         kwargs_prelinear: dict = {},
-        MLP_bottleneck_prelinear : int =None,
         **kwargs
     ) -> None:
         super().__init__()
@@ -73,33 +68,19 @@ class MLP(nn.Module):
         self.n_hid_layers = n_hid_layers
         self.hid_dim = hid_dim
         Activation = get_Activation(activation)
-        Dropout = nn.Dropout if dropout_p > 0 else nn.Identity
         Norm = get_Normalization(norm_layer, dim=1)
         # don't use bias with batch_norm https://twitter.com/karpathy/status/1013245864570073090?l...
         bias_hidden = Norm == nn.Identity
         self.is_skip_hidden = is_skip_hidden
         self.is_cosine = is_cosine
-        self.MLP_bottleneck_prelinear = MLP_bottleneck_prelinear
 
-        if self.MLP_bottleneck_prelinear is not None:  # TODO if use that then can remove pre block
-            self.pre_block = nn.Sequential(
-                nn.Linear(in_dim, self.MLP_bottleneck_prelinear, bias=bias_hidden),
-                Norm(self.MLP_bottleneck_prelinear),
-                Activation(),
-                nn.Linear(self.MLP_bottleneck_prelinear, hid_dim, bias=bias_hidden),
-                Norm(hid_dim),
-                Activation(),
-                Dropout(p=dropout_p),
-            )
 
-        else:
-            PreLinear = FlattenLinear if len(kwargs_prelinear) > 0 else nn.Linear # TODO use only FlattenLinear (currently backward compatibility)
-            self.pre_block = nn.Sequential(
-                PreLinear(in_dim, hid_dim, bias=bias_hidden, **kwargs_prelinear),
-                Norm(hid_dim),
-                Activation(),
-                Dropout(p=dropout_p),
-            )
+        PreLinear = FlattenLinear if len(kwargs_prelinear) > 0 else nn.Linear # TODO use only FlattenLinear (currently backward compatibility)
+        self.pre_block = nn.Sequential(
+            PreLinear(in_dim, hid_dim, bias=bias_hidden, **kwargs_prelinear),
+            Norm(hid_dim),
+            Activation(),
+        )
 
         layers = []
         # start at 1 because pre_block
@@ -108,7 +89,6 @@ class MLP(nn.Module):
                 nn.Linear(hid_dim, hid_dim, bias=bias_hidden),
                 Norm(hid_dim),
                 Activation(),
-                Dropout(p=dropout_p),
             ]
         self.hidden_block = nn.Sequential(*layers)
 
@@ -179,10 +159,93 @@ class FlattenMLP(MLP):
     def reset_parameters(self):
         weights_init(self)
 
-class FlattenMLL(FlattenMLP):
-    """Multi layer linear: MLP with no activation."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, activation="Identity", **kwargs)
+
+class OurProjectionHead(nn.Module):
+    """Multi Layer Perceptron head with skip connection. Will give an MLP with
+    `in_dim - bottleneck_size -  (hid_dim - ) * n_hid_layers - bottleneck_size - out_dim` with hiddens skipped.
+
+    Parameters
+    ----------
+    in_dim : int
+
+    out_dim : int
+
+    hid_dim : int, optional
+        Number of hidden neurones of the main layers.
+
+    n_hid_layers : int, optional
+        Number of hidden main layers (those that will be skipped over).
+
+    is_force_pre_post_layer : bool, optional
+        Whether to use pre and post layers even if the input and / our outputs have the right shape.
+
+    bottleneck_size : int, optional
+        What bottleneck size to use (start and end of skip). If `None` uses `out_dim`.
+    """
+
+    def __init__(
+            self,
+            in_shape: Sequence[int],
+            out_shape: Sequence[int],
+            n_hid_layers: int = 2,
+            hid_dim: int = 2048,
+            is_force_pre_post_layer : bool = False,
+            bottleneck_size : int = 512,
+            is_JL_init: bool = True
+    ) -> None:
+        super().__init__()
+
+        self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
+        self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
+        self.in_dim = prod(self.in_shape)
+        self.out_dim = prod(self.out_shape)
+        self.n_hid_layers = n_hid_layers
+        self.hid_dim = hid_dim
+        self.is_force_pre_post_layer = is_force_pre_post_layer
+        self.bottleneck_size = bottleneck_size
+        self.is_JL_init = is_JL_init
+
+        if self.in_dim != self.bottleneck_size or self.is_force_pre_post_layer:
+            self.pre_block = nn.Linear(self.in_dim, self.bottleneck_size, bias=False)
+        else:
+            self.pre_block = nn.Identity()
+
+        layers = []
+        input_dim = self.bottleneck_size
+        output_dim = self.hid_dim
+        # bottleneck not counted as hidden layer
+        for i in range(self.n_hid_layers+1):
+            if i == self.n_hid_layers:
+                output_dim = self.bottleneck_size
+            if i > 0:
+                input_dim = self.hid_dim
+
+            layers += [
+                nn.BatchNorm1d(input_dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(input_dim, output_dim, bias=False),
+            ]
+        self.hidden_block = nn.Sequential(*layers)
+
+        if self.out_dim != self.bottleneck_size or self.is_force_pre_post_layer:
+            self.post_block = nn.Sequential(nn.BatchNorm1d(self.bottleneck_size),
+                                            nn.ReLU(inplace=True),
+                                            nn.Linear(self.bottleneck_size, self.out_dim, bias=False),)
+        else:
+            self.post_block = nn.Identity()
+
+        self.reset_parameters()
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        X = X.flatten(start_dim=X.ndim - len(self.in_shape))
+        X = self.pre_block(X)
+        X = self.hidden_block(X) + X
+        X = self.post_block(X)
+        X = X.unflatten(dim=-1, sizes=self.out_shape)
+        return X
+
+    def reset_parameters(self):
+        weights_init(self, is_JL_init=self.is_JL_init)
 
 
 class FlattenLinear(nn.Module):
@@ -216,7 +279,7 @@ class FlattenLinear(nn.Module):
     def __init__(
         self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
         bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True,
-        batchnorm_kwargs : dict = {}, is_train_bottleneck : bool =True,  is_JL_init: bool=True,
+        batchnorm_kwargs : dict = {},  is_JL_init: bool=True,
         **kwargs
     ) -> None:
         super().__init__()
@@ -226,7 +289,6 @@ class FlattenLinear(nn.Module):
         self.bottleneck_size = bottleneck_size
         self.is_batchnorm_pre = is_batchnorm_pre
         self.is_batchnorm_bottleneck = is_batchnorm_bottleneck
-        self.is_train_bottleneck = is_train_bottleneck  # TODO eval and chose best
         self.is_JL_init = is_JL_init
 
         in_dim = prod(self.in_shape)
@@ -255,9 +317,6 @@ class FlattenLinear(nn.Module):
         if self.bottleneck_size is not None:
             if self.is_JL_init:
                 johnson_lindenstrauss_init_(self.bottleneck)
-
-            if not self.is_train_bottleneck:
-                freeze_module_(self.bottleneck)
 
 
     def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:

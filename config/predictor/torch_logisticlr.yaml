@@ -1,0 +1,7 @@
+is_sklearn: False
+name: torch_logisticw${format:${optimizer_pred.kwargs.weight_decay},.1e}l${format:${optimizer_pred.kwargs.lr},.1e}
+kwargs:
+  architecture: linear
+  arch_kwargs:
+    out_shape: ${data.target_shape}
+    # in shape automatic

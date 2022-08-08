@@ -4,6 +4,7 @@ defaults:
 name: wandb
 is_can_plot_img: true
 kwargs:
+  save_dir: ${paths.wandb_dir}
   project: issl
   entity: ${wandb_entity}
   group: ${experiment}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="table_cntr"
+experiment="table_cntr_final"
 notes="
 **Goal**: run the main table for contrastive.
 "
@@ -18,7 +18,7 @@ $base_kwargs_tin
 seed=1
 timeout=$time
 representor=cntr
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr,torchlogisticw1e-5b2048e300_datarepr]
 seed=1
 ++decodability.kwargs.projector_kwargs.n_hid_layers=1
 ++decodability.kwargs.projector_kwargs.hid_dim=1024
@@ -28,46 +28,22 @@ cell_baseline="
 representor=cntr_simclr
 "
 
-cell_head="
-++decodability.kwargs.projector_kwargs.n_hid_layers=2
-++decodability.kwargs.projector_kwargs.hid_dim=2048
-"
-
-cell_reg_hopt="
-$cell_head
-regularizer=effdim,etf,effdimunit
-representor.loss.beta=1e-2
+cell_ours="
+representor=cntr
 "
 
 
-cell_reg="
-$cell_head
-regularizer=etf
-representor.loss.beta=1e-2
-"
-
-cell_dim_hopt1="
-$cell_reg
+cell_dim="
 encoder.z_shape=2048
-encoder.rm_out_chan_aug=False
 encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
-
-cell_dim_hopt2="
-$cell_reg
-encoder.z_shape=2048
-encoder.rm_out_chan_aug=True
-encoder.kwargs.arch_kwargs.is_channel_out_dim=True
-+encoder.kwargs.arch_kwargs.bottleneck_channel=512
-+decodability.kwargs.projector_kwargs.in_shape=512
-"
-
-cell_dim="$cell_dim_hopt2"
 
 cell_aug="
 $cell_dim
 data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
+representor=cntr_blured
+seed=2,3
 "
 
 cell_epoch="
@@ -75,9 +51,8 @@ $cell_aug
 update_trainer_repr.max_epochs=1000
 "
 
-
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "" "decodability.kwargs.predictor_kwargs.architecture=identity"  "$cell_baseline"    "$cell_head" "$cell_reg_hopt" "$cell_dim_hopt1" "$cell_dim_hopt2" "$cell_aug" "$cell_epoch"
+  for kwargs_dep in "$cell_aug" #"$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
   do
     # 3681265 - 3681273
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

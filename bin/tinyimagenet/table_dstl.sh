@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="table_dstl"
+experiment="table_dstl_final"
 notes="
 **Goal**: run the main table for distillation.
 "
@@ -15,59 +15,35 @@ time=10000
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
-seed=1
+seed=2
 timeout=$time
 representor=dstl
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
-seed=1
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5b2048e300_datarepr]
 ++decodability.kwargs.projector_kwargs.n_hid_layers=1
 ++decodability.kwargs.projector_kwargs.hid_dim=1024
 "
 
 cell_baseline="
 representor=slfdstl_dino
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test]
 "
 
-cell_head="
-++decodability.kwargs.projector_kwargs.n_hid_layers=2
-++decodability.kwargs.projector_kwargs.hid_dim=2048
+cell_ours="
+representor=dstl
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test,torchlogisticw1e-4_datarepr002test,torchlogisticw1e-5_datarepr002test,torchlogisticw1e-3_datarepr002test,torchlogistic_datarepr002test]
 "
 
-cell_reg_hopt="
-$cell_head
-regularizer=effdim,etf,effdimunit
-representor.loss.beta=1e-2
-"
-
-
-cell_reg="
-$cell_head
-regularizer=etf
-representor.loss.beta=1e-2
-"
-
-cell_dim_hopt1="
-$cell_reg
+cell_dim="
 encoder.z_shape=2048
-encoder.rm_out_chan_aug=False
 encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
-
-cell_dim_hopt2="
-$cell_reg
-encoder.z_shape=2048
-encoder.rm_out_chan_aug=True
-encoder.kwargs.arch_kwargs.is_channel_out_dim=True
-+encoder.kwargs.arch_kwargs.bottleneck_channel=512
-+decodability.kwargs.projector_kwargs.in_shape=512
-"
-
-cell_dim="$cell_dim_hopt2"
 
 cell_aug="
 $cell_dim
 data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
+representor=dstl_blured
+seed=1,3
 "
 
 cell_epoch="
@@ -75,11 +51,8 @@ $cell_aug
 update_trainer_repr.max_epochs=1000
 "
 
-
 if [ "$is_plot_only" = false ] ; then
-  #  "" "$cell_baseline"    "$cell_head" "$cell_reg_hopt" #
-  # 3681247 - 3681252
-  for kwargs_dep in "decodability.kwargs.freeze_Mx_epochs=10" "decodability.kwargs.freeze_Mx_epochs=1 decodability.kwargs.is_freeze_only_bottleneck=False" # "decodability.kwargs.predictor_kwargs.is_train_bottleneck=False" # "$cell_dim_hopt1" "$cell_dim_hopt2" "$cell_aug" "$cell_epoch"
+  for kwargs_dep in  "$cell_aug" #"$cell_baseline" "$cell_ours" "$cell_dim" "$cell_aug" "$cell_epoch"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -88,7 +61,7 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
-
+#
 #python utils/aggregate.py \
 #       experiment=$experiment  \
 #       agg_mode=[summarize_metrics] \

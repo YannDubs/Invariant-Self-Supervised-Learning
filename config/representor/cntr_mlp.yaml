@@ -20,17 +20,13 @@ decodability:
     is_batchnorm_pre: False
     is_batchnorm_post: True
     is_self_contrastive: True
-    predictor_kwargs: # will be replaced by projector when `is_pred_proj_same`
+    predictor_kwargs:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
-      norm_layer: "batch"
       out_shape: 128
-      activation: ReLU
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
-      norm_layer: "batch"
       out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
-      activation: ReLU

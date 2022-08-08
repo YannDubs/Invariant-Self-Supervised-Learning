@@ -4,6 +4,7 @@ import logging
 from collections.abc import Sequence
 from typing import Optional
 import einops
+import math
 
 import torchvision
 
@@ -36,9 +37,6 @@ class ResNet(nn.Module):
         Base resnet to use, any model `torchvision.models.resnet` should work (the larger models were
         not tested).
 
-    is_pretrained : bool, optional
-        Whether to load a model pretrained on imagenet. Might not work well with `is_small=True`.
-
     norm_layer : nn.Module or {"identity","batch"}, optional
         Normalizing layer to use.
 
@@ -49,6 +47,9 @@ class ResNet(nn.Module):
     is_channel_out_dim : bool, optional
         Whether to change the dimension of the output using the channels before the pooling layer
         rather than a linear mapping after the pooling.
+
+    kwargs: dict, optional
+        Additional arguments to pass to the resnet constructor.
     """
 
     def __init__(
@@ -60,10 +61,10 @@ class ResNet(nn.Module):
         is_no_linear: bool= False,
         is_channel_out_dim: bool=False,
         bottleneck_channel: Optional[int] = None,
-        is_bn_bttle_channel: bool = False,  # TODO remove after chose better
+        is_resize_only_if_necessary: bool = False,
+        **kwargs
     ):
         super().__init__()
-        kwargs = {}
         self.in_shape = in_shape
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
         self.out_dim = prod(self.out_shape)
@@ -71,16 +72,13 @@ class ResNet(nn.Module):
         self.is_no_linear = is_no_linear
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
-        self.is_bn_bttle_channel = is_bn_bttle_channel
+        self.is_resize_only_if_necessary = is_resize_only_if_necessary
 
         if not self.is_pretrained:
             # cannot load pretrained if wrong out dim
             kwargs["num_classes"] = self.out_dim
 
-        self.resnet = torchvision.models.__dict__[base](
-            pretrained=self.is_pretrained,
-            **kwargs,
-        )
+        self.resnet = torchvision.models.__dict__[base](**kwargs)
 
         if self.is_channel_out_dim:
             self.update_out_chan_()
@@ -97,6 +95,9 @@ class ResNet(nn.Module):
         current_nchan = self.resnet.fc.in_features
         target_nchan = self.out_dim
 
+        if current_nchan == target_nchan and self.is_resize_only_if_necessary:
+            return
+
         if self.bottleneck_channel is None:
             conv1 = nn.Conv2d(current_nchan, target_nchan, kernel_size=1, bias=False)
             bn = torch.nn.BatchNorm2d(target_nchan)
@@ -105,11 +106,17 @@ class ResNet(nn.Module):
 
         else:
 
-            assert target_nchan % current_nchan == 0
-
-            resizer = BottleneckExpand(current_nchan,
-                                       self.bottleneck_channel,
-                                       expansion=target_nchan // current_nchan)
+            if target_nchan % current_nchan == 0:
+                resizer = BottleneckExpand(current_nchan,
+                                           self.bottleneck_channel,
+                                           expansion=target_nchan // current_nchan)
+            elif target_nchan < current_nchan:
+                resizer = BottleneckExpand(current_nchan,
+                                           self.bottleneck_channel,
+                                           is_residual=False,
+                                           expansion=target_nchan / current_nchan)
+            else:
+                raise ValueError(f"Cannot deal with target_nchan={target_nchan} and current_nchan={current_nchan}.")
 
         self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
 
@@ -209,7 +216,7 @@ class BottleneckExpand(nn.Module):
             norm_layer = nn.BatchNorm2d
         self.expansion = expansion
         self.is_residual = is_residual
-        out_channels = in_channels * self.expansion
+        out_channels = int(in_channels * self.expansion)
         self.conv1 = nn.Conv2d(in_channels, hidden_channels, kernel_size=1, bias=False)
         self.bn1 = norm_layer(hidden_channels)
         self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, kernel_size=3, bias=False, padding=1)
@@ -244,3 +251,7 @@ class BottleneckExpand(nn.Module):
 
     def reset_parameters(self) -> None:
         weights_init(self)
+        # using Johnson-Lindenstrauss lemma for initialization of the projection matrix
+        torch.nn.init.normal_(self.conv1.weight,
+                              std=1 / math.sqrt(self.conv1.weight.shape[0]))
+

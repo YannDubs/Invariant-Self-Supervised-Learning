@@ -185,6 +185,7 @@ class ResultAggregator(PostPlotter):
         params_to_add_dflt={},
         params_to_create={},
         params_to_rm=["jobnum"],
+        jid_to_skip=[],
     ):
         """Collect all the data.
 
@@ -234,6 +235,7 @@ class ResultAggregator(PostPlotter):
 
         results = []
         self.param_names[table_name] = set()
+        jid_to_skip = [str(j).replace(" ","_") for j in jid_to_skip]
         for path in paths:
 
             folder = path.parent
@@ -243,10 +245,20 @@ class ResultAggregator(PostPlotter):
 
             # make dict of params
             params = path_to_params(path_clean)
+
+            if params["jid"] in jid_to_skip:
+                continue
+
             params["jobnum"] = params["jid"].split("_")[0]
 
             try:
-                self.job_ids.add(params["jid"].split("_")[1])
+                jid = params["jid"].split("_")[1]
+                params["onlyjid"] = jid
+
+                if jid in jid_to_skip:
+                    continue
+
+                self.job_ids.add(jid)
             except:
                 pass
 
@@ -324,9 +336,10 @@ class ResultAggregator(PostPlotter):
                     logger.info(f"Skipping subsetting {k} as {col} not there.")
                     continue
 
+                unique = table[col].unique()
                 table = table[(table[col]).isin(val)]
                 if table.empty:
-                    logger.info(f"Empty table after filtering {col}={val}")
+                    logger.info(f"Empty table after filtering {col}={val}. Possible values: {unique}")
 
                 self.tables[k] = table.set_index(self.tables[k].index.names)
 
@@ -577,7 +590,7 @@ class ResultAggregator(PostPlotter):
         y,
         data=None,
         filename="{table}_lines_{y}_vs_{x}",
-        mode="relplot",
+        mode="line",  #"scatter", "lmplot
         folder_col=None,
         logbase_x=1,
         logbase_y=1,
@@ -585,6 +598,7 @@ class ResultAggregator(PostPlotter):
         sharey=False,
         legend_out=True,
         is_no_legend_title=False,
+        is_legend=True,
         set_kwargs={},
         x_rotate=0,
         cols_vary_only=None,
@@ -605,6 +619,8 @@ class ResultAggregator(PostPlotter):
         x_tick_spacing=None,
         y_tick_spacing=None,
         multipy_y=None,
+        highlight={},
+        highlighting_color="red",
         **kwargs,
     ):
         """Plotting all combinations of scatter and line plots.
@@ -714,10 +730,10 @@ class ResultAggregator(PostPlotter):
                 )
                 is_x_errorbar, is_y_errorbar = False, False
 
-        if mode == "relplot":
+        if mode in ["line","scatter"]:
             used_kwargs = dict(
                 #legend="full",
-                kind="line",
+                kind=mode,
                 markers=True,
                 facet_kws={
                     "sharey": sharey,
@@ -763,6 +779,18 @@ class ResultAggregator(PostPlotter):
                 set_log_scale, basex=logbase_x, basey=logbase_y, **kwargs
             )
 
+        if len(highlight) != 0:
+            for i,(k,v) in enumerate(highlight.items()):
+                sns_plot.map_dataframe(
+                    highlight_scatter,
+                    col_to_highlight=self.pretty_renamer[k],
+                    val_to_highlight=self.pretty_renamer[v],
+                    i_highlight=i,
+                    highlighting_color=highlighting_color,
+                    **kwargs
+                )
+
+
         for ax in sns_plot.fig.axes:
             # TODO remove when waiting for https://github.com/mwaskom/seaborn/issues/2456
             if xlabel != "":
@@ -782,6 +810,11 @@ class ResultAggregator(PostPlotter):
 
             if y_tick_spacing:
                 ax.yaxis.set_major_locator(MultipleLocator(y_tick_spacing))
+
+            if not is_legend:
+                plt.legend([], [], frameon=False)
+                ax.legend([],[], frameon=False)
+                sns_plot._legend.remove()
 
         sns_plot.tight_layout()
 
@@ -1040,6 +1073,15 @@ def set_log_scale(data, basex, basey, **kwargs):
     y_data = data[kwargs["y"]].unique()
     plt.xscale(**kwargs_log_scale(x_data, base=basex))
     plt.yscale(**kwargs_log_scale(y_data, base=basey))
+
+def highlight_scatter(data,col_to_highlight, val_to_highlight, i_highlight, highlighting_color="red", **kwargs):
+    """Highlight some scatter points."""
+    idcs = data.reset_index()[col_to_highlight] == val_to_highlight
+    data = data[idcs.values]
+
+    x = data[kwargs["x"]]
+    y = data[kwargs["y"]]
+    plt.scatter(x, y, color=highlighting_color)
 
 
 if __name__ == "__main__":

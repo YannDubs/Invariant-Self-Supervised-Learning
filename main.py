@@ -117,7 +117,9 @@ def main(cfg):
     repr_datamodule = instantiate_datamodule_(repr_cfg)
     repr_cfg = omegaconf2namespace(repr_cfg)  # ensure real python types
 
-    if repr_cfg.representor.is_train and not is_trained(repr_cfg, stage):
+    is_force_retrain = repr_cfg.representor.is_force_retrain
+    is_train = repr_cfg.representor.is_train or is_force_retrain
+    if is_train and not is_trained(repr_cfg, stage, is_force_retrain=is_force_retrain):
         representor = ISSLModule(hparams=repr_cfg)
         repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
         representor = initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
@@ -185,7 +187,9 @@ def main(cfg):
         pred_cfg = omegaconf2namespace(pred_cfg)
 
         is_sklearn = pred_cfg.predictor.is_sklearn
-        if pred_cfg.predictor.is_train and not is_trained(pred_cfg, stage):
+        is_force_retrain = pred_cfg.predictor.is_force_retrain
+        is_train = pred_cfg.predictor.is_train or is_force_retrain
+        if is_train and not is_trained(pred_cfg, stage, is_force_retrain=is_force_retrain):
             if is_sklearn:
                 assert not repr_cfg.representor.is_on_the_fly
 
@@ -297,16 +301,29 @@ def set_downstream_task(cfg: Container, task: str):
         overrides = [f"+data@dflt_data_pred={cfg.downstream_task.data}",f"+predictor@dflt_predictor={cfg.downstream_task.predictor}"]
         if "optimizer" in cfg.downstream_task:
             overrides += [f"optimizer@dflt_optimizer_pred={cfg.downstream_task.optimizer}"] # no + because there is a default
+        if "scheduler" in cfg.downstream_task:
+            overrides += [f"scheduler@dflt_scheduler_pred={cfg.downstream_task.scheduler}"] # no + because there is a default
 
         dflts = compose(config_name="main", overrides=overrides)
         cfg.dflt_predictor = dflts.dflt_predictor
         cfg.dflt_data_pred = dflts.dflt_data_pred
         cfg.dflt_optimizer_pred = dflts.dflt_optimizer_pred
+        cfg.dflt_scheduler_pred = dflts.dflt_scheduler_pred
 
         # 2/ add any overrides
         cfg.predictor = OmegaConf.merge(cfg.dflt_predictor, cfg.predictor)
         cfg.data_pred = OmegaConf.merge(cfg.dflt_data_pred, cfg.data_pred)
         cfg.optimizer_pred = OmegaConf.merge(cfg.dflt_optimizer_pred, cfg.optimizer_pred)
+        cfg.scheduler_pred = OmegaConf.merge(cfg.dflt_scheduler_pred, cfg.scheduler_pred)
+
+        if "max_epochs" in cfg.downstream_task:
+            cfg.update_trainer_pred.max_epochs = cfg.downstream_task.max_epochs
+
+        if "batch_size" in cfg.downstream_task:
+            cfg.data_pred.kwargs.batch_size = cfg.downstream_task.batch_size
+
+        if "add_pred" in cfg.downstream_task:
+            cfg.other.add_pred = cfg.other.add_pred
 
         if cfg.data_pred.is_copy_repr:
             name = cfg.data_repr.name
@@ -324,7 +341,6 @@ def set_downstream_task(cfg: Container, task: str):
         # don't cache if will only see once
         with omegaconf.open_dict(cfg):
             cfg.data_pred.kwargs.is_data_in_memory = False
-
 
     return cfg
 
@@ -373,11 +389,10 @@ def set_cfg(cfg: Container, stage: str) -> Container:
 
         Path(cfg.paths.pretrained.save).mkdir(parents=True, exist_ok=True)
 
-    #file_end_logs = Path(cfg.paths.logs) / f"{cfg.stage}_{FILE_END}"  # backward compatibility
-    file_end_pretrained = Path(cfg.paths.pretrained.save) / BEST_CHECKPOINT.format(stage=stage) # TMP
-    file_end_results = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"  # better to use this as sxavd on all machines
 
-    if file_end_results.is_file() or file_end_pretrained.is_file(): # or file_end_logs.is_file():
+    file_end_results = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"
+
+    if file_end_results.is_file() and not cfg[stage].is_force_retrain:
         logger.info(f"Skipping most of {cfg.stage} as {file_end_results} exists.")
 
         with omegaconf.open_dict(cfg):
@@ -509,6 +524,9 @@ def get_callbacks(
             try:
                 if kwargs.is_use:
                     callback_kwargs = kwargs.get("kwargs", {})
+                    if callback_kwargs.get("dm", False):
+                        callback_kwargs["dm"] = dm
+
                     modules = [issl.callbacks, pl.callbacks]
                     Callback = getattr_from_oneof(modules, name)
                     new_callback = Callback(**callback_kwargs)
@@ -598,7 +616,13 @@ def fit_(
     kwargs = dict()
 
     # Resume training ?
-    last_checkpoint = Path(cfg.checkpoint.kwargs.dirpath) / LAST_CHECKPOINT
+    ckpt_dir = Path(cfg.checkpoint.kwargs.dirpath)
+    if cfg.checkpoint.is_load_last:
+        last_checkpoint = ckpt_dir / LAST_CHECKPOINT
+    else:
+        # don't use last.ckpt (typically if there was an issue with saving)
+        last_checkpoint = get_latest_match(ckpt_dir / "epoch*.ckpt")
+
     if last_checkpoint.exists():
         kwargs["ckpt_path"] = str(last_checkpoint)
         logger.info(f"Continuing run from {last_checkpoint}")
@@ -636,11 +660,27 @@ def save_pretrained(
     logger.info(f"Saved best checkpoint to {ckpt_path}.")
 
 
-def is_trained(cfg: NamespaceMap, stage: str) -> bool:
+def is_trained(cfg: NamespaceMap, stage: str, is_force_retrain: bool=False) -> bool:
     """Test whether already saved the checkpoint, if yes then you already trained but might have preempted."""
-    dest_path = Path(cfg.paths.pretrained.save)
+    pretrained_path = Path(cfg.paths.pretrained.save)
     filename = BEST_CHECKPOINT.format(stage=stage)
-    return (dest_path / filename).is_file()
+
+    if is_force_retrain and (pretrained_path / filename).is_file():
+        results_path = Path(cfg.paths.results)
+        ckpt_path = Path(cfg.checkpoint.kwargs.dirpath)
+        log_path = Path(cfg.paths.logs)
+        logger.info(f"Forcing the retraining of {stage}, even though {pretrained_path / filename} exists. Deleting {pretrained_path} and {results_path} and {ckpt_path} and {log_path}.")
+        remove_rf(pretrained_path, not_exist_ok=True)
+        remove_rf(results_path, not_exist_ok=True)
+        remove_rf(ckpt_path, not_exist_ok=True)
+        remove_rf(log_path, not_exist_ok=True)
+        pretrained_path.mkdir(parents=True)
+        results_path.mkdir(parents=True)
+        ckpt_path.mkdir(parents=True)
+        log_path.mkdir(parents=True)
+        return False
+    else:
+        return (pretrained_path / filename).is_file()
 
 
 def load_pretrained(

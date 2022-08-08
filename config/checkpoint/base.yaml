@@ -1,4 +1,5 @@
 name: ???
+is_load_last: True # if not loads best to continue training
 kwargs:
   dirpath: ${paths.checkpoint}
   monitor: ???

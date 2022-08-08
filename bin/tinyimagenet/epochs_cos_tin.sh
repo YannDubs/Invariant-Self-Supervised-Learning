@@ -54,20 +54,46 @@ python utils/aggregate.py \
        +col_val_subset.pred=["torch_logisticw1.0e-06"] \
        +col_val_subset.datapred=["data_repr"] \
        +col_val_subset.repr=["cntr"] \
-       +collect_data.params_to_create.epochs=\[\["jobnum"\],\{0:50,1:100,2:200,3:500,4:1000,5:3000\}\] \
+       +col_val_subset.epochs=[1500,1000,500,200,100,50] \
+       +collect_data.params_to_add.epochs="update_trainer_repr.max_epochs" \
        +plot_scatter_lines.data="merged" \
        +plot_scatter_lines.hue="repr" \
        +plot_scatter_lines.x="test/repr/decodability" \
        +plot_scatter_lines.y="test/pred/acc" \
        +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-       +plot_scatter_lines.filename="acc_vs_loss_epochs_w1e-6" \
+       +plot_scatter_lines.filename="acc_vs_loss_epochs_cntr_w1e-6" \
        +plot_scatter_lines.multipy_y=100 \
        +plot_scatter_lines.y_tick_spacing=1 \
-       +plot_scatter_lines.x_tick_spacing=0.05 \
+       +plot_scatter_lines.x_tick_spacing=0.02 \
        +plot_scatter_lines.is_invert_xaxis=true \
        +plot_scatter_lines.sharex=False \
         +plot_scatter_lines.legend=False \
-       job_id_to_rm=\[3665928\] \
+       job_id_to_rm=\[3665928,3663012\] \
+       +collect_data.jid_to_skip=["3665928","2 3661734 2"] \
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       +col_val_subset.pred=["torch_logisticw1.0e-05"] \
+       +col_val_subset.datapred=["data_repr"] \
+       +col_val_subset.repr=["cntr"] \
+       +col_val_subset.epochs=[1500,1000,500,200,100,50] \
+       +collect_data.params_to_add.epochs="update_trainer_repr.max_epochs" \
+       +plot_scatter_lines.data="merged" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.x="test/repr/decodability" \
+       +plot_scatter_lines.y="test/pred/acc" \
+       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+       +plot_scatter_lines.filename="acc_vs_loss_epochs_cntr_w1e-5" \
+       +plot_scatter_lines.multipy_y=100 \
+       +plot_scatter_lines.y_tick_spacing=1 \
+       +plot_scatter_lines.x_tick_spacing=0.02 \
+       +plot_scatter_lines.is_invert_xaxis=true \
+       +plot_scatter_lines.sharex=False \
+        +plot_scatter_lines.legend=False \
+       job_id_to_rm=\[3665928,3663012\] \
+       +collect_data.jid_to_skip=["3665928","2 3661734 2"] \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
 

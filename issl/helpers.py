@@ -235,7 +235,7 @@ def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='truncated_
     else:
         raise ValueError(f"invalid distribution {distribution}")
 
-def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
+def init_std_modules(module: nn.Module, nonlinearity: str = "relu", is_JL_init=False) -> bool:
     """Initialize standard layers and return whether was initialized."""
     # all standard layers
     if isinstance(module, nn.modules.conv._ConvNd):
@@ -246,11 +246,15 @@ def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
             pass
 
     elif isinstance(module, nn.Linear):
-        nn.init.trunc_normal_(module.weight, std=0.02)
-        try:
-            nn.init.zeros_(module.bias)
-        except AttributeError: # no bias
-            pass
+        if is_JL_init and (module.weight.shape[0] < module.weight.shape[1]):
+            johnson_lindenstrauss_init_(module)
+
+        else:
+            nn.init.trunc_normal_(module.weight, std=0.02)
+            try:
+                nn.init.zeros_(module.bias)
+            except AttributeError: # no bias
+                pass
 
     elif isinstance(module, nn.modules.batchnorm._NormBase):
         if module.affine:
@@ -266,7 +270,7 @@ def johnson_lindenstrauss_init_(m):
     """Initialization for low dimension projection => johnson lindenstrauss lemma."""
     torch.nn.init.normal_(m.weight, std=1 / math.sqrt(m.weight.shape[0]))
 
-def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
+def weights_init(module: nn.Module, nonlinearity: str = "relu", is_JL_init=False) -> None:
     """Initialize a module and all its descendents.
 
     Parameters
@@ -277,7 +281,7 @@ def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
     nonlinearity : str, optional
         Name of the nn.functional activation. Used for initialization.
     """
-    init_std_modules(module)  # in case you gave a standard module
+    init_std_modules(module, is_JL_init=is_JL_init)  # in case you gave a standard module
 
     # loop over direct children (not grand children)
     for m in module.children():
@@ -289,7 +293,7 @@ def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
             # Imp: don't go in grand children because you might have specific weights you don't want to reset
             m.reset_parameters()
         else:
-            weights_init(m, nonlinearity=nonlinearity)  # go to grand children
+            weights_init(m, nonlinearity=nonlinearity, is_JL_init=is_JL_init)  # go to grand children
 
 
 def batch_flatten(x: torch.Tensor) -> tuple[torch.Tensor, Sequence[int]]:
@@ -353,22 +357,24 @@ def kl_divergence(p, q, z_samples=None, is_lower_var=False):
     return kl_pq
 
 
-MEANS = dict(
-    imagenet=[0.485, 0.456, 0.406],
-    cifar10=[0.4914009, 0.48215896, 0.4465308],
-    clip=[0.48145466, 0.4578275, 0.40821073],
-    stl10=[0.43, 0.42, 0.39],
-    stl10_unlabeled=[0.43, 0.42, 0.39],
-)
-STDS = dict(
-    imagenet=[0.229, 0.224, 0.225],
-    cifar10=[0.24703279, 0.24348423, 0.26158753],
+MEANS = {
+    "imagenet": [0.485, 0.456, 0.406],
+    "tiny-imagenet-200": [0.480, 0.448, 0.398],
+    "cifar10": [0.4914009, 0.48215896, 0.4465308],
+    "clip": [0.48145466, 0.4578275, 0.40821073],
+    "stl10": [0.43, 0.42, 0.39],
+    "stl10_unlabeled": [0.43, 0.42, 0.39],
+}
+STDS = {
+    "imagenet": [0.229, 0.224, 0.225],
+    "tiny-imagenet-200": [0.277, 0.269, 0.282],
+    "cifar10": [0.24703279, 0.24348423, 0.26158753],
     # cifar10=[0.2023, 0.1994, 0.2010],
     # whitening paper actually uses the one from pytorch
-    clip=[0.26862954, 0.26130258, 0.27577711],
-    stl10=[0.27, 0.26, 0.27],
-    stl10_unlabeled=[0.27, 0.26, 0.27],
-)
+    "clip": [0.26862954, 0.26130258, 0.27577711],
+    "stl10": [0.27, 0.26, 0.27],
+    "stl10_unlabeled": [0.27, 0.26, 0.27],
+}
 
 
 class Normalizer(torch.nn.Module):

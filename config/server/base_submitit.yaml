@@ -4,7 +4,7 @@ job_id: ${hydra:job.num}_${hydra:job.id} # job num is number in sweep. ID is uni
 # avoid unnecessary logging : remove progressbar
 trainer:
   enable_progress_bar: false
-  log_every_n_steps: 300
+  #log_every_n_steps: 300
 
 hydra:
   launcher:
@@ -23,4 +23,4 @@ hydra:
     # name of the job
     name: ${experiment}
     # log errors and output together
-    stderr_to_stdout: True
+    stderr_to_stdout: False

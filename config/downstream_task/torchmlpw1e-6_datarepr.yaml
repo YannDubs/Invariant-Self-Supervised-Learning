@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+data: data_repr
+predictor: torch_mlp
+optimizer: SGD_w1e-6

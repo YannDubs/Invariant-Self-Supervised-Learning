@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+data: data_repr_002_test
+predictor: torch_logistic
+epochs_mult_factor: 10 # 100 -> 1000 epochs because 100x smaller data

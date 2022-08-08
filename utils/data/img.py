@@ -471,6 +471,12 @@ class ISSLImgDataset(ISSLDataset):
             augmentations["PIL"]["simclr"] = get_simclr_augmentations(
                 shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength
             )
+            augmentations["PIL"]["whitening_simclr"] = get_simclr_augmentations(
+                shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength, is_whitening=True
+            )
+            augmentations["PIL"]["blured_simclr"] = get_simclr_augmentations(
+                shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength, is_force_blur=True,
+            )
         except ValueError:
             logger.debug(f"Could not load dataset-specific augmentation for {self.dataset_name}.")
 
@@ -729,6 +735,11 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
     def __init__(self, *args, curr_split = "train",  **kwargs) -> None:
         is_train = curr_split == "train"
         super().__init__(*args, curr_split=curr_split, train=is_train,  **kwargs)
+
+    @property
+    def label_names(self) -> list[str]:
+        return ['plane', 'car', 'bird', 'cat', 'deer',
+               'dog', 'frog', 'horse', 'ship', 'truck']
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:

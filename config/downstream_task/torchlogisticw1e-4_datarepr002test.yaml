@@ -4,3 +4,4 @@ defaults:
 data: data_repr_002_test
 predictor: torch_logistic
 optimizer: SGD_w1e-4
+epochs_mult_factor: 10 # 100 -> 1000 epochs because 100x smaller data

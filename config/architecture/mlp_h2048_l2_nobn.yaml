@@ -1,7 +1,0 @@
-defaults:
-  - mlp_h2048_l2
-
-name: mlp_h2048_l2_nobn
-kwargs:
-  arch_kwargs:
-    norm_layer: "identity"

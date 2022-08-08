@@ -92,6 +92,7 @@ class ContrastiveISSL(nn.Module):
             "norm_layer": "batch",
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
+        freeze_Mx_epochs: int = 0,
         encoder: Optional[nn.Module] = None,  # only used for DINO
         **kwargs
     ) -> None:
@@ -111,6 +112,8 @@ class ContrastiveISSL(nn.Module):
         self.is_self_contrastive = is_self_contrastive
         self.loss = loss.lower()
         assert self.loss in ["ce","mse","margin","weighted_margin","weighted_mse"]
+
+        self.freeze_Mx_epochs = freeze_Mx_epochs
 
         if self.is_pred_proj_same:
             self.is_self_contrastive = False
@@ -169,6 +172,24 @@ class ContrastiveISSL(nn.Module):
             kwargs["bias"] = False  # no bias when batchorm
 
         return kwargs
+
+    @property
+    def to_freeze(self):
+        to_freeze = []
+
+        for m in self.projector.modules():
+            if isinstance(m, nn.Linear):
+                # only bottlenecks
+                if m.weight.shape[0] < m.weight.shape[1]:
+                    to_freeze.append(m)
+
+
+        for m in self.predictor.modules():
+            if isinstance(m, nn.Linear):
+                if m.weight.shape[0] < m.weight.shape[1]:
+                    to_freeze.append(m)
+
+        return to_freeze
 
     def forward(
         self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, parent: Any

@@ -454,6 +454,8 @@ class ISSLDataModule(LightningDataModule):
 
             self.is_already_called["test"] = True
 
+        logger.info(f"Train size = {len(self.train_dataset)}, val size = {len(self.val_dataset)}, test size = {len(self.test_dataset)}.")
+
 
     def train_dataloader(
         self,
@@ -493,14 +495,20 @@ class ISSLDataModule(LightningDataModule):
             **kwargs,
         )
 
-    def test_dataloader(self, batch_size: Optional[int] = None, **kwargs) -> DataLoader:
+    def test_dataloader(self,
+                        batch_size: Optional[int] = None,
+                        test_dataset: Optional[ISSLDataset] = None,
+                        **kwargs) -> DataLoader:
         """Return the test dataloader while possibly modifying dataset kwargs."""
+
+        if test_dataset is None:
+            test_dataset = self.test_dataset
 
         if batch_size is None:
             batch_size = self.val_batch_size
 
         return DataLoader(
-            self.test_dataset,
+            test_dataset,
             batch_size=batch_size,
             shuffle=False,
             num_workers=self.num_workers,

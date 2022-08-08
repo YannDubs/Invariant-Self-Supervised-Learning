@@ -88,36 +88,98 @@ wait
 # => show that training for logner is a way of getting ISSL loss closer to 0
 # then do that same with larger acrhctecture on sample plot (only DISSL)
 #
+
 python utils/aggregate.py \
        experiment=$experiment  \
-       patterns.representor=["results/exp_issl_vs_acc/**/results_representor.csv","results/exp_proj_heads_tin/**/results_representor.csv","results/exp_proj_layers_tin/**/results_representor.csv"] \
-       patterns.predictor=["results/exp_issl_vs_acc/**/results_predictor.csv","results/exp_proj_heads_tin/**/results_predictor.csv","results/exp_proj_layers_tin/**/results_predictor.csv"] \
-       +col_val_subset.pred=["torch_logisticw1.0e-04"] \
+       patterns.representor=["results/exp_issl_vs_acc/**/results_representor.csv","results/exp_proj_heads_tin*/**/results_representor.csv","results/exp_proj_heads_tin/**/results_representor.csv","results/exp_proj_layers_tin/**/results_representor.csv","results/exp_epochs_cos_tin*/**/results_representor.csv","results/exp_cntr_pred_tin/**/results_representor.csv","results/exp_cntr_tin*/**/results_representor.csv","exp_results/optim_tin/**/results_representor.csv","results/exp_regularizer_tin*/**/results_representor.csv"] \
+       patterns.predictor=["results/exp_issl_vs_acc/**/results_predictor.csv","results/exp_proj_heads_tin*/**/results_predictor.csv","results/exp_proj_heads_tin/**/results_predictor.csv","results/exp_proj_layers_tin/**/results_predictor.csv","results/exp_epochs_cos_tin*/**/results_predictor.csv","results/exp_cntr_pred_tin/**/results_predictor.csv","results/exp_cntr_tin*/**/results_predictor.csv","exp_results/optim_tin/**/results_predictor.csv","results/exp_regularizer_tin*/**/results_predictor.csv"] \
+       +col_val_subset.pred=["torch_logisticw1.0e-06"] \
        +col_val_subset.datapred=["data_repr"] \
        +col_val_subset.repr=["cntr"] \
        '+col_cond_subset={test/pred/acc: ">0.3"}' \
        +plot_scatter_lines.data="merged" \
-       +plot_scatter_lines.mode="lmplot" \
+       +plot_scatter_lines.mode="scatter" \
        +plot_scatter_lines.x="test/repr/decodability" \
        +plot_scatter_lines.y="test/pred/acc" \
        +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-       +plot_scatter_lines.filename="acc_vs_loss_corr_w1e-4" \
+       +plot_scatter_lines.filename="acc_vs_loss_corr_w1e-6_blue" \
        +plot_scatter_lines.multipy_y=100 \
        +plot_scatter_lines.y_tick_spacing=2 \
        +plot_scatter_lines.x_tick_spacing=0.05 \
        +plot_scatter_lines.is_invert_xaxis=true \
-       '+plot_scatter_lines.scatter_kws={color: "gray"}' \
+        +plot_scatter_lines.highlight.exp="epochs_cos_tin_final" \
+        +plot_scatter_lines.highlighting_color="tab:blue" \
+        +plot_scatter_lines.alpha=0.7 \
+        +plot_scatter_lines.color="gray" \
        +plot_scatter_lines.sharex=False \
         +plot_scatter_lines.legend=False \
+        +collect_data.jid_to_skip=["3665928","2 3661734 2","0 3661734 0"] \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
+       #
 
-# only showing accuracy larger than 30% because makes zoomed in plots (but trend holds regardless) as shown below
 
+python utils/aggregate.py \
+       experiment=$experiment  \
+       patterns.representor=["results/exp_issl_vs_acc/**/results_representor.csv","results/exp_proj_heads_tin*/**/results_representor.csv","results/exp_proj_heads_tin/**/results_representor.csv","results/exp_proj_layers_tin/**/results_representor.csv","results/exp_epochs_cos_tin*/**/results_representor.csv","results/exp_cntr_pred_tin/**/results_representor.csv","results/exp_cntr_tin*/**/results_representor.csv","exp_results/optim_tin/**/results_representor.csv","results/exp_regularizer_tin*/**/results_representor.csv"] \
+       patterns.predictor=["results/exp_issl_vs_acc/**/results_predictor.csv","results/exp_proj_heads_tin*/**/results_predictor.csv","results/exp_proj_heads_tin/**/results_predictor.csv","results/exp_proj_layers_tin/**/results_predictor.csv","results/exp_epochs_cos_tin*/**/results_predictor.csv","results/exp_cntr_pred_tin/**/results_predictor.csv","results/exp_cntr_tin*/**/results_predictor.csv","exp_results/optim_tin/**/results_predictor.csv","results/exp_regularizer_tin*/**/results_predictor.csv"] \
+       +col_val_subset.pred=["torch_logisticw1.0e-05"] \
+       +col_val_subset.datapred=["data_repr"] \
+       +col_val_subset.repr=["cntr"] \
+       '+col_cond_subset={test/pred/acc: ">0.3"}' \
+       +plot_scatter_lines.data="merged" \
+       +plot_scatter_lines.mode="scatter" \
+       +plot_scatter_lines.x="test/repr/decodability" \
+       +plot_scatter_lines.y="test/pred/acc" \
+       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+       +plot_scatter_lines.filename="acc_vs_loss_corr_w1e-5" \
+       +plot_scatter_lines.multipy_y=100 \
+       +plot_scatter_lines.y_tick_spacing=2 \
+       +plot_scatter_lines.x_tick_spacing=0.05 \
+       +plot_scatter_lines.is_invert_xaxis=true \
+        +plot_scatter_lines.highlight.exp="epochs_cos_tin_final" \
+        +plot_scatter_lines.highlighting_color="tab:blue" \
+        +plot_scatter_lines.alpha=0.7 \
+       +plot_scatter_lines.color="gray" \
+       +plot_scatter_lines.sharex=False \
+        +plot_scatter_lines.legend=False \
+        +collect_data.jid_to_skip=["3665928","2 3661734 2","0 3661734 0"] \
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
+#
 #python utils/aggregate.py \
 #       experiment=$experiment  \
-#       patterns.representor=["results/exp_issl_vs_acc/**/results_representor.csv","results/exp_proj_heads_tin/**/results_representor.csv","results/exp_proj_layers_tin/**/results_representor.csv"] \
-#       patterns.predictor=["results/exp_issl_vs_acc/**/results_predictor.csv","results/exp_proj_heads_tin/**/results_predictor.csv","results/exp_proj_layers_tin/**/results_predictor.csv"] \
+#       patterns.representor=["results/exp_issl_vs_acc/**/results_representor.csv","results/exp_proj_heads_tin*/**/results_representor.csv","results/exp_proj_heads_tin/**/results_representor.csv","results/exp_proj_layers_tin/**/results_representor.csv","results/exp_cntr_pred_tin/**/results_representor.csv","results/exp_cntr_tin*/**/results_representor.csv","exp_results/optim_tin/**/results_representor.csv","results/exp_regularizer_tin*/**/results_representor.csv"] \
+#       patterns.predictor=["results/exp_issl_vs_acc/**/results_predictor.csv","results/exp_proj_heads_tin*/**/results_predictor.csv","results/exp_proj_heads_tin/**/results_predictor.csv","results/exp_proj_layers_tin/**/results_predictor.csv","results/exp_cntr_pred_tin/**/results_predictor.csv","results/exp_cntr_tin*/**/results_predictor.csv","exp_results/optim_tin/**/results_predictor.csv","results/exp_regularizer_tin*/**/results_predictor.csv"] \
+#       +col_val_subset.pred=["torch_logisticw1.0e-04"] \
+#       +col_val_subset.datapred=["data_repr"] \
+#       +col_val_subset.repr=["cntr"] \
+#       '+col_cond_subset={test/pred/acc: ">0.3"}' \
+#       +plot_scatter_lines.data="merged" \
+#       +plot_scatter_lines.mode="lmplot" \
+#       +plot_scatter_lines.x="test/repr/decodability" \
+#       +plot_scatter_lines.y="test/pred/acc" \
+#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
+#       +plot_scatter_lines.filename="acc_vs_loss_corr_w1e-4" \
+#       +plot_scatter_lines.multipy_y=100 \
+#       +plot_scatter_lines.y_tick_spacing=2 \
+#       +plot_scatter_lines.x_tick_spacing=0.05 \
+#       +plot_scatter_lines.is_invert_xaxis=true \
+#       +plot_scatter_lines.highlight.exp="epochs_cos_tin_final" \
+#       '+plot_scatter_lines.scatter_kws={color: "gray"}' \
+#       +plot_scatter_lines.sharex=False \
+#        +plot_scatter_lines.legend=False \
+#        +collect_data.jid_to_skip=["3665928","2 3661734 2","0 3661734 0"] \
+#       agg_mode=[plot_scatter_lines] \
+#       $add_kwargs
+#
+#
+## only showing accuracy larger than 30% because makes zoomed in plots (but trend holds regardless) as shown below
+#
+#python utils/aggregate.py \
+#       experiment=$experiment  \
+#       patterns.representor=["results/exp_issl_vs_acc/**/results_representor.csv","results/exp_proj_heads_tin*/**/results_representor.csv","results/exp_proj_heads_tin/**/results_representor.csv","results/exp_proj_layers_tin/**/results_representor.csv","results/exp_cntr_pred_tin/**/results_representor.csv","results/exp_cntr_tin*/**/results_representor.csv","exp_results/optim_tin/**/results_representor.csv","results/exp_regularizer_tin*/**/results_representor.csv"] \
+#       patterns.predictor=["results/exp_issl_vs_acc/**/results_predictor.csv","results/exp_proj_heads_tin*/**/results_predictor.csv","results/exp_proj_heads_tin/**/results_predictor.csv","results/exp_proj_layers_tin/**/results_predictor.csv","results/exp_cntr_pred_tin/**/results_predictor.csv","results/exp_cntr_tin*/**/results_predictor.csv","exp_results/optim_tin/**/results_predictor.csv","results/exp_regularizer_tin*/**/results_predictor.csv"] \
 #       +col_val_subset.pred=["torch_logisticw1.0e-05"] \
 #       +col_val_subset.datapred=["data_repr"] \
 #       +col_val_subset.repr=["cntr"] \
@@ -131,93 +193,10 @@ python utils/aggregate.py \
 #       +plot_scatter_lines.y_tick_spacing=10 \
 #       +plot_scatter_lines.x_tick_spacing=0.2 \
 #       +plot_scatter_lines.is_invert_xaxis=true \
+#       +plot_scatter_lines.highlight.exp="epochs_cos_tin_final" \
 #       '+plot_scatter_lines.scatter_kws={color: "gray"}' \
 #       +plot_scatter_lines.sharex=False \
 #        +plot_scatter_lines.legend=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
-
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       +col_val_subset.pred=["torch_logisticw1.0e-05"] \
-#       +col_val_subset.datapred=["data_repr"] \
-#       +col_val_subset.repr=["cntr"] \
-#       '+col_cond_subset={test/pred/acc: ">0.1"}' \
-#       +plot_scatter_lines.data="merged" \
-#       +plot_scatter_lines.mode="lmplot" \
-#       +plot_scatter_lines.x="test/repr/decodability" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-#       +plot_scatter_lines.filename="acc_vs_loss_corr_w1e-5" \
-#       +plot_scatter_lines.multipy_y=100 \
-#       +plot_scatter_lines.y_tick_spacing=2 \
-#       +plot_scatter_lines.x_tick_spacing=0.05 \
-#       +plot_scatter_lines.is_invert_xaxis=true \
-#       +plot_scatter_lines.sharex=False \
-#        +plot_scatter_lines.legend=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
-
-
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       +col_val_subset.pred=["torch_logisticw1.0e-04"] \
-#       +col_val_subset.datapred=["data_repr"] \
-#       +col_val_subset.repr=["cntr"] \
-#       '+col_cond_subset={test/pred/acc: ">0.1"}' \
-#       +plot_scatter_lines.data="merged" \
-#       +plot_scatter_lines.mode="lmplot" \
-#       +plot_scatter_lines.x="test/repr/decodability" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-#       +plot_scatter_lines.filename="acc_vs_loss_corr_w1e-4" \
-#       +plot_scatter_lines.multipy_y=100 \
-#       +plot_scatter_lines.y_tick_spacing=2 \
-#       +plot_scatter_lines.x_tick_spacing=0.05 \
-#       +plot_scatter_lines.is_invert_xaxis=true \
-#       +plot_scatter_lines.sharex=False \
-#        +plot_scatter_lines.legend=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
-
-
-
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       +col_val_subset.pred=["torch_logisticw1.0e-05"] \
-#       +col_val_subset.datapred=["data_repr"] \
-#       +col_val_subset.repr=["cntr"] \
-#       +plot_scatter_lines.data="merged" \
-#       +plot_scatter_lines.mode="lmplot" \
-#       +plot_scatter_lines.x="train/repr/decodability" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-#       +plot_scatter_lines.filename="acc_vs_trloss_corr_w1e-5" \
-#       +plot_scatter_lines.multipy_y=100 \
-#       +plot_scatter_lines.y_tick_spacing=2 \
-#       +plot_scatter_lines.x_tick_spacing=0.1 \
-#       +plot_scatter_lines.is_invert_xaxis=true \
-#       +plot_scatter_lines.sharex=False \
-#        +plot_scatter_lines.legend=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
-#
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       +col_val_subset.pred=["torch_logisticw1.0e-05"] \
-#       +col_val_subset.datapred=["data_repr"] \
-#       +col_val_subset.repr=["cntr"] \
-#       +plot_scatter_lines.data="merged" \
-#       +plot_scatter_lines.mode="lmplot" \
-#       +plot_scatter_lines.x="train/repr/decodability" \
-#       +plot_scatter_lines.y="test/pred_train/acc" \
-#       +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-#       +plot_scatter_lines.filename="tracc_vs_trloss_corr_w1e-5" \
-#       +plot_scatter_lines.multipy_y=100 \
-#       +plot_scatter_lines.y_tick_spacing=2 \
-#       +plot_scatter_lines.x_tick_spacing=0.1 \
-#       +plot_scatter_lines.is_invert_xaxis=true \
-#       +plot_scatter_lines.sharex=False \
-#        +plot_scatter_lines.legend=False \
+#       +collect_data.jid_to_skip=["3665928","2 3661734 2","0 3661734 0"] \
 #       agg_mode=[plot_scatter_lines] \
 #       $add_kwargs

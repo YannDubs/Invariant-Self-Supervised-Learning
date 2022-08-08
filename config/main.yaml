@@ -26,7 +26,7 @@ defaults:
   # downstream task #
   - checkpoint@checkpoint_pred: last # by default no validation set for predictors
   - optimizer@dflt_optimizer_pred: SGD # can be modified in downstream task
-  - scheduler@scheduler_pred: cosine_nowarm
+  - scheduler@dflt_scheduler_pred: cosine_nowarm # can be modified in downstream task
 
   # OVERRIDES #
   - override hydra/job_logging: colorlog
@@ -40,8 +40,9 @@ job_id: ??? # unique identifier
 seed: 123
 timeout: 1440 # 24 hours
 time: ${hydra:job.num}_${now:%Y-%m-%d_%H-%M-%S} # add job num because time is not when job runs
+# TODO should add epoch and batchsize in repr  (not doing for now for backward compatibility)
 long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/reg_${regularizer.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_shape}/zs_1/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr}
-long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/addpred_${other.add_pred}
+long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/eppred_${trainer.max_epochs}/bspred_${data_pred.kwargs.batch_size}/addpred_${other.add_pred}
 is_return: false # will return everything (the data, the models, ...)
 monitor_return: [] # normal return of the function. This is especially useful for hyperparameter tuning
 monitor_direction: [] # whether the monitor should be maximized or minimized. useful for hyperparameter tuning
@@ -57,6 +58,7 @@ paths: #! the best practice is not to modify those paths but to symlink them to 
   work: ${hydra.runtime.cwd}/${paths.relative_work} # unfortunately cannot use hydra: in hydra so need to do everything by hand i.e. cannot use ${paths.base_dir}/outputs/{time}
   base_dir: ${hydra:runtime.cwd} # actual script where you are running from and want to save stuff
   tmp_dir: ${paths.base_dir} # main directory for all things that are only used when running script
+  wandb_dir: ${paths.tmp_dir}/wandb # main directory for all things that are only used when running script
 
   data: ${paths.base_dir}/data
   logs: ${paths.tmp_dir}/logs/${long_name}/jid_${job_id}
@@ -117,6 +119,11 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
     kwargs:
       max_depth: 4
 
+  DISSLTeacherClf:
+    is_use: false
+    kwargs:
+      dm: true
+
 trainer:
   #default_root_dir: ${paths.results}
   max_epochs: 100
@@ -124,7 +131,7 @@ trainer:
   enable_progress_bar: True
   gradient_clip_val: 2 # null to disable
   gradient_clip_algorithm: "value" # "norm" to clip by norm (problem is if one val is inf, then all is 0)
-  log_every_n_steps: 100
+  log_every_n_steps: 30
   val_check_interval: 1.0 # less than 1 for subepoch validation.
   check_val_every_n_epoch: 10
   enable_checkpointing: True
@@ -153,6 +160,7 @@ encoder:
   name: ???
   z_shape: 1024
   rm_out_chan_aug: False
+  aux_enc_base: null
   is_etf_rep: False
   kwargs:
     in_shape: ${data.shape}
@@ -213,6 +221,7 @@ predictor: {}
 
 dflt_predictor:
   is_train: True
+  is_force_retrain: False
 
 ### OPTIMIZER ###
 optimizer_pred: {}
@@ -223,13 +232,15 @@ dflt_optimizer_pred:
   kwargs:
     lr: ???
     weight_decay: 0
+
 scheduler_pred: {}
+dflt_scheduler_pred: {}
 
 ### RUNNING ###
 checkpoint_pred: {}
 # dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
 update_trainer_pred:
-  max_epochs: 100
+  max_epochs: 100 # maybe should use 500
 
 ########## HYDRA ##########
 hydra:

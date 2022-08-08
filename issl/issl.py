@@ -27,6 +27,12 @@ class ISSLModule(pl.LightningModule):
         Architecture = get_Architecture(cfge.architecture, **cfge.arch_kwargs)
         self.encoder = Architecture(cfge.in_shape, cfge.out_shape)
 
+        if self.hparams.encoder.aux_enc_base is not None:
+            arch_kwargs = dict(**cfge.arch_kwargs)
+            arch_kwargs["base"] = self.hparams.encoder.aux_enc_base
+            AuxArchitecture = get_Architecture(cfge.architecture, **arch_kwargs)
+            self.aux_encoder = AuxArchitecture(cfge.in_shape, cfge.out_shape)
+
         self.loss_decodability = get_loss_decodability(encoder=self.encoder,
             **self.hparams.decodability.kwargs
         )
@@ -108,6 +114,12 @@ class ISSLModule(pl.LightningModule):
                 # z shape: [2 * batch_size, *z_shape]
                 z = torch.cat([z, z_a])
                 z_tgt = torch.cat([z_no_out_chan, z_a_no_out_chan])
+
+            elif self.hparams.encoder.aux_enc_base is not None:
+                # z shape: [2 * batch_size, *z_shape]
+                X_all = torch.cat([x, aux_target])
+                z = self(X_all)
+                z_tgt = self(X_all, encoder=self.aux_encoder)
 
             else:
                 # z shape: [2 * batch_size, *z_shape]

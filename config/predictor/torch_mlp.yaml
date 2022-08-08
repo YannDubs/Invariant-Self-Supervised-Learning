@@ -1,5 +1,5 @@
 is_sklearn: False
-name: torch_mlpL
+name: torch_mlpw${format:${optimizer_pred.kwargs.weight_decay},.1e}l${format:${optimizer_pred.kwargs.lr},.1e}
 kwargs:
   architecture: mlp
   arch_kwargs:
