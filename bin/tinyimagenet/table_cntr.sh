@@ -43,7 +43,6 @@ cell_aug="
 $cell_dim
 data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
 representor=cntr_blured
-seed=2,3
 "
 
 cell_epoch="
@@ -51,10 +50,14 @@ $cell_aug
 update_trainer_repr.max_epochs=1000
 "
 
+cell_epoch_noaug="
+$cell_dim
+update_trainer_repr.max_epochs=1000
+"
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_aug" #"$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
+  for kwargs_dep in "$cell_epoch" "$cell_epoch_noaug"  #"$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
   do
-    # 3681265 - 3681273
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 
     sleep 10

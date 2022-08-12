@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment="table_mlp_final"
+experiment="table_rn50"
 notes="
-**Goal**: run the main table for MLP.
+**Goal**: run resnet50 dissl.
 "
 
 # parses special mode for running the script
@@ -17,15 +17,28 @@ experiment=$experiment
 $base_kwargs_tin
 seed=1
 timeout=$time
-representor=dstl_mlp
-downstream_task.all_tasks=[torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test]
+representor=dstl_noema
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr,torchlogisticw1e-5b2048e300_datarepr]
 ++decodability.kwargs.projector_kwargs.n_hid_layers=1
 ++decodability.kwargs.projector_kwargs.hid_dim=1024
+data_repr.kwargs.batch_size=256
+"
+
+cell_rn_50="
+encoder.z_shape=2048
+architecture@encoder=resnet50
+"
+
+cell_dim="
+$cell_rn_50
+encoder.z_shape=512
+encoder.kwargs.arch_kwargs.is_channel_out_dim=True
++encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "seed=2" #"$cell_baseline" #"$cell_reg seed=2,3,1" #"$cell_baseline"  #"$cell_linear" #
+  for kwargs_dep in "$cell_rn_50"  #"$cell_dim"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -34,8 +47,3 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
-
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       agg_mode=[summarize_metrics] \
-#       $add_kwargs

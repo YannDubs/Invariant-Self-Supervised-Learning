@@ -16,13 +16,13 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 seed=1
-representor=dstl
+representor=dstl_noema
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogistic_datarepr01test,torchlogistic_datarepr001test,torchlogistic_datarepr0002test,torchlogistic_datarepr03test,torchlogistic_datarepr003test]
 timeout=$time
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.25 decodability.kwargs.out_dim=24000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.5 decodability.kwargs.out_dim=20000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.out_dim=16384" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2 decodability.kwargs.out_dim=12000"
+  for kwargs_dep in  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2 decodability.kwargs.out_dim=12000" #"data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.25 decodability.kwargs.out_dim=24000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.5 decodability.kwargs.out_dim=20000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.out_dim=16384" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2 decodability.kwargs.out_dim=12000"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -31,6 +31,7 @@ if [ "$is_plot_only" = false ] ; then
 
   done
 fi
+
 
 
 # make lien plot x : number of samples, and y : accuracy, and hue: aug strength
@@ -42,7 +43,7 @@ python utils/aggregate.py \
        +fillna.n_downstream_samples=1 \
        +apply.n_downstream_samples="lambda x : x * 100000" \
        +col_val_subset.pred=["torch_logisticw1.0e-06"] \
-       +col_val_subset.repr=["dstl"] \
+       +col_val_subset.repr=["dstl_noema"] \
        +plot_scatter_lines.x="n_downstream_samples" \
        +plot_scatter_lines.y="test/pred/acc" \
        +plot_scatter_lines.cols_to_max=["pred","optpred"] \

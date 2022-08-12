@@ -181,7 +181,7 @@ class ETFRegularizer(nn.Module):
     def __init__(
         self,
         z_shape,
-        is_exact_etf=True
+        is_exact_etf=False
     ) :
         super().__init__()
         self.etf_crit = DistToEtf(z_shape, is_exact_etf=is_exact_etf)

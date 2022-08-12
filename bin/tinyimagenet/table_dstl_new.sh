@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="table_dstl_new"
+experiment="table_dstl_new2"
 notes="
 **Goal**: run the main table for distillation.
 "
@@ -18,7 +18,7 @@ $base_kwargs_tin
 seed=1
 timeout=$time
 representor=dstl_noema
-downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5b2048e300_datarepr]
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr,torchlogisticw1e-5b2048e300_datarepr]
 ++decodability.kwargs.projector_kwargs.n_hid_layers=1
 ++decodability.kwargs.projector_kwargs.hid_dim=1024
 data_repr.kwargs.batch_size=256
@@ -26,12 +26,12 @@ data_repr.kwargs.batch_size=256
 
 cell_baseline="
 representor=slfdstl_dino
-downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test]
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test]
 "
 
 cell_ours="
 representor=dstl_noema
-downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test,torchlogisticw1e-4_datarepr002test,torchlogisticw1e-5_datarepr002test,torchlogisticw1e-3_datarepr002test,torchlogistic_datarepr002test]
+downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test,torchlogisticw1e-4_datarepr002test,torchlogisticw1e-5_datarepr002test,torchlogisticw1e-3_datarepr002test,torchlogistic_datarepr002test]
 "
 
 cell_dim="
@@ -73,8 +73,13 @@ $cell_aug
 update_trainer_repr.max_epochs=1000
 "
 
+cell_epoch_noaug="
+$cell_dim
+update_trainer_repr.max_epochs=1000
+"
+
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_baseline" "$cell_aug" "$cell_epoch" #  "$cell_ours" "$cell_dim" "$cell_asymm_small" "$cell_asymm_large" "$cell_aug" "$cell_epoch" # cell_baseline
+  for kwargs_dep in "$cell_ours"  "$cell_baseline" # "$cell_aug" "$cell_epoch" "$cell_ours" "$cell_dim"   #  "$cell_ours" "$cell_dim" "$cell_asymm_small" "$cell_asymm_large" "$cell_aug" "$cell_epoch" # cell_baseline
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &

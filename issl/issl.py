@@ -152,7 +152,10 @@ class ISSLModule(pl.LightningModule):
             # estimate neural collapse
             logs["rel_variance"] = rel_variance(z_x, z_a).mean()
             # estimate etf
-            logs["dist_to_etf"] = self.dist_to_etf(z_x, z_a).mean()
+            pos_loss, neg_loss, dist_to_etf = self.dist_to_etf(z_x, z_a, is_return_pos_neg=True)
+            logs["etf_pos"] = pos_loss.mean()
+            logs["etf_neg"] = neg_loss.mean()
+            logs["dist_to_etf"] = dist_to_etf.mean()
 
         # any additional information that can be useful (dict)
         other.update(d_other)

@@ -1162,19 +1162,21 @@ class DistToEtf(nn.Module):
     def __init__(
         self,
         z_shape,
-        is_exact_etf=True,
-        is_already_normalized=False
+        is_exact_etf=False,
+        is_already_normalized=False,
     ) :
         super().__init__()
         self.is_already_normalized = is_already_normalized
         self.is_exact_etf = is_exact_etf
         self.z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
-        self.bn = torch.nn.BatchNorm1d(self.z_dim, affine=False)
+        self.running_mean = RunningMean(torch.zeros(self.z_dim))
 
     def get_etf_rep(self, z):
-        return F.normalize(self.bn(z), dim=-1, p=2)
+        z_mean = self.running_mean(z.mean(0))
+        z_centered = z - z_mean
+        return F.normalize(z_centered, p=2, dim=1)
 
-    def __call__(self, zx, za):
+    def __call__(self, zx, za, is_return_pos_neg=False):
         z_dim = zx.shape[1]
 
         if not self.is_already_normalized:
@@ -1186,6 +1188,10 @@ class DistToEtf(nn.Module):
             pos_loss = (MtM.diagonal() - 1).pow(2).mean()  # want it to be 1
             neg_loss = (1 / z_dim + MtM.masked_select(~eye_like(MtM).bool())).pow(2).mean()  # want it to be - 1 /dim
         else:
-            pos_loss = - MtM.diagonal().mean()  # directly maximize
+            pos_loss = (1 - MtM.diagonal()).mean()  # directly maximize
             neg_loss = MtM.masked_select(~eye_like(MtM).bool()).mean()  # directly minimize
+
+        if is_return_pos_neg:
+            return pos_loss, neg_loss, pos_loss + neg_loss
+
         return pos_loss + neg_loss

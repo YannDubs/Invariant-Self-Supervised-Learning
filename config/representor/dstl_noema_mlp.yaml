@@ -5,21 +5,27 @@ defaults:
   - override /decodability: distillating
 
 representor:
-  name: dstl_noema
+  name: dstl_noema_mlp
 
 data_repr:
   kwargs:
     dataset_kwargs:
       aux_target:  "augmentation"
-      a_augmentations: ["blured_simclr"]
+      a_augmentations: ["data-standard"]
       train_x_augmentations: "a_augmentations"
 
 decodability:
   kwargs:
-    ema_weight_prior: null
     beta_pM_unif: 2.3
     beta_HMlZ: 1.8
     out_dim: 8192
+    ema_weight_prior: null
     projector_kwargs:
       architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
+    predictor_kwargs:
+      architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
       is_cosine: True

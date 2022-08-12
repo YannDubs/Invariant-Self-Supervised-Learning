@@ -345,12 +345,13 @@ class DISSLTeacherClf(pl.Callback):
             experiment.log({f"{mode}/{pl_module.stage}/{pl_module.hparams.task}/confusion matrix": conf_mat_wandb},
                            commit=False)
 
-            fig, ax = plt.subplots(1, 1, figsize=(15, 15))
-            ax=sns.heatmap(conf_mat, annot=True,  fmt='g',  cmap='Greens', ax=ax)
+            with plot_config(font_scale=1.5):
+                fig, ax = plt.subplots(1, 1, figsize=(15, 15))
+                ax=sns.heatmap(conf_mat, annot=True,  fmt='g',  cmap='Greens', ax=ax)
 
-            ax.set_xlabel(r'Predicted $M(X)$')
-            ax.set_ylabel('True labels $Y$')
-            ax.yaxis.set_ticklabels(self.label_names)
+                ax.set_xlabel(r'Predicted $M(X)$')
+                ax.set_ylabel('True labels $Y$')
+                ax.yaxis.set_ticklabels(self.label_names)
 
             img_kwargs = {"caption": f"ep: {trainer.current_epoch}", "name": f"{mode} confusion_matrix"}
             save_img(pl_module, trainer, fig, **img_kwargs)
