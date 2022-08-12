@@ -18,7 +18,7 @@ $base_kwargs_tin
 seed=1
 timeout=$time
 representor=dstl_noema_mlp
-downstream_task.all_tasks=[torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test]
+downstream_task.all_tasks=[torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test]
 ++decodability.kwargs.projector_kwargs.n_hid_layers=1
 ++decodability.kwargs.projector_kwargs.hid_dim=1024
 "

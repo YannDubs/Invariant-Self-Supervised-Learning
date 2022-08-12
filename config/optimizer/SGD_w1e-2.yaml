@@ -1,6 +1,0 @@
-# name is automatic
-mode: SGD
-kwargs:
-  lr: 0.3
-  weight_decay: 1e-2
-  momentum: 0.9

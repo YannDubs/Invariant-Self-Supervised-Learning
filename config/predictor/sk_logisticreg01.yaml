@@ -1,7 +1,0 @@
-defaults:
-  - sk_logistic
-
-
-name: sk_logisticreg01
-model:
-  C: 0.1 #smaller regularizes more (should tune it)

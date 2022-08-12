@@ -1,4 +1,0 @@
-# @package _global_
-evaluation:
-  representor:
-    is_online_eval: false # there are no meaningful labels for the unlabeled data (will get -1)

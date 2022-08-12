@@ -1,7 +1,0 @@
-defaults:
-  - base
-
-# the test performance here is the standard evaluation pipeline for SSL
-# the train performance will tell you about decodability
-data: data_repr
-predictor: sk_logisticreg0003

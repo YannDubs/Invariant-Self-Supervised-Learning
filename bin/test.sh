@@ -13,9 +13,7 @@ kwargs="
 experiment=$experiment
 mode=dev
 trainer.max_epochs=1
-architecture@encoder=mlp
-data@data_repr=mnist
-downstream_task.all_tasks=[sklogistic_datarepr]
+data@data_repr=cifar10
 timeout=$time
 "
 

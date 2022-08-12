@@ -820,46 +820,6 @@ class ResultAggregator(PostPlotter):
 
         return sns_plot
 
-    def plot_optuna_hypopt(
-        self,
-        storage,
-        study_name="main",
-        filename="hypopt",
-        plot_functions_str=[
-            "plot_param_importances",
-            "plot_parallel_coordinate",
-            "plot_optimization_history",
-            "plot_pareto_front",
-        ],
-    ):
-        """Plot a summary of Optuna study"""
-        check_import("optuna", "plot_optuna_hypopt")
-        study = optuna.load_study(study_name, storage)
-        cfg = self.cfgs[list(self.cfgs.keys())[-1]]  # which cfg shouldn't matter
-
-        best_trials = study.best_trials
-        to_save = {
-            "solutions": [{"values": t.values, "params": t.params} for t in best_trials]
-        }
-        cfg_save(to_save, self.save_dir / f"{self.prfx}{filename}.yaml")
-
-        for i, monitor in enumerate(cfg.monitor_return):
-            for plot_f_str in plot_functions_str:
-                try:
-                    # plotting
-                    plt_modules = [optuna.visualization.matplotlib]
-                    plot_f = getattr_from_oneof(plt_modules, plot_f_str)
-                    out = plot_f(
-                        study, target=lambda trial: trial.values[i], target_name=monitor
-                    )
-                except:
-                    logger.exception(f"Could not plot {monitor}. Error:")
-
-                # saving
-                nice_monitor = monitor.replace("/", "_")
-                filename = self.save_dir / f"optuna_{plot_f_str}_{nice_monitor}"
-                save_fig(out, filename, self.dpi)
-
     @data_getter
     @folder_split
     @single_plot

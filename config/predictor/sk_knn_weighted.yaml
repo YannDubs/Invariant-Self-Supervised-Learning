@@ -1,7 +1,0 @@
-defaults:
-  - sk_knn
-
-name: sk_svm
-model:
-  n_neighbors: 15
-  weights: distance

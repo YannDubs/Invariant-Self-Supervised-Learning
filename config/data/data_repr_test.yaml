@@ -1,6 +1,0 @@
-defaults:
-  - data_repr
-
-name: data_repr_test
-kwargs:
-  is_train_on_test: True # train on the test set

@@ -75,17 +75,6 @@ LAST_CHECKPOINT = "last.ckpt"
 FILE_END = "end.txt"
 CONFIG_FILE = "config.yaml"
 
-# noinspection PyBroadException
-try:
-    GIT_HASH = (
-        subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"])
-        .decode("utf-8")
-        .strip()
-    )
-except:
-    logger.exception("Failed to save git hash with error:")
-    GIT_HASH = None
-
 
 @hydra.main(config_name="main", config_path="config")
 def main_except(cfg):
@@ -140,9 +129,8 @@ def main(cfg):
 
     if repr_cfg.evaluation.representor.is_evaluate:
         logger.info("Evaluate representor ...")
-        is_eval_train = repr_cfg.evaluation.representor.is_eval_train
         repr_res = evaluate(
-            repr_trainer, repr_datamodule, repr_cfg, stage, is_eval_train=is_eval_train, model=representor
+            repr_trainer, repr_datamodule, repr_cfg, stage, model=representor
         )
     else:
         repr_res = load_results(repr_cfg, stage)
@@ -157,8 +145,6 @@ def main(cfg):
         finalize_kwargs,
         is_save_best=True,
     )
-    if repr_cfg.is_skip_pred:
-        return finalize(**finalize_kwargs)
 
     del repr_datamodule  # not used anymore and can be large
 
@@ -224,13 +210,11 @@ def main(cfg):
 
         if pred_cfg.evaluation.predictor.is_evaluate:
             logger.info(f"Evaluate predictor for {task} ...")
-            is_eval_train = pred_cfg.evaluation.predictor.is_eval_train
             pred_res = evaluate(
                 pred_trainer,
                 pred_datamodule,
                 pred_cfg,
                 stage,
-                is_eval_train=is_eval_train,
                 is_sklearn=is_sklearn,
                 model=predictor
             )
@@ -254,18 +238,15 @@ def main(cfg):
 
     ############## SHUTDOWN ##############
 
-    return finalize(**finalize_kwargs)
+    finalize(**finalize_kwargs)
 
 
 def begin(cfg: Container) -> None:
     """Script initialization."""
-    if cfg.other.is_debug:
-        set_debug(cfg)
 
     pl.seed_everything(cfg.seed)
 
     cfg.paths.work = str(Path.cwd())
-    cfg.other.git_hash = GIT_HASH
 
     try:
         # if continuing from single job you shouldn't append run to the end
@@ -370,24 +351,22 @@ def set_cfg(cfg: Container, stage: str) -> Container:
 
         logger.info(f"Name : {cfg.long_name}.")
 
-        if cfg.is_rescale_lr:
-            lr_stage = "issl" if cfg.stage == "repr" else cfg.stage
-            batch_size = cfg.data.kwargs.batch_size
-            if batch_size != 256:
-                new_lr = cfg[f"optimizer_{lr_stage}"].kwargs.lr * batch_size / 256
-                logger.info(f"Rescaling lr to {new_lr}.")
-                cfg[f"optimizer_{lr_stage}"].kwargs.lr = new_lr
+        # rescaling learning rate depening on batch size
+        lr_stage = "issl" if cfg.stage == "repr" else cfg.stage
+        batch_size = cfg.data.kwargs.batch_size
+        if batch_size != 256:
+            new_lr = cfg[f"optimizer_{lr_stage}"].kwargs.lr * batch_size / 256
+            logger.info(f"Rescaling lr to {new_lr}.")
+            cfg[f"optimizer_{lr_stage}"].kwargs.lr = new_lr
 
+    # make sure all paths exist
+    for name, path in cfg.paths.items():
+        if isinstance(path, str):
+            Path(path).mkdir(parents=True, exist_ok=True)
+    logger.info(f"Checkpoint path is {cfg.paths.checkpoint}.")
+    logger.info(f"Results path is {cfg.paths.results}.")
 
-    if not cfg.is_no_save:
-        # make sure all paths exist
-        for name, path in cfg.paths.items():
-            if isinstance(path, str):
-                Path(path).mkdir(parents=True, exist_ok=True)
-        logger.info(f"Checkpoint path is {cfg.paths.checkpoint}.")
-        logger.info(f"Results path is {cfg.paths.results}.")
-
-        Path(cfg.paths.pretrained.save).mkdir(parents=True, exist_ok=True)
+    Path(cfg.paths.pretrained.save).mkdir(parents=True, exist_ok=True)
 
 
     file_end_results = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"
@@ -472,19 +451,6 @@ def initialize_representor_(
 ) -> None:
     """Additional steps needed for initialization of the compressor + logging."""
 
-    if cfg.paths.pretrained.init_repr is not None:
-        logger.info(f"Initializing the representor from {cfg.paths.pretrained.init_repr}.")
-        # loading is not in place (it's a class function)
-        module = module.load_from_checkpoint(cfg.paths.pretrained.init_repr, hparams=cfg)
-    elif cfg.paths.pretrained.init_enc is not None:
-        logger.info(f"Initializing the encoder from {cfg.paths.pretrained.init_enc}.")
-        repr = module.load_from_checkpoint(cfg.paths.pretrained.init_enc, hparams=cfg)
-        module.encoder.load_state_dict(repr.encoder.state_dict())
-        try:  # also try to initialize online eval head
-            module.evaluator.load_state_dict(repr.evaluator.state_dict())
-        except:
-            pass
-
     # save number of parameters for the main model (not online optimizer but with coder)
     n_param = sum(
         p.numel() for p in module.get_specific_parameters("all") if p.requires_grad
@@ -519,25 +485,24 @@ def get_callbacks(
 
     callbacks += [ModelCheckpoint(**cfg.checkpoint.kwargs)]
 
-    if not cfg.callbacks.is_force_no_additional_callback:
-        for name, kwargs in cfg.callbacks.items():
-            try:
-                if kwargs.is_use:
-                    callback_kwargs = kwargs.get("kwargs", {})
-                    if callback_kwargs.get("dm", False):
-                        callback_kwargs["dm"] = dm
+    for name, kwargs in cfg.callbacks.items():
+        try:
+            if kwargs.is_use:
+                callback_kwargs = kwargs.get("kwargs", {})
+                if callback_kwargs.get("dm", False):
+                    callback_kwargs["dm"] = dm
 
-                    modules = [issl.callbacks, pl.callbacks]
-                    Callback = getattr_from_oneof(modules, name)
-                    new_callback = Callback(**callback_kwargs)
+                modules = [issl.callbacks, pl.callbacks]
+                Callback = getattr_from_oneof(modules, name)
+                new_callback = Callback(**callback_kwargs)
 
-                    if isinstance(new_callback, BaseFinetuning) and not is_representor:
-                        pass  # don't add finetuner during prediction
-                    else:
-                        callbacks.append(new_callback)
+                if isinstance(new_callback, BaseFinetuning) and not is_representor:
+                    pass  # don't add finetuner during prediction
+                else:
+                    callbacks.append(new_callback)
 
-            except AttributeError:
-                pass
+        except AttributeError:
+            pass
 
     return callbacks
 
@@ -706,7 +671,6 @@ def evaluate(
     datamodule: pl.LightningDataModule,
     cfg: NamespaceMap,
     stage: str,
-    is_eval_train: bool = False,
     is_sklearn: bool = False,
     model: torch.nn.Module=None
 ) -> dict:
@@ -719,33 +683,6 @@ def evaluate(
             ckpt_path = None
         else:
             ckpt_path = cfg.evaluation[stage].ckpt_path
-
-        if is_eval_train:
-            # add train so that can see in wandb
-            train_stage = f"{cfg.stage}_train"
-
-            # ensure that logging train and test resutls differently
-            if is_sklearn:
-                trainer.stage = train_stage
-            else:
-                trainer.lightning_module.stage = train_stage
-
-            # first save the training ones because they will be under "test" in wandb
-            try:
-                # also evaluate training set
-                train_dataloader = datamodule.train_dataloader()
-                train_res = trainer.test(dataloaders=train_dataloader, ckpt_path=ckpt_path, model=model)[0]
-                train_res = {
-                    k: v for k, v in train_res.items() if f"/{train_stage}/" in k
-                }
-                train_res = replace_keys(
-                    train_res, f"/{train_stage}/", f"/{cfg.stage}/"
-                )
-                to_save["train"] = replace_keys(train_res, "test/", "", is_prfx=True)
-            except:
-                logger.exception(
-                    "Failed to evaluate training set. Skipping this error:"
-                )
 
         eval_dataloader = datamodule.eval_dataloader(cfg.evaluation.is_eval_on_test)
 
@@ -799,13 +736,12 @@ def load_results(cfg: NamespaceMap, stage: str) -> dict:
 
 def save_end_file(cfg):
     """"save end file to make sure that you don't retrain if preemption"""
-    if not cfg.is_no_save:
-        file_end = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"
-        file_end.touch(exist_ok=True)
-        logger.info(f"Saved {file_end}.")
+    file_end = Path(cfg.paths.results) / f"{cfg.stage}_{FILE_END}"
+    file_end.touch(exist_ok=True)
+    logger.info(f"Saved {file_end}.")
 
-        # save config to results
-        cfg_save(cfg, Path(cfg.paths.results) / f"{cfg.stage}_{CONFIG_FILE}")
+    # save config to results
+    cfg_save(cfg, Path(cfg.paths.results) / f"{cfg.stage}_{CONFIG_FILE}")
 
 def finalize_stage_(
     stage: str,
@@ -832,18 +768,10 @@ def finalize_stage_(
     if not is_save_best and "hub" not in cfg.paths.pretrained.save:
         remove_rf(cfg.paths.pretrained.save, not_exist_ok=True)
 
-    if not cfg.is_no_save:
-        save_end_file(cfg)
+    save_end_file(cfg)
 
     finalize_kwargs["results"][stage] = results
     finalize_kwargs["cfgs"][stage] = cfg
-
-    if cfg.is_return:
-        # don't store large stuff if unnecessary
-        finalize_kwargs["modules"][stage] = module
-        finalize_kwargs["trainers"][stage] = trainer
-        finalize_kwargs["datamodules"][stage] = datamodule
-
 
 def finalize(
     modules: dict[str, pl.LightningModule],
@@ -864,38 +792,6 @@ def finalize(
 
     logger.info("Finished.")
     logging.shutdown()
-
-    all_results = dict()
-    for partial_results in results.values():
-        all_results.update(partial_results)
-
-    if cfg.is_return:
-        return modules, trainers, datamodules, cfgs, all_results
-    else:
-        return get_hypopt_monitor(cfg, all_results)
-
-
-def get_hypopt_monitor(cfg: NamespaceMap, all_results: dict) -> Any:
-    """Return the correct monitor for hyper parameter tuning."""
-    out = []
-    for i, result_key in enumerate(cfg.monitor_return):
-        res = all_results[result_key]
-        try:
-            direction = cfg.monitor_direction[i]
-            if not math.isfinite(res):
-                # make sure that infinite or nan monitor are not selected by hypopt
-                if direction == "minimize":
-                    res = float("inf")
-                else:
-                    res = -float("inf")
-        except IndexError:
-            pass
-
-        out.append(res)
-
-    if len(out) == 1:
-        return out[0]  # return single value rather than tuple
-    return tuple(out)
 
 
 def smooth_exit(cfg: NamespaceMap) -> None:

@@ -1,6 +1,0 @@
-defaults:
-  - base
-
-data: data_repr
-predictor: torch_logisticlr
-optimizer: SGD_lr1_w1e-4

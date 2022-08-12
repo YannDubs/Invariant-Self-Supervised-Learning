@@ -1,5 +1,0 @@
-defaults:
-  - base_subset_test
-
-kwargs:
-  subset_train_size: 0.5 # use 50% of the training set to train the downstream model

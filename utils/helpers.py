@@ -84,14 +84,6 @@ def dict2namespace(d, is_allow_missing=False, all_keys=""):
             namespace[k] = dict2namespace(v, f"{all_keys}.{k}")
     return namespace
 
-
-def set_debug(cfg):
-    """Enter debug mode."""
-    logger.info(OmegaConf.to_yaml(cfg))
-    torch.autograd.set_detect_anomaly(True)
-    os.environ["HYDRA_FULL_ERROR"] = "1"
-
-
 def get_latest_match(pattern: Union[Path, str]) -> Path:
     """
     Return the file that matches the pattern which was modified the latest.
