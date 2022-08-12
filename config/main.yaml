@@ -19,7 +19,6 @@ defaults:
   - optimizer@optimizer_eval: Adam_lr3e-4_w0
   - scheduler@scheduler_eval: unifmultistep100 # ensure that can always keep up with the changing representation
   - decodability: contrastive
-  - regularizer: none
   - finetune: none # change if using pretrained representor.
   - representor: base
 
@@ -123,6 +122,9 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
     is_use: false
     kwargs:
       dm: true
+
+regularizer:
+  name: none # not used (backward compatibility for loading models)
 
 trainer:
   #default_root_dir: ${paths.results}

@@ -1,7 +1,0 @@
-defaults:
-  - base
-
-name: bestValLoss
-kwargs:
-  monitor: val/${stage}/${task}/loss
-  mode: "min"

@@ -1,5 +1,0 @@
-
-defaults:
-  - base
-
-dataset: caltech101

@@ -1,8 +1,0 @@
-defaults:
-  - base
-
-name: bnlinear
-kwargs:
-  architecture: linear
-  arch_kwargs:
-    is_batchnorm_pre: True

@@ -1,4 +1,0 @@
-name: ${.kwargs.loss}Mx
-kwargs:
-  loss: ???
-  mode: coarsenerMx

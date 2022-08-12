@@ -1,7 +1,0 @@
-name: effdimunit
-
-kwargs:
-  mode: effdim
-  z_shape : ${encoder.z_shape}
-  is_use_augmented : True
-  is_use_unit: True

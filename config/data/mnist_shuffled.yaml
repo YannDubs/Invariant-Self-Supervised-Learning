@@ -1,8 +1,0 @@
-defaults:
-  - mnist
-
-name: mnist_shuffled
-
-kwargs:
-  dataset_kwargs:
-    is_shuffle_targets: True

@@ -1,7 +1,0 @@
-defaults:
-  - base
-
-dataset: cifar100
-
-kwargs:
-  val_size: 0.05

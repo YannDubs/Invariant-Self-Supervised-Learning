@@ -1,5 +1,0 @@
-defaults:
-  - base_coarsener
-
-kwargs:
-  loss: rel_var

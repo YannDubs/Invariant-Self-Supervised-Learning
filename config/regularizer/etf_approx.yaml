@@ -1,6 +1,0 @@
-name: etf_approx
-
-kwargs:
-  mode: etf
-  z_shape : ${encoder.z_shape}
-  is_exact_etf: False
