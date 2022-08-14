@@ -17,8 +17,6 @@ data_repr:
 decodability:
   kwargs:
     is_pred_proj_same: False
-    is_batchnorm_pre: False
-    is_batchnorm_post: True
     is_self_contrastive: True
     predictor_kwargs: # will be replaced by projector when `is_pred_proj_same`
       architecture: "linear"

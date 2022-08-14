@@ -17,8 +17,6 @@ data_repr:
 decodability:
   kwargs:
     is_pred_proj_same: True
-    is_batchnorm_pre: False
-    is_batchnorm_post: True
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 1024

@@ -5,12 +5,9 @@ defaults:
 kwargs:
   mode: contrastive
   z_shape: ${encoder.z_shape}
-  temperature: 0.07
+  temperature: 0.07 # temperature for cross entropy
   is_pred_proj_same: True # whether to use the same projection head on both branches (ie SimCLR) instead of asymmetric projector/predictor as in CISSL
-  is_self_contrastive: False
-  is_batchnorm_post: True
-  is_batchnorm_pre: False
-  loss: ce
+  is_self_contrastive: False # if heads is not symmetric (CISSL) you can also compare the example with same augmentation as positive
   predictor_kwargs:
     architecture: "linear"
     out_shape: ${encoder.z_shape}

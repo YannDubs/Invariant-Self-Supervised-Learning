@@ -46,12 +46,6 @@ class ContrastiveISSL(nn.Module):
     is_batchnorm_post : bool, optional
         Whether to add a batchnorm layer after the predictor / projector.
 
-    is_batchnorm_pre : bool, optional
-        Whether to add a batchnorm layer pre the predictor / projector.
-
-    loss : {"ce","mse","margin"}, optional
-        Which loss to use for classifying the positive in the batch.
-
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
         it will be a percentage of z_dim. To use no projector set `mode=Flatten`.
@@ -72,9 +66,7 @@ class ContrastiveISSL(nn.Module):
         temperature: float = 0.07,
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
-        is_batchnorm_pre: bool = False,
         is_batchnorm_post: bool = True,
-        loss: str = "ce",
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
             "hid_dim": 2048,
@@ -92,14 +84,11 @@ class ContrastiveISSL(nn.Module):
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
         self.is_pred_proj_same = is_pred_proj_same
-        self.is_batchnorm_pre = is_batchnorm_pre
         self.is_batchnorm_post = is_batchnorm_post
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
-        self.loss = loss.lower()
         self.temperature = temperature
-        assert self.loss in ["ce","mse","margin","weighted_margin","weighted_mse"]
 
         self.freeze_Mx_epochs = freeze_Mx_epochs
 
@@ -118,11 +107,6 @@ class ContrastiveISSL(nn.Module):
         self.reset_parameters()
 
     def add_batchnorms(self, head, kwargs):
-        if self.is_batchnorm_pre:
-            z_shape = kwargs.get("in_shape", self.z_dim)
-            z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
-            head = nn.Sequential(nn.BatchNorm1d(z_dim), head)
-
         if self.is_batchnorm_post:
             if not (kwargs["architecture"].lower() in ["identity", "flatten"]):
                 head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
@@ -237,12 +221,7 @@ class ContrastiveISSL(nn.Module):
         # make sure 32 bits
         logits = logits.float()
 
-        if self.loss == "ce":
-            # temperature scaling for cross entropy
-            logits = logits / self.temperature
-        else:
-            # rescaling logits to 0,1 (cosine sim in [-1,1]) as will be using as the prediction
-            logits = (logits + 1) / 2
+        logits = logits / self.temperature
 
         return logits
 
@@ -266,53 +245,17 @@ class ContrastiveISSL(nn.Module):
             pos_idx = torch.cat([arange + batch_size - 1, arange], dim=0)
 
             logits = logits[mask].view(new_batch_size, n_classes)
-            if self.loss == "ce" :
-                hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
-
-            elif self.loss in ["weighted_margin", "weighted_mse"]:
-                onehot_labels =  F.one_hot(pos_idx, num_classes=n_classes).float()
-                # let labels and logits be in [-1,1]
-                scaled_logits = (logits * 2) - 1
-                scaled_labels = (onehot_labels * 2) - 1
-                dist = - scaled_logits * scaled_labels
-                if "margin" in self.loss:
-                    margin = 0.2  # margin of 1 doesn't make sense as |logit| < 1
-                    dist = (margin - dist).relu()  # squared hinge loss
-                else:
-                    dist = 1 - dist  # MSE loss (equivalent to squared hinge with margin -> infty)
-                squared_dist = dist ** 2
-                # there is 1 positive every batch_size so unbalanced classification task
-                # => but want to have same gradients for both => multiply pos by n_classes
-                balanced_dist = squared_dist * (1 + (onehot_labels * (n_classes - 1)))
-                hat_H_mlz = balanced_dist.mean(-1)
+            hat_H_mlz = F.cross_entropy(logits, pos_idx, reduction="none")
 
         else:
-            if self.loss == "ce" :
-                # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
-                # all the add examples have 0 probability under p
-                log_q = logits.log_softmax(-1)[:, :new_batch_size]
-                # only keep the probability you assign to the 2 positives then sum and divide by 2
-                # essentially multiply and sum by p giving mass 0.5 to each
-                mask = torch.eye(batch_size, device=device).bool().repeat(2, 2)
-                log_q = log_q[mask].view(new_batch_size, 2)
-                hat_H_mlz = - log_q.sum(1) / 2
-
-            elif self.loss in ["weighted_margin","weighted_mse"]:
-                onehot_labels = torch.eye(batch_size, device=device).repeat(2, 2).float()
-                # let labels and logits be in [-1,1]
-                scaled_logits = (logits * 2) - 1
-                scaled_labels = (onehot_labels * 2) - 1
-                dist = - scaled_logits * scaled_labels
-                if "margin" in self.loss:
-                    margin = 0.2  # margin of 1 doesn't make sense as |logit| < 1
-                    dist = (margin - dist).relu()  # hinge loss
-                else:
-                    dist = 1 - dist  # MSE loss
-                squared_dist = dist ** 2
-                # there is 1 positive every batch_size so unbalanced classification task
-                # => but want to have same gradients for both => multiply pos by batch_size
-                balanced_dist = squared_dist * (1 + (onehot_labels * (batch_size - 1)))
-                hat_H_mlz = balanced_dist.mean(-1)
+            # here just predict 0.5 probability for both => no masking needed. This should somehow ensure invariance
+            # all the add examples have 0 probability under p
+            log_q = logits.log_softmax(-1)[:, :new_batch_size]
+            # only keep the probability you assign to the 2 positives then sum and divide by 2
+            # essentially multiply and sum by p giving mass 0.5 to each
+            mask = torch.eye(batch_size, device=device).bool().repeat(2, 2)
+            log_q = log_q[mask].view(new_batch_size, 2)
+            hat_H_mlz = - log_q.sum(1) / 2
 
         hat_H_m = math.log(n_classes)  # only correct for CE but not important in any case
 
