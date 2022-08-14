@@ -6,5 +6,4 @@ kwargs:
   architecture: resnet
   arch_kwargs:
     base: resnet50
-    is_no_linear: False
-    is_channel_out_dim: False
+    is_channel_out_dim: False # If true changes outputs dimensionality by modifying number of channels before avgpooling

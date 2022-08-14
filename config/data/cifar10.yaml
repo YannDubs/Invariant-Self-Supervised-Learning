@@ -2,6 +2,5 @@ defaults:
   - base
 
 dataset: cifar10
-
 kwargs:
-  val_size: 0.05
+  val_size: 0.05 # fraction of training set to use for validation

@@ -1,5 +1,6 @@
 defaults:
   - base_subset_test
 
+# this data uses 2% of the pretraining data to train the downstream probe
 kwargs:
-  subset_train_size: 0.02 # use 1% of the training set to train the downstream model
+  subset_train_size: 0.02

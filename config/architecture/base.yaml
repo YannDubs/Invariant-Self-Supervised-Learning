@@ -1,4 +1,3 @@
 name: ${.kwargs.architecture}
-
 kwargs:
   arch_kwargs: {}

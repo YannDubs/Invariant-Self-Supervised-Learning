@@ -54,7 +54,6 @@ class Predictor(pl.LightningModule):
     ) -> None:
         super().__init__()
         self.save_hyperparameters(hparams)
-        self.is_clf = self.hparams.data.target_is_clf
         self.is_agg_target = self.hparams.data.aux_target == "agg_target"
 
         if representor is not None:
@@ -184,13 +183,12 @@ class Predictor(pl.LightningModule):
     def loss(self, Y_hat: torch.Tensor, y: torch.Tensor,) -> tuple[torch.Tensor, dict]:
         """Compute the MSE or cross entropy loss."""
 
-        loss = prediction_loss(Y_hat, y, self.is_clf)
+        loss = prediction_loss(Y_hat, y)
 
         logs = dict()
         logs["loss"] = loss.mean()
-        if self.is_clf:
-            logs["acc"] = accuracy(Y_hat.argmax(dim=-1), y)
-            logs["err"] = 1 - logs["acc"]
+        logs["acc"] = accuracy(Y_hat.argmax(dim=-1), y)
+        logs["err"] = 1 - logs["acc"]
 
         return loss, logs
 
@@ -205,11 +203,10 @@ class Predictor(pl.LightningModule):
         )
         logs["balanced_loss"] = (loss * sample_weights).mean()
 
-        if self.is_clf:
-            is_same = (Y_hat.argmax(dim=-1) == y).float()
-            balanced_acc = (is_same * sample_weights).mean()
-            logs["balanced_acc"] = balanced_acc
-            logs["balanced_err"] = 1 - logs["balanced_acc"]
+        is_same = (Y_hat.argmax(dim=-1) == y).float()
+        balanced_acc = (is_same * sample_weights).mean()
+        logs["balanced_acc"] = balanced_acc
+        logs["balanced_err"] = 1 - logs["balanced_acc"]
 
     def training_step(
         self, batch: torch.Tensor, batch_idx: torch.Tensor
@@ -311,9 +308,6 @@ class OnlineEvaluator(torch.nn.Module):
 
     arch_kwargs : dict, optional
         Arguments to `get_Architecture`.
-
-    is_classification : bool, optional
-        Whether or not the task is a classification one.
     """
 
     def __init__(
@@ -322,12 +316,10 @@ class OnlineEvaluator(torch.nn.Module):
         out_shape: Sequence[int],
         architecture: Union[str, Callable],
         arch_kwargs: dict[str, Any] = {},
-        is_classification: bool = True,
     ) -> None:
         super().__init__()
         Architecture = get_Architecture(architecture, **arch_kwargs)
         self.model = Architecture(in_shape, out_shape)
-        self.is_classification = is_classification
 
         self.reset_parameters()
 
@@ -352,14 +344,13 @@ class OnlineEvaluator(torch.nn.Module):
         Y_hat = self.model(z)
 
         # Shape: [batch]
-        loss = prediction_loss(Y_hat, y, self.is_classification)
+        loss = prediction_loss(Y_hat, y)
 
         # Shape: []
         loss = loss.mean()
 
         logs = dict(eval_loss=loss)
-        if self.is_classification:
-            logs["eval_acc"] = accuracy(Y_hat.argmax(dim=-1), y)
-            logs["eval_err"] = 1 - logs["eval_acc"]
+        logs["eval_acc"] = accuracy(Y_hat.argmax(dim=-1), y)
+        logs["eval_err"] = 1 - logs["eval_acc"]
 
         return loss, logs

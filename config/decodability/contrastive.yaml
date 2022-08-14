@@ -1,13 +1,12 @@
 defaults:
   - base
 
+# all arguments to ContrastiveISSL (see docstrings)
 kwargs:
   mode: contrastive
   z_shape: ${encoder.z_shape}
   temperature: 0.07
-  is_train_temperature: False
-  n_epochs: ${trainer.max_epochs}
-  is_pred_proj_same: True
+  is_pred_proj_same: True # whether to use the same projection head on both branches (ie SimCLR) instead of asymmetric projector/predictor as in CISSL
   is_self_contrastive: False
   is_batchnorm_post: True
   is_batchnorm_pre: False

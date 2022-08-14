@@ -40,16 +40,6 @@ encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
 
-cell_asymm_small="
-$cell_dim
-encoder.aux_enc_base=resnet18
-"
-
-cell_asymm_large="
-$cell_dim
-encoder.aux_enc_base=resnet50
-++encoder.kwargs.arch_kwargs.is_resize_only_if_necessary=True
-"
 
 #cell_aug="
 #$cell_asymm_large

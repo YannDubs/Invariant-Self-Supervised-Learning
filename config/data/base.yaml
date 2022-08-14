@@ -1,20 +1,21 @@
 defaults:
-  - base_runtime
+  - base_runtime # variables modified during runtime
+
 
 name: ${.dataset}
 dataset: ???
 
+# all arguments to ISSLDataModule (see docstrings
 kwargs:
   seed: ${seed}
   data_dir: ${paths.data}
   batch_size: 256
   num_workers: 8
   subset_train_size: null
-  is_train_on_test: False
-  is_force_all_train: True
+  is_force_all_train: True # if true, trains on entire training set (ie does not split into validation set)
   is_val_on_test: True # this is a trick to get results even when preempted. Should only use once you performed all validation / tuning.
-  dataset_kwargs:
+  dataset_kwargs: # arguments to ISSLDataset
     seed: ${seed}
-    is_normalize: True
-    a_augmentations: ["data-standard"]
-    simclr_aug_strength: 1.0
+    is_normalize: True # whether to normalize data
+    a_augmentations: ["data-standard"] # augmentation to apply to the teacher branch
+    simclr_aug_strength: 1.0 # changing augmentation strength of standard augmentations

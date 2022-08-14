@@ -27,12 +27,6 @@ class ISSLModule(pl.LightningModule):
         Architecture = get_Architecture(cfge.architecture, **cfge.arch_kwargs)
         self.encoder = Architecture(cfge.in_shape, cfge.out_shape)
 
-        if self.hparams.encoder.aux_enc_base is not None:
-            arch_kwargs = dict(**cfge.arch_kwargs)
-            arch_kwargs["base"] = self.hparams.encoder.aux_enc_base
-            AuxArchitecture = get_Architecture(cfge.architecture, **arch_kwargs)
-            self.aux_encoder = AuxArchitecture(cfge.in_shape, cfge.out_shape)
-
         self.loss_decodability = get_loss_decodability(encoder=self.encoder,
             **self.hparams.decodability.kwargs
         )
@@ -105,29 +99,8 @@ class ISSLModule(pl.LightningModule):
 
         x, (_, aux_target) = batch
 
-        if self.hparams.decodability.is_encode_aux:
-            if self.hparams.encoder.rm_out_chan_aug:
-                # here we use a different transformation for the augmentations and the inputs
-                z, z_no_out_chan = self(x, is_return_no_out_chan=True)
-                z_a, z_a_no_out_chan = self(aux_target, is_return_no_out_chan=True)
-
-                # z shape: [2 * batch_size, *z_shape]
-                z = torch.cat([z, z_a])
-                z_tgt = torch.cat([z_no_out_chan, z_a_no_out_chan])
-
-            elif self.hparams.encoder.aux_enc_base is not None:
-                # z shape: [2 * batch_size, *z_shape]
-                X_all = torch.cat([x, aux_target])
-                z = self(X_all)
-                z_tgt = self(X_all, encoder=self.aux_encoder)
-
-            else:
-                # z shape: [2 * batch_size, *z_shape]
-                z = self(torch.cat([x, aux_target]))
-                z_tgt = z
-        else:
-            z = self(x)  # only encode the input (ie if asymmetry between X and A)
-            z_tgt = None
+        z = self(x)  # only encode the input (ie if asymmetry between X and A)
+        z_tgt = None
 
         beta = self.hparams.representor.loss.beta
         if self.loss_regularizer is not None or math.isclose(beta, 0):
@@ -148,14 +121,13 @@ class ISSLModule(pl.LightningModule):
         logs["z_norm_l1"] = z.norm(dim=1, p=1).mean()
 
         z_x, z_a = z.detach().chunk(2, dim=0)
-        if self.hparams.decodability.is_encode_aux:
-            # estimate neural collapse
-            logs["rel_variance"] = rel_variance(z_x, z_a).mean()
-            # estimate etf
-            pos_loss, neg_loss, dist_to_etf = self.dist_to_etf(z_x, z_a, is_return_pos_neg=True)
-            logs["etf_pos"] = pos_loss.mean()
-            logs["etf_neg"] = neg_loss.mean()
-            logs["dist_to_etf"] = dist_to_etf.mean()
+        # estimate neural collapse
+        logs["rel_variance"] = rel_variance(z_x, z_a).mean()
+        # estimate etf
+        pos_loss, neg_loss, dist_to_etf = self.dist_to_etf(z_x, z_a, is_return_pos_neg=True)
+        logs["etf_pos"] = pos_loss.mean()
+        logs["etf_neg"] = neg_loss.mean()
+        logs["dist_to_etf"] = dist_to_etf.mean()
 
         # any additional information that can be useful (dict)
         other.update(d_other)

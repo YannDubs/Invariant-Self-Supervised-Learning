@@ -1,5 +1,6 @@
 defaults:
   - base_runtime
 
-is_copy_repr: True
+# this data simply copies the one from pretraining
 name: data_repr
+is_copy_repr: True

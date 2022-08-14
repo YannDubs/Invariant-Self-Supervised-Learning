@@ -1,8 +1,9 @@
 defaults:
-  - base_subset
+  - base_runtime
 
+is_copy_repr: True # whether to copy data from pretraining
 name: "data_repr_${.kwargs.subset_train_size}_test" # when using is_copy_repr name will be formatted
+dataset: ???
 
 kwargs:
-  subset_train_size: ???
-  is_test_nonsubset_train: False # test on actual test
+  subset_train_size: ??? # uses fraction of training set

@@ -1,4 +1,6 @@
 defaults:
+  # all the following defaults select one config file per config folders.
+  # for details about configs see hydra: https://hydra.cc/docs/intro/
 
   # GENERAL #
   - _self_
@@ -18,14 +20,13 @@ defaults:
   - decodability: contrastive
   - representor: base # actual model used for SSL
 
-  # ONLINE EVALUATOR #
-  # probing head trained during SSL
+  # ONLINE EVALUATOR / PROBING HEAD #
   - architecture@online_evaluator: linear
   - optimizer@optimizer_eval: Adam_lr3e-4_w0
   - scheduler@scheduler_eval: unifmultistep100 # ensure that can always keep up with the changing representation
 
   # DOWNSTREAM TASK #
-  - checkpoint@checkpoint_pred: last # by default no validation set for predictors
+  - checkpoint@checkpoint_pred: last
   - optimizer@dflt_optimizer_pred: SGD # can be modified in downstream task
   - scheduler@dflt_scheduler_pred: cosine_nowarm # can be modified in downstream task
 
@@ -35,17 +36,20 @@ defaults:
 
 
 ########## GENERAL ##########
-experiment: ???
-job_num: ${hydra:job.num}
-job_id: ??? # unique identifier
-is_nlp_cluster: False # should the working directory be used as main
-seed: 123
-timeout: 1440 # 24 hours
-time: ${hydra:job.num}_${now:%Y-%m-%d_%H-%M-%S} # add job num because time is not when job runs
-# TODO should add epoch and batchsize in repr  (not doing for now for backward compatibility)
-long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/reg_${regularizer.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_shape}/zs_1/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr}
-long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/eppred_${trainer.max_epochs}/bspred_${data_pred.kwargs.batch_size}/addpred_${other.add_pred}
+seed: 123 # for reproducibility
 
+### SERVER SPECIFIC ###
+job_num: ${hydra:job.num} # set by hydra
+job_id: ??? # unique identifier set by
+is_nlp_cluster: False # specific to stanford's cluster
+time: ${hydra:job.num}_${now:%Y-%m-%d_%H-%M-%S} # add job num because time is not when job runs
+timeout: 1440 # 24 hours
+
+### PATHS ###
+experiment: ??? # set to the desired experiment name. **SET AS DESIRED**
+# TODO should add epoch and batchsize in those paths  (not doing for now for backward compatibility)
+long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/reg_${regularizer.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_shape}/zs_1/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr} # pretraining path
+long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/eppred_${trainer.max_epochs}/bspred_${data_pred.kwargs.batch_size}/addpred_${other.add_pred} # downstream task path
 paths: #! the best practice is not to modify those paths but to symlink them to the places you want
   relative_work: outputs/${now:%Y-%m-%d_%H-%M-%S}
   relative_checkpoint: checkpoints/${long_name}/jid_${job_id}
@@ -64,37 +68,28 @@ paths: #! the best practice is not to modify those paths but to symlink them to 
     save: ${paths.base_dir}/pretrained/${long_name}/jid_${job_id} # directory for saving pretrained models
     load: ${paths.base_dir}/pretrained/${long_name}/**  # directory for loading pretrained models if you use ** or * it will glob all matching files and take the latest
 
-other: # some meta information that can be useful for internal stuff (usually dirty workarounds or for logging)
+other: # some meta information that can be useful for internal stuff
   add_repr: null # some additional value for saving (e.g. current sweeping values)
   add_pred: null # some additional value for saving (e.g. current sweeping values)
 
-### STAGE SPECIFIC ###
-stage: ???
-long_name: ???
-task: ??? # what to use for monitor in wandb. data.name during rep, task during pred
-checkpoint: {}
-data: {}
-
 ### RUNNING ###
 evaluation:
-  is_eval_on_test: True # whether to evaluate on test. If not uses validation which is necessary if you don't have access to test set
+  is_eval_on_test: True # whether to evaluate on test rather than validation
   representor:
-    ckpt_path: "best"
-    is_evaluate: ${representor.is_train}
-    is_online_eval: True
+    ckpt_path: "best" # which checkpoint to evaluate
+    is_evaluate: ${representor.is_train} # whether to evaluate representation learning stage
+    is_online_eval: True # whether to train an online evaluator during SSL
   predictor:
-    ckpt_path: "best"
-    is_evaluate: ${predictor.is_train}
+    ckpt_path: "best" # which checkpoint to evaluate
+    is_evaluate: ${predictor.is_train}  # whether to evaluate downstream predictor
 
 callbacks: # can use any callback name of issl.callbacks, pl.callbacks
-
-  # all callback kwargs should be here (`is_use` just says whether to use that callback)
   LearningRateMonitor:
     is_use : true
     kwargs:
       logging_interval : epoch
 
-  TQDMProgressBar: # TODO RichProgressBar in lightning 1.6
+  RichProgressBar:
     is_use : ${trainer.enable_progress_bar }
     kwargs:
       refresh_rate: ${trainer.log_every_n_steps}
@@ -104,63 +99,62 @@ callbacks: # can use any callback name of issl.callbacks, pl.callbacks
     kwargs:
       max_depth: 4
 
-regularizer:
-  name: none # not used (backward compatibility for loading models)
-
-trainer:
-  #default_root_dir: ${paths.results}
-  max_epochs: 100
-  enable_progress_bar: True
-  gradient_clip_val: 2 # null to disable
-  gradient_clip_algorithm: "value" # "norm" to clip by norm (problem is if one val is inf, then all is 0)
-  log_every_n_steps: 30
-  val_check_interval: 1.0 # less than 1 for subepoch validation.
-  check_val_every_n_epoch: 10
-  enable_checkpointing: True
+trainer: # this can be any arguments to a pytorch lightning trainer https://pytorch-lightning.readthedocs.io/en/latest/common/trainer.html#trainer-class-api
+  # **SET AS DESIRED** any of the following arguments.
+  # this will set both the trainer for the representor and the predictor.
+  # To set parameters separately use `update_trainer_repr` and `update_trainer_pred`
+  max_epochs: 100 # number of training epochs
+  enable_progress_bar: True # whether to show progress bar
+  gradient_clip_val: 2 # whether to clip gradients. use null to disable
+  gradient_clip_algorithm: "value" # how to clip gradients. "norm" to clip by norm
+  log_every_n_steps: 50 # how often to log
+  check_val_every_n_epoch: 10 # how often to check validation
+  val_check_interval: 1.0 # required to use check_val_every_n_epoch
 
   # ENGINEERING / SPEED #
-  gpus: 1
+  gpus: 1 # number of GP
   num_nodes: 1  # number gpu nodes
   precision: 16 # use 16 bit for speed # TODO use "b16" once it is not experiemntal (maybe lightning 1.6)
-  accumulate_grad_batches: 1
-  sync_batchnorm: false # whether to synchronize batch norm over GPUs
 
-  # DEBUGGING #
-  fast_dev_run: false # use true to make a quick test (not full epoch)
-  overfit_batches: 0.0 # use 0.01 to make sure you can overfit 1% of training data => training works
-  profiler: null # use `simple` or `"advanced"` to find bottleneck
+### STAGE SPECIFIC ###
+# the following is modified at runtime, they do not need to be defined here
+stage: ???
+long_name: ???
+task: ??? # what to use for monitor in wandb. data.name during rep, task during pred
+checkpoint: {}
+data: {}
 
-########## REPRESENTOR ##########
+########## PRETRAINING / REPRESENTATION LEARNING ##########
 ### DATA ###
+# modified in the data config files
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target: ???
+      aux_target: "augmentation"
 
 ### MODELS ###
-encoder:
+encoder: # modified in the encoder config files
   name: ???
-  z_shape: 1024
-  rm_out_chan_aug: False
-  aux_enc_base: null
-  is_etf_rep: False
+  z_shape: 1024 # dimensionality of the representation. **SET AS DESIRED**
   kwargs:
     in_shape: ${data.shape}
-    out_shape: ${encoder.z_shape} # do not change that
+    out_shape: ${encoder.z_shape} # do not change this (automatically set)
     architecture: ???
     arch_kwargs: {}
 
-online_evaluator:
+online_evaluator: # online probing head. modified in the architecture config files
   name: ???
   kwargs:
     in_shape: ${encoder.z_shape}
     out_shape: ${data.target_shape}
     architecture: ???
     arch_kwargs: {}
-    is_classification: ${data.target_is_clf}
+
+regularizer: # not used (backward compatibility for loading models)
+  name: none
 
 ### OPTIMIZER ###
-optimizer_issl:
+optimizer_issl: # optimizer for representation learning. modified in the optimizer config files
   name: ${optimizer_issl.mode}_lr${format:${optimizer_issl.kwargs.lr},.1e}_w${format:${optimizer_issl.kwargs.weight_decay},.1e}
   mode: ???
   kwargs:
@@ -168,7 +162,7 @@ optimizer_issl:
     weight_decay: 0
 scheduler_issl: {}
 
-optimizer_eval:
+optimizer_eval: # optimizer for online probe. modified in the optimizer config files
   name: ${optimizer_eval.mode}_lr${format:${optimizer_eval.kwargs.lr},.1e}_w${format:${optimizer_eval.kwargs.weight_decay},.1e}
   mode: ???
   kwargs:
@@ -177,37 +171,38 @@ optimizer_eval:
 scheduler_eval: {}
 
 ### RUNNING ###
-checkpoint_repr: {}
-# dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
-update_trainer_repr:
+checkpoint_repr: {} # automatically set by checkpoint@checkpoint_repr
+update_trainer_repr: # dictionary that will update the trainer configs only for the pretraining stage
   max_epochs: 100
 
 ########## DOWNSTREAM TASK ##########
+# downstream tasks are defined by both the probe architecture/optimizer and the dataset
+
 downstream_task:
-  all_tasks: [torchlogistic_datarepr]
+  # the following is a list all tasks to evaluate the representations learning with
+  # this will then use the appropriate config file in `downstream_task`
+  all_tasks: [torchlogisticw1e-6_datarepr]
 
 ### DATA ###
-# everything you want to override would go here
+# modified in the data config files (set by `all_tasks`)
 data_pred: {}
-
-# all the defaults arguments go here.
-dflt_data_pred:
-  is_copy_repr: False
+dflt_data_pred: # all the default arguments
+  is_copy_repr: False # whether to copy the data from the representation learning stage
   kwargs:
     batch_size: 512
     dataset_kwargs:
       aux_target: null
 
 ### PREDICTOR ###
+# modified in the predictor config files (set by `all_tasks`)
 predictor: {}
-
 dflt_predictor:
   is_train: True
   is_force_retrain: False
 
 ### OPTIMIZER ###
+# modified in the optimizer config files (set by `all_tasks`)
 optimizer_pred: {}
-
 dflt_optimizer_pred:
   name: ${.mode}_lr${format:${.kwargs.lr},.1e}_w${format:${.kwargs.weight_decay},.1e}
   mode: ???
@@ -215,24 +210,22 @@ dflt_optimizer_pred:
     lr: ???
     weight_decay: 0
 
+# modified in the scheduler config files (set by `all_tasks`)
 scheduler_pred: {}
 dflt_scheduler_pred: {}
 
 ### RUNNING ###
-checkpoint_pred: {}
-# dictionary that will update the trainer (this is done because often the trainer is the same for repr and pred so want to minimize replication)
-update_trainer_pred:
-  max_epochs: 100 # maybe should use 500
+checkpoint_pred: {} # automatically set by checkpoint@checkpoint_pred
+update_trainer_pred: # dictionary that will update the trainer configs only for the downstream task stage
+  max_epochs: 100
 
 ########## HYDRA ##########
 hydra:
   job:
     env_set:
       NCCL_DEBUG: INFO
-
   run:
     dir: ${paths.work}
-
   sweep:
     dir:  ${paths.work}
     subdir: ${hydra.job.num}_${hydra.job.id}

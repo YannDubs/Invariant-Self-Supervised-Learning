@@ -137,12 +137,6 @@ class ISSLDataset(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def is_clfs(self) -> dict[Optional[str], Any]:
-        """Return a dictionary saying whether `input`, `target`, should be classified."""
-        ...
-
-    @property
-    @abc.abstractmethod
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
         """Return dictionary giving the shape `input`, `target`."""
         ...
@@ -201,16 +195,6 @@ class ISSLDataset(abc.ABC):
             raise ValueError(f"Unknown aux_target={self.aux_target}")
 
         return to_add
-
-    def get_is_clf(self) -> tuple[bool, Optional[bool]]:
-        """Return `is_clf` for the target and aux_target."""
-        is_clf = self.is_clfs
-        is_clf["representative"] = is_clf["input"]
-        is_clf["augmentation"] = is_clf["input"]
-        is_clf["agg_target"] = True  # agg_target has to be clf
-        is_clf[None] = None
-
-        return is_clf["target"], is_clf[self.aux_target]
 
     def get_shapes(self,) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
         """Return `shapes` for the target, aux_target, all agg_target."""
@@ -277,21 +261,8 @@ class ISSLDataModule(LightningDataModule):
         If int, represents the absolute number or examples. If `None` does not
         subset the data.
 
-    is_test_nonsubset_train : bool, optional
-        Whether to test on the training set that is not subset. This only makes sense
-        if `subset_train_size` is not None, and ensures that you are testing on the
-        "rest"  of the training set. This is particularly helpful if you want to
-        approximate the fact that representation learning has access to the entire
-        distribution (including test) but predictors are trained on a subset.
-        This avoid having to train on the union of train + validation + test to have
-        the same result, i.e., it keeps an unseen test set if needed.
-
     is_data_in_memory : bool, optional
         Whether to pre-load all the data in memory.
-
-    is_train_on_test : bool, optional
-        Whether to use the test set as the training set. Useful to evaluate the generalization
-        of the encoder without taking into account that of the predictor.
 
     is_val_on_test : bool, optional
         Whether to validate on test. This can be used for very long runs to get results even
@@ -315,11 +286,9 @@ class ISSLDataModule(LightningDataModule):
         val_batch_size: Optional[int] = None,
         seed: int = 123,
         subset_train_size: Optional[float] = None,
-        is_test_nonsubset_train: bool = False,
         dataset_kwargs: dict = {},
         is_shuffle_train: bool = True,
         is_data_in_memory: bool=False,
-        is_train_on_test : bool = False,
         is_val_on_test: bool = False,
         is_force_all_train: bool=False
     ) -> None:
@@ -332,11 +301,9 @@ class ISSLDataModule(LightningDataModule):
         self.val_batch_size = batch_size if val_batch_size is None else val_batch_size
         self.seed = seed
         self.subset_train_size = subset_train_size
-        self.is_test_nonsubset_train = is_test_nonsubset_train
         self.dataset_kwargs = dataset_kwargs
         self.is_shuffle_train = is_shuffle_train
         self.is_data_in_memory = is_data_in_memory
-        self.is_train_on_test = is_train_on_test
         self.is_val_on_test = is_val_on_test
         self.is_force_all_train = is_force_all_train
 
@@ -382,17 +349,7 @@ class ISSLDataModule(LightningDataModule):
         return train_dataset
 
     def get_test_dataset_proc(self, **dataset_kwargs):
-        if self.is_test_nonsubset_train:
-            logger.info("Using non subset train as test")
-            assert isinstance(self.train_dataset, BalancedSubset)
-            # the non subset dataset. Note that it might still be a
-            # subset because it does not reincorporate validation
-            nonsubset_train = deepcopy(self.train_dataset.dataset)
-            # set in evaluation mode
-            subset2dataset(nonsubset_train).set_eval_()
-            return nonsubset_train
-        else:
-            return self.get_test_dataset(**dataset_kwargs)
+        return self.get_test_dataset(**dataset_kwargs)
 
     @property
     def dataset(self) -> ISSLDataset:
@@ -402,7 +359,6 @@ class ISSLDataModule(LightningDataModule):
     def set_info_(self) -> None:
         """Sets some information from the dataset."""
         dataset = self.dataset
-        self.target_is_clf, self.aux_is_clf = dataset.get_is_clf()
         self.target_shape, self.aux_shape = dataset.get_shapes()
         self.shape = dataset.shapes["input"]
         self.aux_target = dataset.aux_target
@@ -419,11 +375,7 @@ class ISSLDataModule(LightningDataModule):
 
 
         if (stage == "fit" or stage is None) and not self.is_already_called["fit"]:
-            if self.is_train_on_test :
-                logger.info("Training on the test set.")
-                self.train_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
-            else:
-                self.train_dataset = self.get_train_dataset_subset(**self.dataset_kwargs)
+            self.train_dataset = self.get_train_dataset_subset(**self.dataset_kwargs)
 
             self.set_info_()
 

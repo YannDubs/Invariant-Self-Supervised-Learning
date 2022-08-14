@@ -40,10 +40,6 @@ class ResNet(nn.Module):
     norm_layer : nn.Module or {"identity","batch"}, optional
         Normalizing layer to use.
 
-    is_no_linear : bool, optional
-        Whether or not to remove the last linear layer. This is typical in self supervised learning but
-        has the disadvantage that you cannot chose the dimensionality of Z.
-
     is_channel_out_dim : bool, optional
         Whether to change the dimension of the output using the channels before the pooling layer
         rather than a linear mapping after the pooling.
@@ -58,7 +54,6 @@ class ResNet(nn.Module):
         out_shape: Sequence[int],
         base: str = "resnet18",
         is_pretrained: bool = False,
-        is_no_linear: bool= False,
         is_channel_out_dim: bool=False,
         bottleneck_channel: Optional[int] = None,
         is_resize_only_if_necessary: bool = False,
@@ -69,7 +64,6 @@ class ResNet(nn.Module):
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
         self.out_dim = prod(self.out_shape)
         self.is_pretrained = is_pretrained
-        self.is_no_linear = is_no_linear
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
         self.is_resize_only_if_necessary = is_resize_only_if_necessary
@@ -83,9 +77,8 @@ class ResNet(nn.Module):
         if self.is_channel_out_dim:
             self.update_out_chan_()
 
-        if self.is_no_linear or self.is_pretrained or self.is_channel_out_dim:
-            # when pretrained has to remove last layer
-            self.rm_last_linear_()
+        # remove last linear layer in SSL
+        self.rm_last_linear_()
 
         self.update_conv_size_(self.in_shape)
 

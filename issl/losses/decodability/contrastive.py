@@ -35,13 +35,6 @@ class ContrastiveISSL(nn.Module):
     temperature : float, optional
         Temperature scaling in InfoNCE. Recommended less than 1.
 
-    is_train_temperature : bool, optional
-        Whether to treat the temperature as a parameter. Uses the same same as CLIP.
-        If so `temperature` will be used as the initialization.
-
-    min_temperature : float, optional
-        Lower bound on the temperature. Only if `is_train_temperature`.
-
     is_pred_proj_same : bool, optional
         Whether to use the projector for the predictor. Typically, True in SSL, but our theory says that it should be
         False.
@@ -77,9 +70,6 @@ class ContrastiveISSL(nn.Module):
         self,
         z_shape: Sequence[int],
         temperature: float = 0.07,
-        is_train_temperature: bool = False,
-        n_epochs: Optional[int] = None,
-        min_temperature: float = 0.01,
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
         is_batchnorm_pre: bool = False,
@@ -101,9 +91,6 @@ class ContrastiveISSL(nn.Module):
 
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
-        self.is_train_temperature = is_train_temperature
-        self.n_epochs = n_epochs
-        self.min_temperature = min_temperature
         self.is_pred_proj_same = is_pred_proj_same
         self.is_batchnorm_pre = is_batchnorm_pre
         self.is_batchnorm_post = is_batchnorm_post
@@ -111,6 +98,7 @@ class ContrastiveISSL(nn.Module):
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
         self.loss = loss.lower()
+        self.temperature = temperature
         assert self.loss in ["ce","mse","margin","weighted_margin","weighted_mse"]
 
         self.freeze_Mx_epochs = freeze_Mx_epochs
@@ -126,14 +114,6 @@ class ContrastiveISSL(nn.Module):
         else:
             Predictor = get_Architecture(**self.predictor_kwargs)
             self.predictor = self.add_batchnorms(Predictor(), self.predictor_kwargs)
-
-        if self.is_train_temperature:
-            self.init_temperature = temperature
-            self.log_temperature = nn.Parameter(
-                torch.log(torch.tensor(self.init_temperature))
-            )
-        else:
-            self._temperature = temperature
 
         self.reset_parameters()
 
@@ -151,11 +131,6 @@ class ContrastiveISSL(nn.Module):
 
     def reset_parameters(self) -> None:
         weights_init(self)
-
-        if self.is_train_temperature:
-            self.log_temperature = nn.Parameter(
-                torch.log(torch.tensor(self.init_temperature))
-            )
 
     def process_kwargs(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
@@ -270,16 +245,6 @@ class ContrastiveISSL(nn.Module):
             logits = (logits + 1) / 2
 
         return logits
-
-    @property
-    def temperature(self):
-        if self.is_train_temperature:
-            temperature = torch.clamp(
-                self.log_temperature.exp(), min=self.min_temperature
-            )
-        else:
-            temperature = self._temperature
-        return temperature
 
     def compute_loss(self, logits: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Computes the upper bound H_q[A|Z]."""

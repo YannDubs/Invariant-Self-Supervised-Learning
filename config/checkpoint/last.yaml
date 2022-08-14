@@ -5,4 +5,4 @@ name: last
 kwargs:
   monitor: null
   mode: "min" # placeholder
-  every_n_epochs: 1
+  every_n_epochs: 1 # saves every epoch

@@ -1,12 +1,5 @@
-# @package _global_
+name: ${decodability.kwargs.mode}
 
-decodability:
-  name: ${decodability.kwargs.mode}
-  is_encode_aux : True
-  kwargs:
-    mode: ???
-
-data_repr:
-  kwargs:
-    dataset_kwargs:
-      aux_target: "augmentation" # by default will perform R[A|Z] if you want R[M(X)|Z] use "representative"
+# all arguments to get_loss_decodability (see docstrings)
+kwargs:
+  mode: ???

@@ -404,7 +404,6 @@ def instantiate_datamodule_(
     datamodule.prepare_data()
     datamodule.setup()
 
-    cfgd.aux_is_clf = datamodule.aux_is_clf
     limit_train_batches = cfgt.get("limit_train_batches", 1)
     if limit_train_batches > 1:
         # if limit_train_batches is in number of batches
@@ -413,7 +412,6 @@ def instantiate_datamodule_(
         # if limit_train_batches is in percentage
         cfgd.length = int(len(datamodule.train_dataset) * limit_train_batches)
     cfgd.shape = datamodule.shape
-    cfgd.target_is_clf = datamodule.target_is_clf
     cfgd.target_shape = datamodule.target_shape
     cfgd.balancing_weights = datamodule.balancing_weights
     cfgd.aux_shape = datamodule.aux_shape

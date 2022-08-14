@@ -5,7 +5,6 @@ architecture@online_evaluator=linear
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]
 data_repr.kwargs.batch_size=512
 encoder.z_shape=512
-encoder.kwargs.arch_kwargs.is_no_linear=True
 data@data_repr=tinyimagenet
 data_repr.kwargs.is_force_all_train=True
 data_repr.kwargs.is_val_on_test=True

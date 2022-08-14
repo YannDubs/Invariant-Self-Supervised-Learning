@@ -9,4 +9,3 @@ kwargs:
     norm_layer: batchnorm
     n_hid_layers: 2
     activation: ReLU
-    dropout_p: 0.

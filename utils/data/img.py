@@ -220,7 +220,6 @@ class ISSLImgDataset(ISSLDataset):
             self.a_augmentations.remove("label")
         if "perm_label" in self.a_augmentations:
             assert not self.is_Mx_aug, "cannot have `label` and `perm_label`"
-            assert self.is_clfs["target"], "`perm_label` only in clf"
             self.is_Mx_aug = True
             # Mx permuter simply increases by 1. Attention: self.n_Mxs must be computed later
             self.perm_Mx = lambda x: (x + 1) % self.n_Mxs
@@ -583,11 +582,6 @@ class ISSLImgDataset(ISSLDataset):
     def is_color(self) -> bool:
         shape = self.shapes["input"]
         return shape[0] == 3
-
-    @property
-    def is_clfs(self) -> dict[str, bool]:
-        # images should be seen as regression when they are color and clf otherwise
-        return dict(input=not self.is_color, target=True, Mx=True)
 
     @property
     def shapes(self) -> dict[str, tuple[int, ...]]:
