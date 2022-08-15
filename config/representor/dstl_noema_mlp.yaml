@@ -24,8 +24,10 @@ decodability:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
+      bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
+      is_cosine: True
     predictor_kwargs:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
-      is_cosine: True
+      bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx
