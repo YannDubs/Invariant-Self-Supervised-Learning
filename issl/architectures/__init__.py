@@ -44,9 +44,6 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
     elif architecture == "cosine":
         return partial(FlattenCosine, **kwargs)
 
-    elif architecture == "convnext":
-        return partial(ConvNext, **kwargs)
-
     elif architecture == "resnet":
         return partial(ResNet, **kwargs)
 

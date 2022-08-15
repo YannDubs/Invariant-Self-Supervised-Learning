@@ -4,3 +4,5 @@ name: ${decodability.kwargs.mode}
 kwargs:
   mode: ???
   z_shape: ${encoder.z_shape}
+  projector_kwargs:
+    architecture: "mlp"

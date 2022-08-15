@@ -14,7 +14,7 @@ from issl.helpers import prod, weights_init
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["ResNet",  "ConvNext"]
+__all__ = ["ResNet"]
 
 
 class ResNet(nn.Module):
@@ -165,33 +165,6 @@ class ResNet(nn.Module):
     def reset_parameters(self):
         # resnet is already correctly initialized
         pass
-
-class ConvNext(ResNet):
-    def update_out_chan_(self):
-        #TODO chose whether or not to use norm
-        old_out_dim = self.resnet.classifier[2].in_features
-        #norm = torchvision.models.convnext.LayerNorm2d(old_out_dim, eps=1e-6)
-        conv1 = nn.Conv2d(old_out_dim, self.out_dim, kernel_size=1)
-        nn.init.trunc_normal_(conv1.weight, std=0.02)  # not adding GELU because will directly be followed by layernorm
-        #resizer = nn.Sequential(norm, conv1)
-        resizer = conv1
-        self.resnet.avgpool = nn.Sequential(resizer, self.resnet.avgpool)
-        self.resnet.classifier[0] = torchvision.models.convnext.LayerNorm2d(self.out_dim, eps=1e-6)
-
-    def rm_last_linear_(self):
-        self.resnet.classifier[2] = nn.Identity()
-
-    def update_conv_size_(self, in_shape):
-        """Update network based on image size."""
-        if in_shape[1] < 100:
-            # convnext for smaller images (stride 4 -> 2)
-            conv1 = self.resnet.features[0][0]
-            self.resnet.features[0][0] = nn.Conv2d(
-                in_shape[0], conv1.out_channels,
-                kernel_size=conv1.kernel_size,
-                stride=2
-            )
-            weights_init(self.resnet.features[0][0])
 
 
 class BottleneckExpand(nn.Module):

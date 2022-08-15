@@ -9,8 +9,8 @@ representor:
 
 decodability:
   kwargs:
-    beta_HMlZ: 1.8
-    out_dim: 8192
+    beta_det_inv: 1.8
+    n_equivalence_classes: 8192
     projector_kwargs:
       architecture: "mlp"
       is_cosine: True

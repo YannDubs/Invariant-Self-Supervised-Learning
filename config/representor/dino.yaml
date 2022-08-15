@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - base@representor
+  - override /regularizer: none
+  - override /decodability: dino
+
+representor:
+  name: dino

@@ -7,18 +7,11 @@ defaults:
 representor:
   name: dissl_mlp
 
-data_repr:
-  kwargs:
-    dataset_kwargs:
-      aux_target:  "augmentation"
-      a_augmentations: ["data-standard"]
-      train_x_augmentations: "a_augmentations"
-
 decodability:
   kwargs:
     lambda_maximality: 2.3
-    beta_HMlZ: 1.8
-    out_dim: 8192
+    beta_det_inv: 1.8
+    n_equivalence_classes: 8192
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 2048

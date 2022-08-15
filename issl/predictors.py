@@ -303,7 +303,7 @@ class OnlineEvaluator(torch.nn.Module):
         Shape of the output
 
     architecture : str or Callable
-        If module should be instantiated using `Architecture(in_shape, out_dim)`. If str will be given to
+        If module should be instantiated using `Architecture(in_shape, n_equivalence_classes)`. If str will be given to
         `get_Architecture`.
 
     arch_kwargs : dict, optional

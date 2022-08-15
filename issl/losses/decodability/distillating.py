@@ -30,8 +30,8 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
     z_shape : sequence of int
         Shape of the representation.
 
-    out_dim : float, optional
-        Size of the output of the projector. Note that if  <= 1 it will be a percentage of z_dim.
+    n_equivalence_classes : int, optional
+        Number of equivalence classes (C in the paper)
 
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`.
@@ -43,14 +43,14 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
     def __init__(
             self,
             z_shape: Sequence[int],
-            out_dim: float = 512,
+            n_equivalence_classes: float = 16384,
             projector_kwargs: dict[str, Any] = {"architecture": "linear"},
             encoder: Optional[nn.Module]=None # only used for DINO
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
-        self.out_dim = out_dim if out_dim > 1 else max(10, int(self.z_dim * out_dim))
+        self.n_equivalence_classes = n_equivalence_classes
 
         self.projector_kwargs = self.process_shapes(projector_kwargs)
         Projector = get_Architecture(**self.projector_kwargs)
@@ -67,7 +67,7 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
         kwargs["in_shape"] = kwargs.get("in_shape", self.z_shape)
-        kwargs["out_shape"] = kwargs.get("out_shape", self.out_dim)
+        kwargs["out_shape"] = kwargs.get("out_shape", self.n_equivalence_classes)
         return kwargs
 
     def forward(
@@ -144,13 +144,12 @@ class DISSL(BaseDistillationISSL):
         self,
         *args,
         lambda_maximality: float = 2.3,
-        beta_HMlZ: float=1.5,
+        beta_det_inv: float=1.5,
+        n_equivalence_classes: float = 16384,
         temperature: float=1.0,
         temperature_assign:  Optional[float] = None,
         is_batchnorm_pre: bool=True,
-        is_reweight_ema: bool=True,
         batchnorm_kwargs: dict = {},
-        freeze_Mx_epochs: int=0,
         predictor_kwargs: dict[str, Any] = {
                                "architecture": "linear",
                            },
@@ -159,13 +158,10 @@ class DISSL(BaseDistillationISSL):
 
         super().__init__(*args,  **kwargs)
         self.lambda_maximality = lambda_maximality
-        self.beta_HMlZ = beta_HMlZ - 1  # backward compatibility  (should drop)
-        assert self.beta_HMlZ >= 0
+        self.beta_det_inv = beta_det_inv
         self.is_batchnorm_pre = is_batchnorm_pre
         self.temperature = temperature
         self.temperature_assign = temperature_assign or self.temperature / 2
-        self.is_reweight_ema = is_reweight_ema
-        self.freeze_Mx_epochs = freeze_Mx_epochs
 
         # code ready for multi crops
         self.crops_assign = 2
@@ -265,7 +261,7 @@ class DISSL(BaseDistillationISSL):
         fit_pM_Unif = - H_M # want to max entropy
 
         # shape: [batch_size]
-        loss = CE_pMlz_qMlza + self.lambda_maximality * fit_pM_Unif + self.beta_HMlZ * CE_pMlz_pMlza
+        loss = CE_pMlz_qMlza + self.lambda_maximality * fit_pM_Unif + self.beta_det_inv * CE_pMlz_pMlza
         # TODO if want the absolute value of the loss to be independent of the number of ouptut
         # for better comparison / interpretation, then you should divide it by log(n_Mx)
 
@@ -301,7 +297,7 @@ class DINO(BaseDistillationISSL):
             self,
             *args,
             encoder: nn.Module,
-            out_dim: int=10000, # for imagenet they use 65k
+            n_equivalence_classes: int=1000,  # for imagenet they use 65k
             projector_kwargs: dict[str, Any] = {
                 "architecture": "mlp",
                 "hid_dim": 2048,
@@ -322,7 +318,7 @@ class DINO(BaseDistillationISSL):
 
         super().__init__(
             *args,
-            out_dim=out_dim,
+            n_equivalence_classes=n_equivalence_classes,
             projector_kwargs=projector_kwargs,
             **kwargs,
         )
@@ -330,7 +326,7 @@ class DINO(BaseDistillationISSL):
         self.student_temperature = student_temperature
         self.center_momentum = center_momentum
         self.freeze_Mx_epochs = freeze_Mx_epochs  # will be frozen in ISSL
-        self.register_buffer("center", torch.zeros(1, out_dim))
+        self.register_buffer("center", torch.zeros(1, n_equivalence_classes))
 
         # clone student and freeze it
         # cannot use deepcopy because weight norm => reinstantiate

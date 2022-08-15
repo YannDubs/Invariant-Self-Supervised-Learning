@@ -235,7 +235,7 @@ def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='truncated_
     else:
         raise ValueError(f"invalid distribution {distribution}")
 
-def init_std_modules(module: nn.Module, nonlinearity: str = "relu", is_JL_init=False) -> bool:
+def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
     """Initialize standard layers and return whether was initialized."""
     # all standard layers
     if isinstance(module, nn.modules.conv._ConvNd):
@@ -246,15 +246,11 @@ def init_std_modules(module: nn.Module, nonlinearity: str = "relu", is_JL_init=F
             pass
 
     elif isinstance(module, nn.Linear):
-        if is_JL_init and (module.weight.shape[0] < module.weight.shape[1]):
-            johnson_lindenstrauss_init_(module)
-
-        else:
-            nn.init.trunc_normal_(module.weight, std=0.02)
-            try:
-                nn.init.zeros_(module.bias)
-            except AttributeError: # no bias
-                pass
+        nn.init.trunc_normal_(module.weight, std=0.02)
+        try:
+            nn.init.zeros_(module.bias)
+        except AttributeError: # no bias
+            pass
 
     elif isinstance(module, nn.modules.batchnorm._NormBase):
         if module.affine:
@@ -270,7 +266,7 @@ def johnson_lindenstrauss_init_(m):
     """Initialization for low dimension projection => johnson lindenstrauss lemma."""
     torch.nn.init.normal_(m.weight, std=1 / math.sqrt(m.weight.shape[0]))
 
-def weights_init(module: nn.Module, nonlinearity: str = "relu", is_JL_init=False) -> None:
+def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
     """Initialize a module and all its descendents.
 
     Parameters
@@ -281,7 +277,7 @@ def weights_init(module: nn.Module, nonlinearity: str = "relu", is_JL_init=False
     nonlinearity : str, optional
         Name of the nn.functional activation. Used for initialization.
     """
-    init_std_modules(module, is_JL_init=is_JL_init)  # in case you gave a standard module
+    init_std_modules(module)  # in case you gave a standard module
 
     # loop over direct children (not grand children)
     for m in module.children():
@@ -293,7 +289,7 @@ def weights_init(module: nn.Module, nonlinearity: str = "relu", is_JL_init=False
             # Imp: don't go in grand children because you might have specific weights you don't want to reset
             m.reset_parameters()
         else:
-            weights_init(m, nonlinearity=nonlinearity, is_JL_init=is_JL_init)  # go to grand children
+            weights_init(m, nonlinearity=nonlinearity)  # go to grand children
 
 
 def batch_flatten(x: torch.Tensor) -> tuple[torch.Tensor, Sequence[int]]:

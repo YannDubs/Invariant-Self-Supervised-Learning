@@ -1,25 +1,20 @@
 defaults:
-  - base_distillating
+  - base
 
 # all arguments to DISSL (see docstrings)
 kwargs:
-  mode: assign_self_distillation
-  lambda_maximality: 2.3 # hyperparameter
-  beta_HMlZ: 1.5 # cannot be less than one
-  out_dim: 16384
-  temperature: 1
-  temperature_assign: null # by default half of temperature
-  is_batchnorm_pre: False
-  is_reweight_ema: True
-  freeze_Mx_epochs: 0
+  mode: dissl
+  ### the following three hyperparameters are worth tuning ###
+  lambda_maximality: 2.3 # maximality hyperparameter to tune (typically [1.8,2.8])
+  beta_det_inv: 0.8 # determinism+invariance hyperparameter (typically [0.4,1])
+  n_equivalence_classes: 16384 # number of equivalent classes (ie C in the paper)
+  #############################################################
   batchnorm_kwargs: {}
   projector_kwargs:
     architecture: "mlp"
     bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
-    is_JL_init: ${decodability.kwargs.predictor_kwargs.is_JL_init}
     hid_dim: 1024
     n_hid_layers: 1
   predictor_kwargs:
     architecture: "linear"
     bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx
-    is_JL_init: True

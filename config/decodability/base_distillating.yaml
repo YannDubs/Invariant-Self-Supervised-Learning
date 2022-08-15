@@ -1,8 +1,0 @@
-defaults:
-  - base
-
-kwargs:
-  mode: ???
-  out_dim: 1000
-  projector_kwargs:
-    architecture: "mlp"

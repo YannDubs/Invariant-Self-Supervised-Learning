@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from issl.architectures.helpers import get_Activation, get_Normalization
-from issl.helpers import (batch_flatten, batch_unflatten, freeze_module_, johnson_lindenstrauss_init_, prod,
+from issl.helpers import (batch_flatten, batch_unflatten, prod,
                           weights_init, BatchNorm1d)
 
 __all__ = ["FlattenMLP", "FlattenLinear", "Resizer", "Flatten", "FlattenCosine", "OurProjectionHead"]
@@ -115,9 +115,6 @@ class MLP(nn.Module):
 
     def reset_parameters(self):
         weights_init(self)
-        
-        if self.MLP_bottleneck_prelinear is not None:
-            johnson_lindenstrauss_init_(self.pre_block[0])
 
 
 class FlattenMLP(MLP):
@@ -191,7 +188,6 @@ class OurProjectionHead(nn.Module):
             hid_dim: int = 2048,
             is_force_pre_post_layer : bool = False,
             bottleneck_size : int = 512,
-            is_JL_init: bool = True
     ) -> None:
         super().__init__()
 
@@ -203,7 +199,6 @@ class OurProjectionHead(nn.Module):
         self.hid_dim = hid_dim
         self.is_force_pre_post_layer = is_force_pre_post_layer
         self.bottleneck_size = bottleneck_size
-        self.is_JL_init = is_JL_init
 
         if self.in_dim != self.bottleneck_size or self.is_force_pre_post_layer:
             self.pre_block = nn.Linear(self.in_dim, self.bottleneck_size, bias=False)
@@ -245,7 +240,7 @@ class OurProjectionHead(nn.Module):
         return X
 
     def reset_parameters(self):
-        weights_init(self, is_JL_init=self.is_JL_init)
+        weights_init(self)
 
 
 class FlattenLinear(nn.Module):
@@ -279,7 +274,7 @@ class FlattenLinear(nn.Module):
     def __init__(
         self, in_shape: Sequence[int], out_shape: Sequence[int], is_batchnorm_pre: bool=False,
         bottleneck_size : Optional[int]=None, is_batchnorm_bottleneck: bool =True,
-        batchnorm_kwargs : dict = {},  is_JL_init: bool=True,
+        batchnorm_kwargs : dict = {},
         **kwargs
     ) -> None:
         super().__init__()
@@ -289,7 +284,6 @@ class FlattenLinear(nn.Module):
         self.bottleneck_size = bottleneck_size
         self.is_batchnorm_pre = is_batchnorm_pre
         self.is_batchnorm_bottleneck = is_batchnorm_bottleneck
-        self.is_JL_init = is_JL_init
 
         in_dim = prod(self.in_shape)
         out_dim = prod(self.out_shape)
@@ -314,9 +308,6 @@ class FlattenLinear(nn.Module):
 
     def reset_parameters(self):
         weights_init(self)
-        if self.bottleneck_size is not None:
-            if self.is_JL_init:
-                johnson_lindenstrauss_init_(self.bottleneck)
 
 
     def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:

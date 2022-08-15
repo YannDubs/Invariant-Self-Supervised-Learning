@@ -1,13 +1,12 @@
 defaults:
-  - base_distillating
-
+  - base
 
 is_ema: True # teacher is exponential moving average of the student
 
-# all arguments to DinoISSL (see docstrings)
+# all arguments to DINO (see docstrings)
 kwargs:
   mode: dino_self_distillation
-  out_dim: 1000 # output of DINO's teacher (ie nuimber fo equivalence classes)
+  n_equivalence_classes: 1000 # output of DINO's teacher
   student_temperature:  0.1
   n_epochs: ${trainer.max_epochs}
   freeze_Mx_epochs: 1 # freezes the teacher for initial epochs
