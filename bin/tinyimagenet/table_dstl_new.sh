@@ -30,8 +30,12 @@ downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datare
 "
 
 cell_ours="
-representor=dstl_noema
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6datarepr,torchlogisticw1e-5b2048e300_datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-5b2048e300_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test,torchlogisticw1e-4_datarepr002test,torchlogisticw1e-5_datarepr002test,torchlogisticw1e-3_datarepr002test,torchlogistic_datarepr002test]
+"
+
+cell_large_proj="
+++decodability.kwargs.projector_kwargs.n_hid_layers=2
+++decodability.kwargs.projector_kwargs.hid_dim=2048
 "
 
 cell_dim="
@@ -85,7 +89,7 @@ update_trainer_repr.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_epoch_coarse" #"$cell_ours" #  #"$cell_ours"   # "$cell_aug" "$cell_epoch" "$cell_ours" "$cell_dim"   #  "$cell_ours" "$cell_dim" "$cell_asymm_small" "$cell_asymm_large" "$cell_aug" "$cell_epoch" # cell_baseline
+  for kwargs_dep in "$cell_large_proj" # "$cell_epoch_coarse" #"$cell_ours" #  #"$cell_ours"   # "$cell_aug" "$cell_epoch" "$cell_ours" "$cell_dim"   #  "$cell_ours" "$cell_dim" "$cell_asymm_small" "$cell_asymm_large" "$cell_aug" "$cell_epoch" # cell_baseline
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
