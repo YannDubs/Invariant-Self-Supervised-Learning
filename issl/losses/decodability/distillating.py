@@ -244,9 +244,12 @@ class DistillatingISSL(BaseDistillationISSL):
         CE_pMlz_qMlza = 0
         H_M = 0
         CE_pMlz_pMlza = 0
+        CE_pMlz_qMlz = 0
         n_CE_pq = 0
         n_CE_pp = 0
+        n_CE_pp_self = 0
         for i_p, p_Mlz in enumerate(all_p_Mlz):
+            p_Mlz_detach = p_Mlz.detach()
 
             ##### Ensure maximality #####
             # current marginal estimate p(M). batch shape: [] ; event shape: []
@@ -275,6 +278,8 @@ class DistillatingISSL(BaseDistillationISSL):
 
             for i_q, log_q_Mlza in enumerate(all_log_q_Mlz):
                 if i_p == i_q:
+                    CE_pMlz_qMlz = CE_pMlz_qMlz - (p_Mlz_detach * log_q_Mlza.detach()).sum(-1) # only used for monitoring
+                    n_CE_pp_self += 1
                     continue  # skip if same view
 
                 # KL = - H[M|Z] - E_{p(M|Z)}[log q(M|Z)]. As you want to have a deterministic
@@ -285,6 +290,7 @@ class DistillatingISSL(BaseDistillationISSL):
         CE_pMlz_qMlza /= n_CE_pq
         H_M /= len(all_p_Mlz)
         CE_pMlz_pMlza /= n_CE_pp
+        CE_pMlz_qMlz /= n_CE_pp_self
 
         fit_pM_Unif = - H_M # want to max entropy
         if self.ema_weight_prior is not None and is_ema and self.is_reweight_ema:
@@ -296,11 +302,16 @@ class DistillatingISSL(BaseDistillationISSL):
         # TODO if want the absolute value of the loss to be independent of the number of ouptut
         # for better comparison / interpretation, then you should divide it by log(n_Mx)
 
+        H_Mlz=Categorical(probs=torch.cat(all_p_Mlz, dim=0).detach()).entropy().mean()
+        CE_distill = CE_pMlz_qMlz.detach().mean()
+        CE_invariance = CE_pMlz_pMlza.detach().mean()
         logs = dict(
             fit_pM_Unif=fit_pM_Unif,
-            fit_pMlz_qMlz=CE_pMlz_qMlza.mean(),
+            fit_pMlz_qMlz=CE_pMlz_qMlza.detach().mean(),
             H_M=H_M,
-            H_Mlz=Categorical(probs=torch.cat(all_p_Mlz, dim=0).detach()).entropy().mean()
+            H_Mlz=H_Mlz,
+            KL_invariance=CE_invariance - H_Mlz,
+            KL_distillation=CE_distill - H_Mlz
         )
         other = dict()
 

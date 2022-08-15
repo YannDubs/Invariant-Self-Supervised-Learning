@@ -19,7 +19,7 @@ decodability:
     ema_weight_prior: null
     beta_pM_unif: 2.3
     beta_HMlZ: 1.8
-    out_dim: 8192
+    out_dim: 16384
     projector_kwargs:
       architecture: "mlp"
       is_cosine: True

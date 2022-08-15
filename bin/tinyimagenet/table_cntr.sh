@@ -71,7 +71,7 @@ update_trainer_repr.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_ours_noselfcntr" # "$cell_aug_noblured" "$cell_aug_onlyblured"  #"$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
+  for kwargs_dep in "$cell_epoch" # "$cell_aug_noblured" "$cell_aug_onlyblured"  #"$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
   do
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 
