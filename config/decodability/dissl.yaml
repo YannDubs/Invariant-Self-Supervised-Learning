@@ -1,11 +1,11 @@
 defaults:
   - base_distillating
 
+# all arguments to DISSL (see docstrings)
 kwargs:
   mode: assign_self_distillation
-  beta_pM_unif: 1.9
+  lambda_maximality: 2.3 # hyperparameter
   beta_HMlZ: 1.5 # cannot be less than one
-  ema_weight_prior: null
   out_dim: 16384
   temperature: 1
   temperature_assign: null # by default half of temperature

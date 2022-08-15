@@ -2,29 +2,23 @@
 defaults:
   - base@representor
   - override /regularizer: none
-  - override /decodability: contrastive
+  - override /decodability: cissl
 
 representor:
   name: cntr_mlp
 
-data_repr:
-  kwargs:
-    dataset_kwargs:
-      aux_target:  "augmentation"
-      a_augmentations: ["data-standard"] # should have a data standard augmentation
-      train_x_augmentations: "a_augmentations"
-
 decodability:
   kwargs:
-    is_pred_proj_same: False
-    is_self_contrastive: True
+    # uses an MLP predictor as the downstream probe
     predictor_kwargs:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
       out_shape: 128
+      norm_layer: "batch"
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 2048
       n_hid_layers: 2
       out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
+      norm_layer: "batch"

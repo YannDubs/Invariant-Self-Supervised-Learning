@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-experiment="table_dstl_new2"
+experiment="table_dissl_new2"
 notes="
 **Goal**: run the main table for distillation.
 "
@@ -17,7 +17,7 @@ experiment=$experiment
 $base_kwargs_tin
 seed=1
 timeout=$time
-representor=dstl_noema
+representor=dissl
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr]
 data_repr.kwargs.batch_size=256
 "
@@ -28,7 +28,6 @@ downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datare
 "
 
 cell_ours="
-representor=dstl_noema
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6datarepr,torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchmlpw1e-6_datarepr,torchmlpw1e-3_datarepr002test,torchmlpw1e-5_datarepr002test,torchmlpw1e-4_datarepr002test,torchmlp_datarepr002test,torchlogisticw1e-4_datarepr002test,torchlogisticw1e-5_datarepr002test,torchlogisticw1e-3_datarepr002test,torchlogistic_datarepr002test]
 "
 
@@ -38,22 +37,10 @@ encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
 
-
-#cell_aug="
-#$cell_asymm_large
-#data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
-#representor=dstl_noema_blured
-#"
-#
-#cell_epoch="
-#$cell_aug
-#update_trainer_repr.max_epochs=1000
-#"
-
 cell_aug="
 $cell_dim
 data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
-representor=dstl_noema_blured
+representor=dissl_coarse
 "
 
 cell_epoch="

@@ -16,11 +16,9 @@ from issl.helpers import prod, weights_init
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["ContrastiveISSL"]
+__all__ = ["SimCLR","CISSL"]
 
-
-# TODO should probably write it as a subclass of self distillation because you are reusing a lot of the
-class ContrastiveISSL(nn.Module):
+class BaseContrastiveISSL(nn.Module):
     """Computes the ISSL loss using contrastive variational bound (i.e. with positive and negative examples).
 
     Notes
@@ -43,9 +41,6 @@ class ContrastiveISSL(nn.Module):
         Whether to keep current example in batch when performing contrastive learning and then have to predict
         proba 0.5 to current and positive.
 
-    is_batchnorm_post : bool, optional
-        Whether to add a batchnorm layer after the predictor / projector.
-
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
         it will be a percentage of z_dim. To use no projector set `mode=Flatten`.
@@ -66,31 +61,27 @@ class ContrastiveISSL(nn.Module):
         temperature: float = 0.07,
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
-        is_batchnorm_post: bool = True,
         projector_kwargs: dict[str, Any] = {
             "architecture": "mlp",
-            "hid_dim": 2048,
-            "n_hid_layers": 2,
+            "hid_dim": 1024,
+            "n_hid_layers": 1,
             "norm_layer": "batch",
         },
-        predictor_kwargs: dict[str, Any] = {"architecture": "flatten"},
-        freeze_Mx_epochs: int = 0,
+        predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
         encoder: Optional[nn.Module] = None,  # only used for DINO
         **kwargs
     ) -> None:
+
         super().__init__()
         logger.info(f"Unused arguments {kwargs}.")
 
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
         self.z_dim = prod(self.z_shape)
         self.is_pred_proj_same = is_pred_proj_same
-        self.is_batchnorm_post = is_batchnorm_post
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
         self.is_self_contrastive = is_self_contrastive
         self.temperature = temperature
-
-        self.freeze_Mx_epochs = freeze_Mx_epochs
 
         if self.is_pred_proj_same:
             self.is_self_contrastive = False
@@ -107,10 +98,8 @@ class ContrastiveISSL(nn.Module):
         self.reset_parameters()
 
     def add_batchnorms(self, head, kwargs):
-        if self.is_batchnorm_post:
-            if not (kwargs["architecture"].lower() in ["identity", "flatten"]):
-                head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
-
+        if not (kwargs["architecture"].lower() in ["identity", "flatten"]):
+            head = nn.Sequential(head, nn.BatchNorm1d(self.out_dim))
         return head
 
     def reset_parameters(self) -> None:
@@ -119,36 +108,9 @@ class ContrastiveISSL(nn.Module):
     def process_kwargs(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
         kwargs["in_shape"] = kwargs.get("in_shape", self.z_shape)
-
-        if "out_shape" not in kwargs:
-            kwargs["out_shape"] = prod(self.z_shape)
-        elif kwargs["out_shape"] <= 1:
-            kwargs["out_shape"] = max(10, int(self.z_dim * kwargs["out_shape"]))
-
+        kwargs["out_shape"] = kwargs.get("out_shape", prod(self.z_shape))
         self.out_dim = kwargs["out_shape"]
-
-        if self.is_batchnorm_post and kwargs["architecture"] in ["mlp", "linear"]:
-            kwargs["bias"] = False  # no bias when batchorm
-
         return kwargs
-
-    @property
-    def to_freeze(self):
-        to_freeze = []
-
-        for m in self.projector.modules():
-            if isinstance(m, nn.Linear):
-                # only bottlenecks
-                if m.weight.shape[0] < m.weight.shape[1]:
-                    to_freeze.append(m)
-
-
-        for m in self.predictor.modules():
-            if isinstance(m, nn.Linear):
-                if m.weight.shape[0] < m.weight.shape[1]:
-                    to_freeze.append(m)
-
-        return to_freeze
 
     def forward(
         self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, parent: Any
@@ -207,21 +169,15 @@ class ContrastiveISSL(nn.Module):
         """Compute the logits for the contrastive predictor p(A|Z)."""
 
         # shape: [2*batch_size, out_shape]
-        z_src = self.predictor(z_src)
-        z_tgt = self.projector(z_tgt)
-
-
-        # will use cosine similarity
-        z_src = F.normalize(z_src, dim=1, p=2)
-        z_tgt = F.normalize(z_tgt, dim=1, p=2)
+        # normalize to use cosine similarity
+        z_src = F.normalize(self.predictor(z_src), dim=1, p=2)
+        z_tgt = F.normalize(self.projector(z_tgt), dim=1, p=2)
 
         # shape: [2*batch_size, 2*batch_size]
         logits = z_src @ z_tgt.T
 
         # make sure 32 bits
-        logits = logits.float()
-
-        logits = logits / self.temperature
+        logits = logits.float() / self.temperature
 
         return logits
 
@@ -267,3 +223,27 @@ class ContrastiveISSL(nn.Module):
         )
 
         return hat_H_mlz, logs
+
+
+class CISSL(BaseContrastiveISSL):
+    def __init__(self,
+                 *args,
+                is_pred_proj_same: bool = False,
+                is_self_contrastive: bool = True,
+                **kwargs):
+        super().__init__(*args,
+                         is_pred_proj_same=is_pred_proj_same,
+                         is_self_contrastive=is_self_contrastive,
+                         **kwargs)
+
+
+class SimCLR(BaseContrastiveISSL):
+    def __init__(self,
+                 *args,
+                is_pred_proj_same: bool = True,
+                is_self_contrastive: bool = False,
+                **kwargs):
+        super().__init__(*args,
+                         is_pred_proj_same=is_pred_proj_same,
+                         is_self_contrastive=is_self_contrastive,
+                         **kwargs)

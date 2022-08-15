@@ -1,19 +1,22 @@
 defaults:
   - base_distillating
 
-is_ema: True
+
+is_ema: True # teacher is exponential moving average of the student
+
+# all arguments to DinoISSL (see docstrings)
 kwargs:
   mode: dino_self_distillation
-  out_dim: 1000 # used to be 10k (in case backward compatible)
+  out_dim: 1000 # output of DINO's teacher (ie nuimber fo equivalence classes)
   student_temperature:  0.1
   n_epochs: ${trainer.max_epochs}
-  freeze_Mx_epochs: 1
+  freeze_Mx_epochs: 1 # freezes the teacher for initial epochs
   projector_kwargs:
     architecture: "mlp"
-    hid_dim: 1024 # should be 2048 but for now wants the same head for all models
+    hid_dim: 1024
     n_hid_layers: 1
     norm_layer: batchnorm
     activation: GELU
-    bottleneck_size: 256
-    is_cosine: True
-    is_batchnorm_bottleneck: False
+    bottleneck_size: 256 # bottleneck before the last layer, ie, low rank approx
+    is_cosine: True # uses cosine similarity instead of linear layer for last layer
+    is_batchnorm_bottleneck: False # no batch norm after the bottleneck layer

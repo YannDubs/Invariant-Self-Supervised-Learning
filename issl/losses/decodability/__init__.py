@@ -10,13 +10,13 @@ __all__ = ["get_loss_decodability"]
 
 
 def get_loss_decodability(mode: str, **kwargs) -> torch.nn.Module:
-    if mode == "contrastive":
-        return ContrastiveISSL(**kwargs)
-    elif mode in ["assign_self_distillation", "distillating"]:
-        return DistillatingISSL(**kwargs)
-    elif mode in ["swav_self_distillation", "swav"]:
-        return SwavISSL(**kwargs)
-    elif mode in ["dino_self_distillation", "dino"]:
-        return DinoISSL(**kwargs)
+    if mode == "simclr":
+        return SimCLR(**kwargs)
+    elif mode == "cissl":
+        return CISSL(**kwargs)
+    elif mode in ["dissl"]:
+        return DISSL(**kwargs)
+    elif mode in ["dino"]:
+        return DINO(**kwargs)
     else:
         raise ValueError(f"Unknown mode={mode}.")

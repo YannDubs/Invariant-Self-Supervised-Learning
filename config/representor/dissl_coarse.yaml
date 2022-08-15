@@ -2,22 +2,20 @@
 defaults:
   - base@representor
   - override /regularizer: none
-  - override /decodability: distillating
+  - override /decodability: dissl
 
 representor:
-  name: dstl_noema
+  name: dissl
 
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target:  "augmentation"
-      a_augmentations: ["blured_simclr"]
-      train_x_augmentations: "a_augmentations"
+      simclr_aug_strength: 2.0 # increase the strength of simclr augmentation
+      a_augmentations: ["blured_simclr"] # add bluring to standard augmentations
 
 decodability:
   kwargs:
-    ema_weight_prior: null
-    beta_pM_unif: 2.3
+    lambda_maximality: 2.3
     beta_HMlZ: 1.8
     out_dim: 8192
     projector_kwargs:

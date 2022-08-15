@@ -5,7 +5,7 @@ defaults:
   - override /decodability: distillating
 
 representor:
-  name: dstl_noema
+  name: dissl_mlp
 
 data_repr:
   kwargs:
@@ -16,10 +16,15 @@ data_repr:
 
 decodability:
   kwargs:
-    ema_weight_prior: null
-    beta_pM_unif: 2.3
+    lambda_maximality: 2.3
     beta_HMlZ: 1.8
     out_dim: 8192
     projector_kwargs:
       architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
+    predictor_kwargs:
+      architecture: "mlp"
+      hid_dim: 2048
+      n_hid_layers: 2
       is_cosine: True

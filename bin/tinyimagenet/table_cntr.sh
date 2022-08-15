@@ -23,7 +23,7 @@ seed=1
 "
 
 cell_baseline="
-representor=cntr_simclr
+representor=simclr
 "
 
 cell_ours="
@@ -39,8 +39,7 @@ encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 
 cell_aug="
 $cell_dim
-data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
-representor=cntr_blured
+representor=cntr_coarse
 "
 
 cell_epoch="

@@ -1,0 +1,12 @@
+defaults:
+  - base
+
+# all arguments to ContrastiveISSL (see docstrings)
+kwargs:
+  mode: simclr
+  projector_kwargs: # this will be both predictor and projector as `is_pred_proj_same`
+    architecture: "mlp"
+    out_shape: 128
+    hid_dim: 1024
+    n_hid_layers: 1
+    norm_layer: "batch"

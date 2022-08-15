@@ -16,7 +16,7 @@ kwargs="
 experiment=$experiment
 $base_kwargs_tin
 seed=1
-representor=dstl_noema
+representor=dissl
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogistic_datarepr01test,torchlogistic_datarepr001test,torchlogistic_datarepr0002test,torchlogistic_datarepr03test,torchlogistic_datarepr003test]
 timeout=$time
 "
@@ -43,7 +43,7 @@ python utils/aggregate.py \
        +fillna.n_downstream_samples=1 \
        +apply.n_downstream_samples="lambda x : x * 100000" \
        +col_val_subset.pred=["torch_logisticw1.0e-06"] \
-       +col_val_subset.repr=["dstl_noema"] \
+       +col_val_subset.repr=["dissl"] \
        +plot_scatter_lines.x="n_downstream_samples" \
        +plot_scatter_lines.y="test/pred/acc" \
        +plot_scatter_lines.cols_to_max=["pred","optpred"] \

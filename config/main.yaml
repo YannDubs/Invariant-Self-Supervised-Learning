@@ -130,7 +130,9 @@ data: {}
 data_repr:
   kwargs:
     dataset_kwargs:
-      aux_target: "augmentation"
+      aux_target: "augmentation" # input to teacher should be augmented example
+      a_augmentations: ["data-standard"] # augmentations for teacher (default: uses standard)
+      train_x_augmentations: "a_augmentations" # augmentations for student (default: same as teacher)
 
 ### MODELS ###
 encoder: # modified in the encoder config files

@@ -3,3 +3,4 @@ name: ${decodability.kwargs.mode}
 # all arguments to get_loss_decodability (see docstrings)
 kwargs:
   mode: ???
+  z_shape: ${encoder.z_shape}

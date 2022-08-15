@@ -17,7 +17,7 @@ experiment=$experiment
 $base_kwargs_tin
 seed=1
 timeout=$time
-representor=dstl_noema
+representor=dissl
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr]
 data_repr.kwargs.batch_size=256
 "
