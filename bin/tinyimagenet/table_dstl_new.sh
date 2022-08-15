@@ -37,6 +37,10 @@ cell_noJL="
 decodability.kwargs.predictor_kwargs.is_JL_init=False
 "
 
+cell_bnpre="
+decodability.kwargs.is_batchnorm_pre=True
+"
+
 
 cell_large_proj="
 ++decodability.kwargs.projector_kwargs.n_hid_layers=2
@@ -94,7 +98,7 @@ update_trainer_repr.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_noJL" #"$cell_large_proj" # "$cell_epoch_coarse" #"$cell_ours" #  #"$cell_ours"   # "$cell_aug" "$cell_epoch" "$cell_ours" "$cell_dim"   #  "$cell_ours" "$cell_dim" "$cell_asymm_small" "$cell_asymm_large" "$cell_aug" "$cell_epoch" # cell_baseline
+  for kwargs_dep in "$cell_bnpre" # "$cell_noJL" #"$cell_large_proj" # "$cell_epoch_coarse" #"$cell_ours" #  #"$cell_ours"   # "$cell_aug" "$cell_epoch" "$cell_ours" "$cell_dim"   #  "$cell_ours" "$cell_dim" "$cell_asymm_small" "$cell_asymm_large" "$cell_aug" "$cell_epoch" # cell_baseline
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
