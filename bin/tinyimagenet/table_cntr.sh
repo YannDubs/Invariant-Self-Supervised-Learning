@@ -20,8 +20,6 @@ timeout=$time
 representor=cntr
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr]
 seed=1
-++decodability.kwargs.projector_kwargs.n_hid_layers=1
-++decodability.kwargs.projector_kwargs.hid_dim=1024
 "
 
 cell_baseline="

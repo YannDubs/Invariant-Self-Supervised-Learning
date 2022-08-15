@@ -19,8 +19,6 @@ seed=1
 timeout=$time
 representor=dstl_noema
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr]
-++decodability.kwargs.projector_kwargs.n_hid_layers=1
-++decodability.kwargs.projector_kwargs.hid_dim=1024
 data_repr.kwargs.batch_size=256
 "
 
