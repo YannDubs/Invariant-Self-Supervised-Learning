@@ -23,29 +23,20 @@ __all__ = [
 ]
 
 class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
-    """Compute the ISSL loss using self distillation (i.e. approximates M(X) using current representation).
 
-    Parameters
-    ----------
-    z_shape : sequence of int
-        Shape of the representation.
-
-    n_equivalence_classes : int, optional
-        Number of equivalence classes (C in the paper)
-
-    projector_kwargs : dict, optional
-        Arguments to get `Projector` from `get_Architecture`.
-
-    encoder : Module, optional
-        Optional encoder.
-    """
 
     def __init__(
             self,
             z_shape: Sequence[int],
             n_equivalence_classes: float = 16384,
-            projector_kwargs: dict[str, Any] = {"architecture": "linear"},
-            encoder: Optional[nn.Module]=None # only used for DINO
+            projector_kwargs: dict[str, Any] = {
+                "architecture": "mlp",
+                "bottleneck_size": 512,
+                "hid_dim": 1024,
+                "n_hid_layers": 1,
+                "is_cosine": True,
+                "norm_layer": "batch"
+            },
     ) -> None:
         super().__init__()
         self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
@@ -56,13 +47,10 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         Projector = get_Architecture(**self.projector_kwargs)
         self.projector = Projector()
 
-        self.current_epoch = 0
-
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
         weights_init(self)
-        self.current_epoch = 0
 
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
@@ -97,69 +85,55 @@ class BaseDistillationISSL(nn.Module, metaclass=abc.ABCMeta):
         other : dict
             Additional values to return.
         """
-
-        self.current_epoch = parent.current_epoch
-
-        if z.ndim != 2:
-            raise ValueError(
-                f"When using contrastive loss the representation needs to be flattened."
-            )
-
         loss, logs, other = self.loss(z, z_tgt)
-
-        return loss, logs, other
-
-    def loss(
-        self, z: torch.Tensor, z_tgt: torch.Tensor,
-    ) -> tuple[torch.Tensor, dict, dict]:
-
-        z_x, z_a = z.chunk(2, dim=0)
-        z_tgt_x, z_tgt_a = z_tgt.chunk(2, dim=0)
-
-        loss1, logs1, other = self.asymmetric_loss(z_x, z_tgt_a)
-        loss2, logs2, _ = self.asymmetric_loss(z_a, z_tgt_x)
-        loss = (loss1 + loss2) / 2
-
-        logs = average_dict(logs1, logs2)
-
         return loss, logs, other
 
     @abc.abstractmethod
-    def asymmetric_loss(self, z_src : torch.Tensor, z_tgt: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
+    def loss(self, z_src: torch.Tensor, z_tgt: torch.Tensor) -> tuple[torch.Tensor, dict, dict]:
         pass
+
+
 
 # performs SSL by having one part of the model implementing the M(X)
 add_doc_dissl = """              
     lambda_maximality : float, optional
         Parameter that weights the divergence D[p_hat(M) || Unif]
-    
-    is_batchnorm_pre : bool, optional
-        Whether to add a batchnorm layer before the projector / predictor. Strongly recommended.
     """
 
 class DISSL(BaseDistillationISSL):
-    __doc__ = BaseDistillationISSL.__doc__ + add_doc_dissl
+    """Compute the ISSL loss using self distillation (i.e. approximates M(X) using current representation).
+
+    Parameters
+    ----------
+    z_shape : sequence of int
+        Shape of the representation.
+
+    n_equivalence_classes : int, optional
+        Number of equivalence classes (C in the paper)
+
+    projector_kwargs : dict, optional
+        Arguments to get `Projector` from `get_Architecture`.
+
+    encoder : Module, optional
+        Optional encoder.
+    """
 
     def __init__(
         self,
         *args,
         lambda_maximality: float = 2.3,
-        beta_det_inv: float=1.5,
-        n_equivalence_classes: float = 16384,
+        beta_det_inv: float=0.8,
         temperature: float=1.0,
         temperature_assign:  Optional[float] = None,
-        is_batchnorm_pre: bool=True,
-        batchnorm_kwargs: dict = {},
         predictor_kwargs: dict[str, Any] = {
                                "architecture": "linear",
                            },
         **kwargs,
     ) -> None:
 
-        super().__init__(*args,  **kwargs)
+        super().__init__(*args, **kwargs)
         self.lambda_maximality = lambda_maximality
         self.beta_det_inv = beta_det_inv
-        self.is_batchnorm_pre = is_batchnorm_pre
         self.temperature = temperature
         self.temperature_assign = temperature_assign or self.temperature / 2
 
@@ -167,22 +141,9 @@ class DISSL(BaseDistillationISSL):
         self.crops_assign = 2
         self.crops_pred = 2
 
-        # use same arch as projector
-        # Predictor = get_Architecture(**self.projector_kwargs)
-        # self.predictor = Predictor()
-
         self.predictor_kwargs = self.process_shapes(predictor_kwargs)
         Predictor = get_Architecture(**self.predictor_kwargs)
         self.predictor = Predictor()
-
-        if self.is_batchnorm_pre:
-            m_hat_shape = self.projector_kwargs.get("in_shape", self.z_dim)
-            m_hat_dim = m_hat_shape if isinstance(m_hat_shape, int) else prod(m_hat_shape)
-
-            # not sure that you want to use batchnorm_pre in the case where using bn in the linear layer
-            # and even less sure about learning a bias term for those
-            self.predictor = nn.Sequential(BatchNorm1d(self.z_dim, **batchnorm_kwargs), self.predictor)
-            self.projector = nn.Sequential(BatchNorm1d(m_hat_dim, **batchnorm_kwargs), self.projector)
 
         self.reset_parameters()
 
@@ -191,23 +152,6 @@ class DISSL(BaseDistillationISSL):
         logits_assign = self.projector(z_tgt).float() / self.temperature_assign
         Mx = F.softmax(logits_assign, dim=-1)
         return Mx
-
-    @property
-    def to_freeze(self):
-        to_freeze = []
-
-        for m in self.projector.modules():
-            if isinstance(m, nn.Linear):
-                # only bottleneck layers
-                if m.weight.shape[0] < m.weight.shape[1]:
-                    to_freeze.append(m)
-
-        for m in self.predictor.modules():
-            if isinstance(m, nn.Linear):
-                if m.weight.shape[0] < m.weight.shape[1]:
-                    to_freeze.append(m)
-
-        return to_freeze
 
     def loss(
         self, z: torch.Tensor, z_tgt: torch.Tensor,
@@ -258,15 +202,11 @@ class DISSL(BaseDistillationISSL):
         H_M /= len(all_p_Mlz)
         CE_pMlz_pMlza /= n_CE_pp
 
-        fit_pM_Unif = - H_M # want to max entropy
-
         # shape: [batch_size]
-        loss = CE_pMlz_qMlza + self.lambda_maximality * fit_pM_Unif + self.beta_det_inv * CE_pMlz_pMlza
-        # TODO if want the absolute value of the loss to be independent of the number of ouptut
-        # for better comparison / interpretation, then you should divide it by log(n_Mx)
+        loss = CE_pMlz_qMlza - self.lambda_maximality * H_M + self.beta_det_inv * CE_pMlz_pMlza
 
         logs = dict(
-            fit_pM_Unif=fit_pM_Unif,
+            fit_pM_Unif=-H_M,
             fit_pMlz_qMlz=CE_pMlz_qMlza.mean(),
             H_M=H_M,
             H_Mlz=Categorical(probs=torch.cat(all_p_Mlz, dim=0).detach()).entropy().mean()
@@ -279,19 +219,34 @@ class DISSL(BaseDistillationISSL):
         pass  # not using
 
 
-add_doc_dino = """              
+
+
+class DINO(BaseDistillationISSL):
+    """Compute the ISSL loss using self distillation (i.e. approximates M(X) using current representation).
+
+    Parameters
+    ----------
+    z_shape : sequence of int
+        Shape of the representation.
+
+    n_equivalence_classes : int, optional
+        Number of equivalence classes (C in the paper)
+
+    projector_kwargs : dict, optional
+        Arguments to get `Projector` from `get_Architecture`.
+
+    encoder : Module, optional
+        Optional encoder.
+
     freeze_Mx_epochs : int, optional
         Freeze the last lasyer that many epochs from the start.
-       
-    student_temperature : float, optional 
+
+    student_temperature : float, optional
         Temperature for prediction of the student network.
-        
+
     center_momentum : float, optional
         Ema weight for computing the mean for centering.
     """
-
-class DINO(BaseDistillationISSL):
-    __doc__ = BaseDistillationISSL.__doc__ + add_doc_dino
 
     def __init__(
             self,
@@ -300,12 +255,14 @@ class DINO(BaseDistillationISSL):
             n_equivalence_classes: int=1000,  # for imagenet they use 65k
             projector_kwargs: dict[str, Any] = {
                 "architecture": "mlp",
-                "hid_dim": 2048,
+                "hid_dim": 1024,
                 "n_hid_layers": 1,
                 "norm_layer": "batch",
                 "activation": "GELU",
                 "bottleneck_size": 256,
-                "is_cosine": True},
+                "is_cosine": True,
+                "is_batchnorm_bottleneck": False
+            },
             freeze_Mx_epochs: int=1,
             student_temperature: float=0.1,
             center_momentum: float = 0.9,
@@ -343,8 +300,12 @@ class DINO(BaseDistillationISSL):
             np.ones(self.n_epochs - warmup_teacher_temp_epochs) * teacher_temperature
         ))
 
+        self.current_epoch = 0
         self.reset_parameters()
 
+    def reset_parameters(self) -> None:
+        weights_init(self)
+        self.current_epoch = 0
 
     @property
     def to_freeze(self):
@@ -364,6 +325,21 @@ class DINO(BaseDistillationISSL):
         batch_center = torch.mean(teacher_output, dim=0, keepdim=True)
         # ema update
         self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
+
+    def loss(
+        self, z: torch.Tensor, z_tgt: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict, dict]:
+
+        z_x, z_a = z.chunk(2, dim=0)
+        z_tgt_x, z_tgt_a = z_tgt.chunk(2, dim=0)
+
+        loss1, logs1, other = self.asymmetric_loss(z_x, z_tgt_a)
+        loss2, logs2, _ = self.asymmetric_loss(z_a, z_tgt_x)
+        loss = (loss1 + loss2) / 2
+
+        logs = average_dict(logs1, logs2)
+
+        return loss, logs, other
 
     def asymmetric_loss(self, M_student, M_teacher):
 
@@ -392,11 +368,6 @@ class DINO(BaseDistillationISSL):
     ) -> tuple[torch.Tensor, dict, dict]:
 
         self.current_epoch = parent.current_epoch
-
-        if z.ndim != 2:
-            raise ValueError(
-                f"When using contrastive loss the representation needs to be flattened."
-            )
 
         # shape: [batch_size, M_shape].
         # have to use x and a directly because the encoder is different now

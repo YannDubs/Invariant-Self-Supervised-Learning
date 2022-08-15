@@ -9,9 +9,6 @@ representor:
 
 decodability:
   kwargs:
-    lambda_maximality: 2.3
-    beta_det_inv: 1.8
-    n_equivalence_classes: 8192
     projector_kwargs:
       architecture: "mlp"
       hid_dim: 2048

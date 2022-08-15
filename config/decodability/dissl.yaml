@@ -9,12 +9,13 @@ kwargs:
   beta_det_inv: 0.8 # determinism+invariance hyperparameter (typically [0.4,1])
   n_equivalence_classes: 16384 # number of equivalent classes (ie C in the paper)
   #############################################################
-  batchnorm_kwargs: {}
   projector_kwargs:
     architecture: "mlp"
     bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
     hid_dim: 1024
     n_hid_layers: 1
+    is_cosine: True
+    norm_layer: "batch"
   predictor_kwargs:
     architecture: "linear"
     bottleneck_size: 512 # bottleneck for the last layer, ie, low rank approx

@@ -68,7 +68,6 @@ class BaseContrastiveISSL(nn.Module):
             "norm_layer": "batch",
         },
         predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
-        encoder: Optional[nn.Module] = None,  # only used for DINO
         **kwargs
     ) -> None:
 

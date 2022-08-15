@@ -12,12 +12,3 @@ data_repr:
     dataset_kwargs:
       simclr_aug_strength: 2.0 # increase the strength of simclr augmentation
       a_augmentations: ["blured_simclr"] # add bluring to standard augmentations
-
-decodability:
-  kwargs:
-    lambda_maximality: 2.3
-    beta_det_inv: 1.8
-    n_equivalence_classes: 8192
-    projector_kwargs:
-      architecture: "mlp"
-      is_cosine: True
