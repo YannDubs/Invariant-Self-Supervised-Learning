@@ -26,7 +26,6 @@ from hydra import compose
 from omegaconf import Container, OmegaConf
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
-from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.plugins.environments import SLURMEnvironment
 
 from issl import ISSLModule, Predictor
@@ -78,6 +77,7 @@ def main_except(cfg):
 
 
 def main(cfg):
+    breakpoint()
     logger.info(os.uname().nodename)
 
     ############## STARTUP ##############
