@@ -15,8 +15,7 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
 
     Parameters
     ----------
-    architecture : {"mlp", "linear", "resnet", "identity", "cnn_unflatten", "vit", "cnn", "clip_vitb16", "clip_vitb32",
-                    "clip_rn50", "dino_vitb16", "dino_rn50", "dino_vits16", "simclr_rn50", "swav_rn50"}.
+    architecture : {"mlp", "linear", "resnet", "identity", "cosine"}.
 
     kwargs :
         Additional arguments to the Module.
@@ -27,16 +26,10 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
         Architecture that can be instantiated by `Architecture(in_shape, out_shape)`
     """
     if architecture == "mlp":
-        return partial(FlattenMLP, **kwargs)
-
-    elif architecture == "projhead":
-        return partial(OurProjectionHead, **kwargs)
+        return partial(MLP, **kwargs)
 
     elif architecture == "identity":
         return partial(torch.nn.Identity, **kwargs)
-
-    elif architecture == "flatten":
-        return partial(Flatten, **kwargs)
 
     elif architecture == "linear":
         return partial(FlattenLinear, **kwargs)

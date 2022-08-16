@@ -10,7 +10,7 @@ from issl.architectures import  get_Architecture
 from issl.helpers import (average_dict, freeze_module_, weights_init)
 from torch.distributions import Categorical
 from torch.nn import functional as F
-import  numpy as np
+import numpy as np
 import math
 import pytorch_lightning as pl
 
@@ -126,7 +126,7 @@ class DINO(nn.Module):
         return kwargs
 
     def forward(
-            self, z: torch.Tensor, _, x : torch.Tensor, a : torch.Tensor , parent: Any
+            self, z: torch.Tensor, x : torch.Tensor, x_tilde : torch.Tensor , parent: Any
     ) -> tuple[torch.Tensor, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 
@@ -147,12 +147,15 @@ class DINO(nn.Module):
         """
         self.current_epoch = parent.current_epoch
 
-        # shape: [batch_size, M_shape].
-        # have to use x and a directly because the encoder is different now
-        student_M = self.projector(z).float()
-        teacher_M = self.teacher_proj(parent(torch.cat([x, a]),
-                                             encoder=self.teacher_encoder)).float()
+        # shape=[batch_size*2, z_dim]
+        # have to use x and x_tilde directly because the encoder is different now
+        z_tilde = self.teacher_encoder(torch.cat([x, x_tilde]), dim=0)
 
+        # shape: [batch_size*2, M_shape].
+        student_M = self.projector(z).float()
+        teacher_M = self.teacher_proj(z_tilde).float()
+
+        # shape: [].
         loss, logs = super().loss(student_M, teacher_M)
 
         return loss, logs
@@ -181,7 +184,7 @@ class DINO(nn.Module):
         p_Mlz = F.softmax(logits_teacher, dim=-1)
 
         # shape: []
-        CE_distill_aug = -(p_Mlz * logits_student.log_softmax(-1)).sum(-1).mean(),
+        CE_distill_aug = -(p_Mlz * logits_student.log_softmax(-1)).sum(-1).mean()
 
         self.update_center(M_teacher)
 

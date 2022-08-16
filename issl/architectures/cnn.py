@@ -53,26 +53,18 @@ class ResNet(nn.Module):
         in_shape: Sequence[int],
         out_shape: Sequence[int],
         base: str = "resnet18",
-        is_pretrained: bool = False,
         is_channel_out_dim: bool=False,
         bottleneck_channel: Optional[int] = None,
-        is_resize_only_if_necessary: bool = False,
         **kwargs
     ):
         super().__init__()
         self.in_shape = in_shape
         self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
         self.out_dim = prod(self.out_shape)
-        self.is_pretrained = is_pretrained
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
-        self.is_resize_only_if_necessary = is_resize_only_if_necessary
 
-        if not self.is_pretrained:
-            # cannot load pretrained if wrong out dim
-            kwargs["num_classes"] = self.out_dim
-
-        self.resnet = torchvision.models.__dict__[base](**kwargs)
+        self.resnet = torchvision.models.__dict__[base](num_classes=self.out_dim, **kwargs)
 
         if self.is_channel_out_dim:
             self.update_out_chan_()
@@ -87,9 +79,6 @@ class ResNet(nn.Module):
     def update_out_chan_(self):
         current_nchan = self.resnet.fc.in_features
         target_nchan = self.out_dim
-
-        if current_nchan == target_nchan and self.is_resize_only_if_necessary:
-            return
 
         if self.bottleneck_channel is None:
             conv1 = nn.Conv2d(current_nchan, target_nchan, kernel_size=1, bias=False)
@@ -135,31 +124,9 @@ class ResNet(nn.Module):
     def forward_out_chan(self, Y_pred):
         return self.resnet.avgpool(Y_pred)
 
-    def forward(self, X, is_return_no_out_chan=False):
-        if is_return_no_out_chan:  # TODO test if works and worth keeping
-            assert self.is_channel_out_dim
-
-            # need to recode everything to remove the flattening
-            x = self.resnet.conv1(X)
-            x = self.resnet.bn1(x)
-            x = self.resnet.relu(x)
-            x = self.resnet.maxpool(x)
-
-            x = self.resnet.layer1(x)
-            x = self.resnet.layer2(x)
-            x = self.resnet.layer3(x)
-            Y_pred_nopool = self.resnet.layer4(x)
-
-            Y_pred_no_out_chan = self.resnet.avgpool[1](Y_pred_nopool).flatten(1)
-            Y_pred_out_chan = self.resnet.avgpool(Y_pred_nopool).flatten(1)
-            Y_pred = Y_pred_out_chan.unflatten(dim=-1, sizes=self.out_shape)
-
-            # also return the representation without out channel
-            return Y_pred, Y_pred_no_out_chan
-
-        else:
-            Y_pred = self.resnet(X)
-            Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
+    def forward(self, X):
+        Y_pred = self.resnet(X)
+        Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
         return Y_pred
 
     def reset_parameters(self):

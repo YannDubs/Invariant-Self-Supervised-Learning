@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from typing import Any, Optional
 import logging
@@ -10,7 +9,7 @@ import torch
 
 from issl import get_Architecture
 from issl.helpers import DistToEtf, OrderedSet, append_optimizer_scheduler_
-from issl.losses import get_loss_decodability
+from issl.losses import get_loss_decodability, DINO
 from issl.predictors import OnlineEvaluator
 
 __all__ = ["ISSLModule"]
@@ -32,25 +31,16 @@ class ISSLModule(pl.LightningModule):
         )
 
         if self.hparams.evaluation.representor.is_online_eval:
-            # replaces pl_bolts.callbacks.SSLOnlineEvaluator because training
-            # as a callback was not well support by lightning
+            # online probe
             self.evaluator = OnlineEvaluator(**self.hparams.online_evaluator.kwargs)
 
         self.stage = self.hparams.stage  # allow changing to stages
 
-        # input example to get shapes for summary
+        # input example to get shapes for summary of the model
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
+        # only used for monitoring
         self.dist_to_etf = DistToEtf(z_dim=self.hparams.encoder.z_dim)
-
-    def load_state_dict(self, state_dict, *args, **kwargs):
-        # TODO rm this is just for backward compatibility
-        new_state_dict = {k.replace("p_ZlX.mapper","encoder"): v for k,v in state_dict.items()}
-        try:
-            super().load_state_dict(new_state_dict, *args, **kwargs)
-        except:
-            logger.exception("Using strict=False after:")
-            super().load_state_dict(new_state_dict, strict=False)
 
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
@@ -65,41 +55,25 @@ class ISSLModule(pl.LightningModule):
 
         return self(x).cpu(), y.cpu()
 
-    def forward(
-        self, x: torch.Tensor, encoder=None,  **kwargs
-    ):
-        """Represents the data `x`.
-
-        Parameters
-        ----------
-        x : torch.Tensor of shape=[batch_size, *data.shape]
-            Data to represent.
-
-        encoder : Module, optional
-            Encoder to use instead of the default `self.encoder`. Useful to use an EMA encoder.
-
-        Returns
-        -------
-        z : torch.Tensor of shape=[batch_size, z_dim]
-            Represented data.
-        """
-
-        if encoder is None:
-            encoder = self.encoder
-
-        # shape: [batch_size, *z_dim]
-        z = encoder(x, **kwargs)
-
+    def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
+        """Represents the data `x`."""
+        # shape: [batch_size, z_dim]
+        z = self.encoder(x, **kwargs)
         return z
 
     def step(self, batch: list) -> tuple[torch.Tensor, dict]:
 
-        x, (_, aux_target) = batch
+        x, (_, x_tilde) = batch
 
-        z = self(x)  # only encode the input (ie if asymmetry between X and A)
-        z_tgt = None
+        # z shape: [2 * batch_size, z_dim]
+        z = self(torch.cat([x, x_tilde]))
+        z_tgt = z  # could change if second branch is encoded differently (eg CLIP)
 
-        loss, logs = self.loss_decodability(z, z_tgt, x, aux_target, self)
+        if isinstance(self.loss_decodability, DINO):
+            # dino will have to refeaturize data with the EMA teacher
+            loss, logs = self.loss_decodability(z, x, x_tilde, self)
+        else:
+            loss, logs = self.loss_decodability(z, z_tgt)
 
         # to log (dict)
         logs["loss"] = loss
@@ -113,17 +87,11 @@ class ISSLModule(pl.LightningModule):
     def training_step(
         self, batch: torch.Tensor, batch_idx: int, optimizer_idx: int = 0
     ) -> Optional[torch.Tensor]:
-
         curr_opt = self.idcs_to_opt[optimizer_idx]
-
-        # MODEL
         if curr_opt == "issl":
-            loss, logs = self.step(batch)
-
-        # ONLINE EVALUATOR
+            loss, logs = self.step(batch)  # representation learning
         elif curr_opt == "evaluator":
-            loss, logs = self.evaluator(batch, self)
-
+            loss, logs = self.evaluator(batch, self)  # online evaluator
         else:
             raise ValueError(f"Unknown curr_opt={curr_opt}.")
 
@@ -185,7 +153,7 @@ class ISSLModule(pl.LightningModule):
         optimizers, schedulers = [], []
         n_opt = 0
 
-        # Encoder OPTIMIZER
+        # ENCODER OPTIMIZER
         self.idcs_to_opt[n_opt] = "issl"
         n_opt += 1
         append_optimizer_scheduler_(
@@ -232,6 +200,7 @@ class ISSLModule(pl.LightningModule):
         self.eval()
 
     def on_after_backward(self):
+        # freezing only used for DINO
         dec = self.loss_decodability
         if hasattr(dec, "to_freeze") and self.current_epoch < dec.freeze_Mx_epochs:
             for to_freeze in dec.to_freeze:

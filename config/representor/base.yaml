@@ -1,5 +1,4 @@
 name: base
-is_on_the_fly: False
 is_force_retrain: False # force retraining even if exists
 is_train: True # whether to train the compressor, if not will load a pretrained representor if it exists
 is_use_init: False # useful for using pretrained SSL

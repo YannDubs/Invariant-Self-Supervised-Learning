@@ -2,26 +2,19 @@ from __future__ import annotations
 
 import contextlib
 import copy
-import json
 import math
 import numbers
 import operator
-from pathlib import Path
 import random
 import sys
-import warnings
 from argparse import Namespace
 from collections.abc import MutableMapping, MutableSet, Sequence
-from functools import reduce, wraps
-from queue import Queue
-from typing import Any, Optional, Union
+from functools import reduce
+
+from typing import Any, Optional
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-from matplotlib.cbook import MatplotlibDeprecationWarning
-from torch.optim.lr_scheduler import ReduceLROnPlateau, _LRScheduler
 from torchvision import transforms as transform_lib
 
 import torch
@@ -35,10 +28,6 @@ except:
     pass
 
 logger = logging.getLogger(__name__)
-
-def is_pow_of_k(n, k):
-    """Check if `n` is a power of k. Can be wrong for huge n."""
-    return math.log(n, k).is_integer()
 
 class RunningMean(nn.Module):
     """Keep track of an exponentially moving average"""
@@ -112,18 +101,6 @@ class NamespaceMap(Namespace, MutableMapping):
     def __iter__(self):
         return iter(self.__dict__)
 
-
-
-
-def cont_tuple_to_tuple_cont(container):
-    """Converts a container (list, tuple, dict) of tuple to a tuple of container."""
-    if isinstance(container, dict):
-        return tuple(dict(zip(container, val)) for val in zip(*container.values()))
-    elif isinstance(container, list) or isinstance(container, tuple):
-        return tuple(zip(*container))
-    else:
-        raise ValueError("Unknown container type: {}.".format(type(container)))
-
 def check_import(module: str, to_use: Optional[str] = None):
     """Check whether the given module is imported."""
     if module not in sys.modules:
@@ -194,22 +171,6 @@ def tmp_seed(seed: Optional[int], is_cuda: bool = torch.cuda.is_available()):
             if is_cuda:
                 torch.cuda.set_rng_state(torch_cuda_state)
 
-def file_cache(filename):
-    """Decorator to cache the output of a function to disk."""
-    def decorator(f):
-        @wraps(f)
-        def decorated(self, directory, *args, **kwargs):
-            filepath = Path(directory) / filename
-            if filepath.is_file():
-                out = json.loads(filepath.read_text())
-            else:
-                logger.info(f"Precomputing cache at {filepath}")
-                out = f(self, directory, *args, **kwargs)
-                filepath.write_text(json.dumps(out))
-            return out
-        return decorated
-    return decorator
-
 
 # taken from https://github.com/rwightman/pytorch-image-models/blob/d5ed58d623be27aada78035d2a19e2854f8b6437/timm/models/layers/weight_init.py
 def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='truncated_normal'):
@@ -235,7 +196,7 @@ def variance_scaling_(tensor, scale=1.0, mode='fan_in', distribution='truncated_
     else:
         raise ValueError(f"invalid distribution {distribution}")
 
-def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
+def init_std_modules(module: nn.Module) -> bool:
     """Initialize standard layers and return whether was initialized."""
     # all standard layers
     if isinstance(module, nn.modules.conv._ConvNd):
@@ -261,10 +222,6 @@ def init_std_modules(module: nn.Module, nonlinearity: str = "relu") -> bool:
         return False
 
     return True
-
-def johnson_lindenstrauss_init_(m):
-    """Initialization for low dimension projection => johnson lindenstrauss lemma."""
-    torch.nn.init.normal_(m.weight, std=1 / math.sqrt(m.weight.shape[0]))
 
 def weights_init(module: nn.Module, nonlinearity: str = "relu") -> None:
     """Initialize a module and all its descendents.
@@ -322,54 +279,14 @@ def freeze_module_(model):
     for p in model.parameters():
         p.requires_grad = False
 
-def aggregate_dicts(dicts, operation=mean):
-    """
-    Aggregate a sequence of dictionaries to a single dictionary using `operation`. `Operation` should
-    reduce a list of all values with the same key. Keys that are not found in one dictionary will
-    be mapped to `None`, `operation` can then chose how to deal with those.
-    """
-    all_keys = set().union(*[el.keys() for el in dicts])
-    return {k: operation([dic.get(k, None) for dic in dicts]) for k in all_keys}
-
-
-def kl_divergence(p, q, z_samples=None, is_lower_var=False):
-    """Computes KL[p||q], analytically if possible but with MC if not."""
-    try:
-        kl_pq = torch.distributions.kl_divergence(p, q)
-
-    except NotImplementedError:
-        # removes the event shape
-        log_q = q.log_prob(z_samples)
-        log_p = p.log_prob(z_samples)
-        if is_lower_var:
-            # http://joschu.net/blog/kl-approx.html
-            log_r = log_q - log_p
-            # KL[p||q] = (r−1) - log(r)
-            kl_pq = log_r.exp() - 1 - log_r
-        else:
-            # KL[p||q] = E_p[log p] - E_p[log q]
-            kl_pq = log_p - log_q
-
-    return kl_pq
-
 
 MEANS = {
-    "imagenet": [0.485, 0.456, 0.406],
     "tiny-imagenet-200": [0.480, 0.448, 0.398],
     "cifar10": [0.4914009, 0.48215896, 0.4465308],
-    "clip": [0.48145466, 0.4578275, 0.40821073],
-    "stl10": [0.43, 0.42, 0.39],
-    "stl10_unlabeled": [0.43, 0.42, 0.39],
 }
 STDS = {
-    "imagenet": [0.229, 0.224, 0.225],
     "tiny-imagenet-200": [0.277, 0.269, 0.282],
     "cifar10": [0.24703279, 0.24348423, 0.26158753],
-    # cifar10=[0.2023, 0.1994, 0.2010],
-    # whitening paper actually uses the one from pytorch
-    "clip": [0.26862954, 0.26130258, 0.27577711],
-    "stl10": [0.27, 0.26, 0.27],
-    "stl10_unlabeled": [0.27, 0.26, 0.27],
 }
 
 
@@ -420,102 +337,6 @@ class OrderedSet(MutableSet):
     def __iter__(self):
         return self._d.__iter__()
 
-
-def at_least_ndim(x: torch.Tensor, ndim: int) -> torch.Tensor:
-    """Reshapes a tensor so that it has at least n dimensions."""
-    if x is None:
-        return None
-    return x.view(list(x.shape) + [1] * (ndim - x.ndim))
-
-
-def tensors_to_fig(
-    x: torch.Tensor,
-    n_rows: Optional[int] = None,
-    n_cols: Optional[int] = None,
-    x_labels: list = [],
-    y_labels: list = [],
-    imgsize: tuple[int, int] = (4, 4),
-    small_font: int = 16,
-    large_font: int = 20,
-) -> plt.Figure:
-    """Make a grid-like figure from tensors and labels. Return figure."""
-    b, c, h, w = x.shape
-    assert (n_rows is not None) or (n_cols is not None)
-    if n_cols is None:
-        n_cols = b // n_rows
-    elif n_rows is None:
-        n_rows = b // n_cols
-
-    n_x_labels = len(x_labels)
-    n_y_labels = len(y_labels)
-    assert n_x_labels in [0, 1, n_cols]
-    assert n_y_labels in [0, 1, n_rows]
-
-    figsize = (imgsize[0] * n_cols, imgsize[1] * n_rows)
-
-    constrained_layout = True
-
-    # TODO : remove once use matplotlib 3.4
-    # i.e. use fig, axes = plt.subplots(n_rows, n_cols, squeeze=False, sharex=True, sharey=True, figsize=figsize, constrained_layout=True)
-    if n_x_labels == 1 or n_y_labels == 1:
-        constrained_layout = False
-
-    fig, axes = plt.subplots(
-        n_rows,
-        n_cols,
-        squeeze=False,
-        sharex=True,
-        sharey=True,
-        figsize=figsize,
-        constrained_layout=constrained_layout,
-    )
-
-    for i in range(n_cols):
-        for j in range(n_rows):
-            xij = x[i * n_rows + j]
-            xij = xij.permute(1, 2, 0)
-            axij = axes[j, i]
-            if xij.size(2) == 1:
-                axij.imshow(to_numpy(xij.squeeze()), cmap="gray")
-            else:
-                axij.imshow(to_numpy(xij))
-
-            axij.get_xaxis().set_ticks([])
-            axij.get_xaxis().set_ticklabels([])
-            axij.get_yaxis().set_ticks([])
-            axij.get_yaxis().set_ticklabels([])
-
-            if n_x_labels == n_cols and j == (n_rows - 1):
-                axij.set_xlabel(x_labels[i], fontsize=small_font)
-            if n_y_labels == n_rows and i == 0:
-                axij.set_ylabel(y_labels[j], fontsize=small_font)
-
-    # TODO : remove all the result once use matplotlib 3.4
-    # i.e. use:
-    #     if n_x_labels == 1:
-    #         fig.supxlabel(x_labels[0])
-
-    #     if n_y_labels == 1:
-    #         fig.supylabel(y_labels[0])
-    # fig.set_constrained_layout_pads(w_pad=0, h_pad=0.,hspace=hspace, wspace=wspace)
-
-    large_ax = fig.add_subplot(111, frameon=False)
-    # hide tick and tick label of the big axis
-    plt.tick_params(labelcolor="none", top=False, bottom=False, left=False, right=False)
-
-    if n_x_labels == 1:
-        large_ax.set_xlabel(x_labels[0], fontsize=large_font)
-
-    if n_y_labels == 1:
-        large_ax.set_ylabel(y_labels[0], fontsize=large_font)
-
-    # TODO : remove once use matplotlib 3.4
-    if n_x_labels == 1 or n_y_labels == 1:
-        plt.tight_layout()
-
-    return fig
-
-
 def prediction_loss(
     Y_hat: torch.Tensor, y: torch.Tensor, is_classification: bool = True,
 ) -> torch.Tensor:
@@ -545,12 +366,6 @@ def prediction_loss(
 
     return loss
 
-
-def queue_push_(queue: Queue, el: torch.Tensor) -> None:
-    """Pushes to the queue without going past the limit."""
-    if queue.full():
-        queue.get(0)
-    queue.put_nowait(el)
 
 
 def get_lr_scheduler(
@@ -649,27 +464,17 @@ def get_lr_scheduler(
         Scheduler = getattr(torch.optim.lr_scheduler, scheduler_type)
         scheduler = Scheduler(optimizer, **kwargs)
 
-    # TODO: test plateau
-
     if is_warmup_lr:
-        if scheduler_type == "CosineAnnealingLR":
-            # TODO: test
-            assert warmup_multiplier == 1.0
-            check_import("pl_bolts", "CosineAnnealingLR with warmup")
-            kwargs = copy.deepcopy(kwargs)
-            # the following will remove warmup_epochs => should no give
-            # epochs = epochs - warmup_epochs
-            T_max = kwargs.pop("T_max")
-            scheduler = LinearWarmupCosineAnnealingLR(
-                optimizer, warmup_epochs=warmup_epochs, max_epochs=T_max, **kwargs
-            )
-        else:
-            scheduler = GradualWarmupScheduler(
-                optimizer,
-                multiplier=warmup_multiplier,
-                total_epoch=warmup_epochs,
-                after_scheduler=scheduler,
-            )
+        assert scheduler_type == "CosineAnnealingLR"
+        assert warmup_multiplier == 1.0
+        check_import("pl_bolts", "CosineAnnealingLR with warmup")
+        kwargs = copy.deepcopy(kwargs)
+        # the following will remove warmup_epochs => should no give
+        # epochs = epochs - warmup_epochs
+        T_max = kwargs.pop("T_max")
+        scheduler = LinearWarmupCosineAnnealingLR(
+            optimizer, warmup_epochs=warmup_epochs, max_epochs=T_max, **kwargs
+        )
 
     return dict(scheduler=scheduler, name=name, **kwargs_config_scheduler)
 
@@ -730,18 +535,6 @@ def append_optimizer_scheduler_(
             # never warmup besides the last
             sch_kwargs["is_warmup_lr"] = False
 
-        is_plat = mode == "ReduceLROnPlateau"
-        if is_warmup_lr and is_plat:
-            # pytorch lightning will not work with the current code for plateau + warmup
-            # because they use `isinstance` to know whether to give a metric
-            # => instead just append a linear warming up
-            lin = LinearLR(
-                optimizer,
-                start_factor=1 / 100,
-                total_iters=sch_kwargs["warmup_epochs"],
-            )
-            schedulers += [dict(scheduler=lin, name=name)]
-            sch_kwargs["is_warmup_lr"] = False
 
         scheduler = get_lr_scheduler(optimizer, mode, name=name, **sch_kwargs)
         schedulers += [scheduler]
@@ -749,246 +542,6 @@ def append_optimizer_scheduler_(
     return optimizers, schedulers
 
 
-# modified from https://github.com/ildoonet/pytorch-gradual-warmup-lr/blob/6b5e8953a80aef5b324104dc0c2e9b8c34d622bd/warmup_scheduler/scheduler.py#L5
-class GradualWarmupScheduler(_LRScheduler):
-    """ Gradually warm-up(increasing) learning rate in optimizer.
-
-    Args:
-        optimizer (Optimizer): Wrapped optimizer.
-        multiplier: target learning rate = base lr * multiplier if multiplier > 1.0. if multiplier = 1.0, lr starts from 0 and ends up with the base_lr.
-        total_epoch: target learning rate is reached at total_epoch, gradually
-        after_scheduler: after target_epoch, use this scheduler(eg. ReduceLROnPlateau)
-    """
-
-    def __init__(self, optimizer, multiplier, total_epoch, after_scheduler=None):
-        self.multiplier = multiplier
-        if self.multiplier < 1.0:
-            raise ValueError("multiplier should be greater thant or equal to 1.")
-        self.total_epoch = total_epoch
-        self.after_scheduler = after_scheduler
-        self.finished = False
-
-        super(GradualWarmupScheduler, self).__init__(optimizer)
-
-    def get_lr(self):
-        if self.last_epoch >= self.total_epoch:
-            if self.after_scheduler:
-                if not self.finished:
-                    self.after_scheduler.base_lrs = [
-                        base_lr * self.multiplier for base_lr in self.base_lrs
-                    ]
-                    self.after_scheduler._last_lr = self.after_scheduler.base_lrs
-                    for i, group in enumerate(self.optimizer.param_groups):
-                        group["lr"] = self.after_scheduler.base_lrs[i]
-                    self.finished = True
-                return self.after_scheduler.get_last_lr()
-            return [base_lr * self.multiplier for base_lr in self.base_lrs]
-        else:
-            # before finished warming up do not call underlying scheduler
-            if self.multiplier == 1.0:
-                return [
-                    base_lr * (float(self.last_epoch) / self.total_epoch)
-                    for base_lr in self.base_lrs
-                ]
-            else:
-                return [
-                    base_lr
-                    * (
-                        (self.multiplier - 1.0) * self.last_epoch / self.total_epoch
-                        + 1.0
-                    )
-                    for base_lr in self.base_lrs
-                ]
-
-    def step_ReduceLROnPlateau(self, metrics):
-        self.last_epoch += 1
-        if self.last_epoch < self.total_epoch:
-            warmup_lr = self.get_lr()
-            for param_group, lr in zip(self.optimizer.param_groups, warmup_lr):
-                param_group["lr"] = lr
-        else:
-            self.after_scheduler.step(metrics)
-
-    def step(self, metrics=None):
-        if not isinstance(self.after_scheduler, ReduceLROnPlateau):
-            if self.finished and self.after_scheduler:
-                self.after_scheduler.step()
-                self._last_lr = self.after_scheduler.get_last_lr()
-            else:
-                return super(GradualWarmupScheduler, self).step()
-        else:
-            self.step_ReduceLROnPlateau(metrics)
-
-
-# TODO remove in pytorch 1.10 as this is copied from there
-class LinearLR(_LRScheduler):
-    """Decays the learning rate of each parameter group by linearly changing small
-    multiplicative factor until the number of epoch reaches a pre-defined milestone: total_iters.
-    Notice that such decay can happen simultaneously with other changes to the learning rate
-    from outside this scheduler. When last_epoch=-1, sets initial lr as lr.
-
-    Args:
-        optimizer (Optimizer): Wrapped optimizer.
-        start_factor (float): The number we multiply learning rate in the first epoch.
-            The multiplication factor changes towards end_factor in the following epochs.
-            Default: 1./3.
-        end_factor (float): The number we multiply learning rate at the end of linear changing
-            process. Default: 1.0.
-        total_iters (int): The number of iterations that multiplicative factor reaches to 1.
-            Default: 5.
-        last_epoch (int): The index of the last epoch. Default: -1.
-        verbose (bool): If ``True``, prints a message to stdout for
-            each update. Default: ``False``.
-    """
-
-    def __init__(
-        self,
-        optimizer,
-        start_factor=1.0 / 3,
-        end_factor=1.0,
-        total_iters=5,
-        last_epoch=-1,
-        verbose=False,
-    ):
-        if start_factor > 1.0 or start_factor < 0:
-            raise ValueError(
-                "Starting multiplicative factor expected to be between 0 and 1."
-            )
-
-        if end_factor > 1.0 or end_factor < 0:
-            raise ValueError(
-                "Ending multiplicative factor expected to be between 0 and 1."
-            )
-
-        self.start_factor = start_factor
-        self.end_factor = end_factor
-        self.total_iters = total_iters
-        super(LinearLR, self).__init__(optimizer, last_epoch, verbose)
-
-    def get_lr(self):
-        if not self._get_lr_called_within_step:
-            warnings.warn(
-                "To get the last learning rate computed by the scheduler, "
-                "please use `get_last_lr()`.",
-                UserWarning,
-            )
-
-        if self.last_epoch == 0:
-            return [
-                group["lr"] * self.start_factor for group in self.optimizer.param_groups
-            ]
-
-        if self.last_epoch > self.total_iters:
-            return [group["lr"] for group in self.optimizer.param_groups]
-
-        return [
-            group["lr"]
-            * (
-                1.0
-                + (self.end_factor - self.start_factor)
-                / (
-                    self.total_iters * self.start_factor
-                    + (self.last_epoch - 1) * (self.end_factor - self.start_factor)
-                )
-            )
-            for group in self.optimizer.param_groups
-        ]
-
-    def _get_closed_form_lr(self):
-        return [
-            base_lr
-            * (
-                self.start_factor
-                + (self.end_factor - self.start_factor)
-                * min(self.total_iters, self.last_epoch)
-                / self.total_iters
-            )
-            for base_lr in self.base_lrs
-        ]
-
-
-@contextlib.contextmanager
-def plot_config(
-    style="ticks",
-    context="talk",
-    palette="colorblind",
-    font_scale=1.15,
-    font="sans-serif",
-    is_ax_off=False,
-    is_rm_xticks=False,
-    is_rm_yticks=False,
-    rc={"lines.linewidth": 4},
-    set_kwargs=dict(),
-    despine_kwargs=dict(),
-    # pretty_renamer=dict(), #TODO
-):
-    """Temporary seaborn and matplotlib figure style / context / limits / ....
-
-    Parameters
-    ----------
-    style : dict, None, or one of {darkgrid, whitegrid, dark, white, ticks}
-        A dictionary of parameters or the name of a preconfigured set.
-
-    context : dict, None, or one of {paper, notebook, talk, poster}
-        A dictionary of parameters or the name of a preconfigured set.
-
-    palette : string or sequence
-        Color palette, see :func:`color_palette`
-
-    font : string
-        Font family, see matplotlib font manager.
-
-    font_scale : float, optional
-        Separate scaling factor to independently scale the size of the
-        font elements.
-
-    is_ax_off : bool, optional
-        Whether to turn off all axes.
-
-    is_rm_xticks, is_rm_yticks : bool, optional
-        Whether to remove the ticks and labels from y or x axis.
-
-    rc : dict, optional
-        Parameter mappings to override the values in the preset seaborn
-        style dictionaries.
-
-    set_kwargs : dict, optional
-        kwargs for matplotlib axes. Such as xlim, ylim, ...
-
-    despine_kwargs : dict, optional
-        Arguments to `sns.despine`.
-    """
-    defaults = plt.rcParams.copy()
-
-    try:
-        rc["font.family"] = font
-        plt.rcParams.update(rc)
-
-        with sns.axes_style(style=style, rc=rc), sns.plotting_context(
-            context=context, font_scale=font_scale, rc=rc
-        ), sns.color_palette(palette):
-            yield
-            last_fig = plt.gcf()
-            for i, ax in enumerate(last_fig.axes):
-                ax.set(**set_kwargs)
-
-                if is_ax_off:
-                    ax.axis("off")
-
-                if is_rm_yticks:
-                    ax.axes.yaxis.set_ticks([])
-
-                if is_rm_xticks:
-                    ax.axes.xaxis.set_ticks([])
-
-        sns.despine(**despine_kwargs)
-
-    finally:
-        with warnings.catch_warnings():
-            # filter out depreciation warnings when resetting defaults
-            warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
-            # reset defaults
-            plt.rcParams.update(defaults)
 
 class BatchNorm1d(nn.BatchNorm1d):
     def __init__(self, *args, is_bias=True, **kwargs):
@@ -997,146 +550,9 @@ class BatchNorm1d(nn.BatchNorm1d):
         if self.affine and not self.is_bias:
             self.bias.requires_grad = False
 
-
-# modified from: https://github.com/facebookresearch/vissl/blob/aa3f7cc33b3b7806e15593083aedc383d85e4a53/vissl/losses/distibuted_sinkhornknopp.py#L11
-def sinkhorn_knopp(
-    logits: torch.Tensor,
-    eps: float = 0.05,
-    n_iter: int = 3,
-    is_hard_assignment: bool = False,
-    is_double_prec: bool = True,
-    is_force_no_gpu: bool = False,
-):
-    """Sinkhorn knopp algorithm to find an equipartition giving logits.
-    
-    Parameters
-    ----------
-    logits : torch.Tensor
-        Logits of shape (n_samples, n_Mx).
-
-    eps : float, optional
-        Regularization parameter for Sinkhorn-Knopp algorithm. Reducing epsilon parameter encourages
-        the assignments to be sharper (i.e. less uniform), which strongly helps avoiding collapse. 
-        However, using a too low value for epsilon may lead to numerical instability.
-
-    n_iter : int, optional
-        Nubmer of iterations. Larger is better but more compute.
-
-    is_hard_assignment : bool, optional
-        Whether to use hard assignements rather than soft ones.
-    
-    is_double_prec : bool, optional
-        Whether to use double precision to ensure that no instabilities.
-
-    is_force_no_gpu : bool, optional
-        Forcing computation on CPU even if GPU available.
-    """
-
-    # we follow the u, r, c and Q notations from
-    # https://arxiv.org/abs/1911.05371
-
-    is_gpu = (not is_force_no_gpu) and torch.cuda.is_available()
-
-    logits = logits.float()
-    if is_double_prec:
-        logits = logits.double()
-
-    # Q shape: [n_Mx, n_samples]
-    # log sum exp trick for stability
-    logits = logits / eps
-    M = torch.max(logits)
-    Q = (logits - M).exp().T
-
-    # remove potential infs in Q. Replace by max non inf.
-    Q = torch.nan_to_num(Q, posinf=Q.masked_fill(torch.isinf(Q), 0).max().item())
-
-    # make the matrix sum to 1
-    sum_Q = torch.sum(Q, dtype=Q.dtype)
-    Q /= sum_Q
-
-    # number of clusters, and examples to be clustered
-    n_Mx, n_samples = Q.shape
-
-    # Shape: [n_Mx]
-    r = torch.ones(n_Mx) / n_Mx
-    c = torch.ones(n_samples) / n_samples
-    if is_double_prec:
-        r, c = r.double(), c.double()
-
-    if is_gpu:
-        r = r.cuda(non_blocking=True)
-        c = c.cuda(non_blocking=True)
-
-    for _ in range(n_iter):
-        # normalize each row: total weight per prototype must be 1/K. Shape : [n_Mx]
-        sum_rows = torch.sum(Q, dim=1, dtype=Q.dtype)
-
-        # for numerical stability, add a small epsilon value for zeros
-        if len(torch.nonzero(sum_rows == 0)) > 0:
-            Q += 1e-12
-            sum_rows = torch.sum(Q, dim=1, dtype=Q.dtype)
-
-        #  Shape : [n_Mx]
-        u = r / sum_rows
-
-        # remove potential infs in u. Replace by max non inf.
-        u = torch.nan_to_num(u, posinf=u.masked_fill(torch.isinf(u), 0).max().item())
-
-        # normalize each row: total weight per prototype must be 1/n_Mx
-        Q *= u.unsqueeze(1)
-
-        # normalize each column: total weight per sample must be 1/n_samples_world
-        Q *= (c / torch.sum(Q, dim=0, dtype=Q.dtype)).unsqueeze(0)
-
-    Q = (Q / torch.sum(Q, dim=0, keepdim=True, dtype=Q.dtype)).T.float()
-
-    if is_hard_assignment:
-        # shape : [n_samples]
-        index_max = torch.max(Q, dim=1)[1]
-        Q.zero_()
-        Q.scatter_(1, index_max.unsqueeze(1), 1)
-
-    return Q
-
-def warmup_cosine_scheduler(step, warmup_steps, total_steps, boundary=0, optima=1):
-    """Computes scheduler for cosine with warmup."""
-    if step < warmup_steps:
-        return boundary + (float(step) / float(max(1, warmup_steps))) * (optima - boundary)
-
-    progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-
-    return boundary + 0.5 * (1.0 + math.cos(math.pi * progress)) * (optima - boundary)
-
 def eye_like(x):
     """Return an identity like `x`."""
     return torch.eye(*x.size(), out=torch.empty_like(x))
-
-def rel_distance(x1, x2, detach_at=None, **kwargs):
-    """
-    Return the relative distance of positive examples compaired to negative.
-    ~0 means that positives are essentially the same compared to negatives.
-    ~1 means that positives and negatives are essentially indistinguishable.
-    """
-    dist = torch.cdist(x1, x2, **kwargs)
-    dist_inter_class = dist[~eye_like(dist).bool()].mean()
-    dist_intra_class = dist.diag().mean()
-    rel_dist = dist_intra_class / (dist_inter_class + 1e-5)
-    if detach_at is not None and detach_at > rel_dist:
-        # only detach negatives, positives can still go to 0 var
-        rel_dist = dist_intra_class / (dist_inter_class.detach() + 1e-5)
-    return rel_dist
-
-def corrcoeff_to_eye_loss(x1,x2):
-    batch_size, dim = x1.shape
-    x1_norm = (x1 - x1.mean(1, keepdim=True)) / x1.std(1, keepdim=True)
-    x2_norm = (x2 - x2.mean(1, keepdim=True)) / x2.std(1, keepdim=True)
-    corr_coeff = x1_norm @ x2_norm.T / dim
-    pos_loss = (corr_coeff.diagonal() - 1).pow(2)
-    neg_loss_1 = corr_coeff.masked_select(~eye_like(corr_coeff).bool()).view(batch_size, batch_size - 1).pow(2).mean(1)
-    neg_loss_2 = corr_coeff.T.masked_select(~eye_like(corr_coeff).bool()).view(batch_size, batch_size - 1).pow(2).mean(1)
-    neg_loss = (neg_loss_1 + neg_loss_2) / 2  # symmetrize
-    return pos_loss + neg_loss
-
 
 class DistToEtf(nn.Module):
     def __init__(self, z_dim):

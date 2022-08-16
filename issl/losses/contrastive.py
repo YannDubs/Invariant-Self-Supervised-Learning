@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import copy
 import math
-from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 import logging
 import torch
@@ -12,7 +11,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from issl.architectures import get_Architecture
-from issl.helpers import prod, weights_init
+from issl.helpers import weights_init
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +42,11 @@ class BaseContrastiveISSL(nn.Module):
 
     projector_kwargs : dict, optional
         Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
-        it will be a percentage of z_dim. To use no projector set `mode=Flatten`.
+        it will be a percentage of z_dim. To use no projector set `mode=Identity`.
 
     predictor_kwargs : dict, optional
         Arguments to get `Predictor` from `get_Architecture`. Note that is `out_shape` is <= 1
-        it will be a percentage of z_dim. To use no predictor set `mode=Flatten`.
+        it will be a percentage of z_dim. To use no predictor set `mode=Identity`.
 
     References
     ----------
@@ -111,7 +110,7 @@ class BaseContrastiveISSL(nn.Module):
         return kwargs
 
     def forward(
-        self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, ___
+        self, z: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
     
@@ -120,7 +119,7 @@ class BaseContrastiveISSL(nn.Module):
         z : Tensor shape=[2 * batch_size, z_dim]
             Representations.
 
-        z_tgt : Tensor shape=[2 * batch_size, *x_shape]
+        z_tgt : Tensor shape=[2 * batch_size, z_dim]
             Representation from the other branch.
     
         Returns

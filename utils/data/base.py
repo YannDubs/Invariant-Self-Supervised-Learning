@@ -364,10 +364,6 @@ class ISSLDataModule(LightningDataModule):
         self.aux_target = dataset.aux_target
         self.normalized = dataset.normalization if dataset.is_normalize else None
 
-    @property
-    def balancing_weights(self) -> dict[str, float]:
-        """dictionary mapping every target to a weight that examples from this class should carry."""
-        return dict()
 
     def setup(self, stage: Optional[str] = None) -> None:
         """Prepare the datasets for the current stage."""

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 import torch.nn as nn
 
 
@@ -37,13 +35,3 @@ def get_Activation(activation):
         Activation to use.
     """
     return getattr(nn, activation)
-
-
-def is_pow2(n: int) -> bool:
-    """Check if a number is a power of 2."""
-    return (n != 0) and (n & (n - 1) == 0)
-
-
-def closest_pow(n: int, base: float = 2) -> float:
-    """Return the closest (in log space) power of 2 from a number."""
-    return base ** round(math.log(n, base))

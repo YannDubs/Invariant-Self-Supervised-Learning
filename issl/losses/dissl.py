@@ -87,17 +87,15 @@ class DISSL(nn.Module):
         Mx = F.softmax(logits_assign, dim=-1)
         return Mx
 
-    def forward(
-            self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, ___
-    ) -> tuple[torch.Tensor, dict]:
+    def forward(self, z: torch.Tensor, z_tgt: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Self distillation of examples and compute the upper bound on R[A|Z].
 
         Parameters
         ----------
-        z : Tensor shape=[batch_size, z_dim]
+        z : Tensor shape=[2 * batch_size, z_dim]
             Sampled representation.
 
-        z_tgt : Tensor shape=[2 * batch_size, *x_shape]
+        z_tgt : Tensor shape=[2 * batch_size, z_dim]
             Representation from the other branch.
 
         Returns
@@ -107,10 +105,6 @@ class DISSL(nn.Module):
         logs : dict
             Additional values to monitor.
         """
-        loss, logs = self.loss(z, z_tgt)
-        return loss, logs
-
-    def loss(self, z: torch.Tensor, z_tgt: torch.Tensor) -> tuple[torch.Tensor, dict]:
 
         # shape: [batch_size, M_shape]. Make sure not half prec
         logits_assign = self.projector(z_tgt).float() / self.temperature_assign

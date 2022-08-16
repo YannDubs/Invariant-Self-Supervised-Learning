@@ -2,31 +2,21 @@ from __future__ import annotations
 
 import glob
 import logging
-import os
 import shutil
 import warnings
 from contextlib import contextmanager
 from copy import deepcopy
-from functools import partial
 from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
-import sklearn
-import wandb
-from joblib import Parallel, dump, load
-from sklearn.metrics import make_scorer
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.pipeline import Pipeline
-
 import pytorch_lightning as pl
-import torch
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.utils.fixes import delayed
-
-from issl.helpers import NamespaceMap, mean, namespace2dict
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.cbook import MatplotlibDeprecationWarning
 from omegaconf import Container, OmegaConf
-from torch.utils.data import DataLoader
+
+from issl.helpers import NamespaceMap, namespace2dict
 from utils.data.helpers import subset2dataset
 from utils.data.sklearn import SklearnDataModule
 
@@ -225,182 +215,11 @@ def log_dict(trainer: pl.Trainer, to_log: dict, is_param: bool) -> None:
         pass
 
 
-class BinarizeScorer:
-    def __init__(self, scorer, is_unbinarize=False):
-        self.scorer = scorer
-        self.label_binarizer = LabelBinarizer(pos_label=1, neg_label=-1)
-        self.is_unbinarize = is_unbinarize
-
-    def __call__(self, estimator, X, y_true, *args, **kwargs):
-        Y = self.label_binarizer.fit_transform(y_true)
-        if self.is_unbinarize:
-            # dirty tricks to be able to give the unbinarizer to the loss
-            self.scorer._kwargs["unbinarize"] = self.label_binarizer.inverse_transform
-        return self.scorer(estimator, X, Y, *args, **kwargs)
-
-
-class AggScorer:
-    def __init__(self, scorer, funcs_agg=[mean, max, min]):
-        self.scorer = scorer
-        self.funcs_agg = funcs_agg
-
-    def __call__(self, estimator, X, y_true, *args, **kwargs):
-        self.scorer(list(estimator.estimators_)[0], X, y_true[:, 0], *args, **kwargs)
-        losses = Parallel(n_jobs=estimator.n_jobs)(
-            delayed(self.scorer)(e, X, y_true[:, i], *args, **kwargs)
-            for i, e in enumerate(estimator.estimators_)
-        )
-        return np.array([f(losses) for f in self.funcs_agg])
-
-
-class PositiveScorer:
-    def __init__(self, scorer):
-        self.scorer = scorer
-
-    def __call__(self, *args, **kwargs):
-        return -self.scorer(*args, **kwargs)
-
-
-def unbin_loss(y_true, pred_decision, *args, unbinarize=None, loss=None, **kwargs):
-    # dirty trick to avoid error in sklearn make scorer => pass as binzrize then unbinarize
-    y_true = unbinarize(y_true)
-    return loss(y_true, pred_decision, *args, **kwargs)
-
-
-def get_score(
-    name,
-    is_agg=False,
-    greater_is_better=False,
-    needs_proba=False,
-    needs_threshold=False,
-    funcs_agg=[mean, min, max],
-    **kwargs,
-):
-    if name == "ridge_clf_loss":
-        needs_threshold = True
-        is_unbinarize = False
-        name = "mean_squared_error"  # use mean squared error but need to ensure threshold is used
-    elif name == "hinge_loss":
-        needs_threshold = True
-        is_unbinarize = True
-    elif name == "log_loss":
-        needs_proba = True
-
-    loss = getattr(sklearn.metrics, name)
-
-    if needs_threshold and is_unbinarize:
-        loss = partial(unbin_loss, loss=loss)
-
-    if name.split("_")[-1] == "score":
-        # if score then greater is better
-        greater_is_better = True
-
-    scorer = make_scorer(
-        loss,
-        greater_is_better=greater_is_better,
-        needs_proba=needs_proba,
-        needs_threshold=needs_threshold,
-        **kwargs,
-    )
-
-    if needs_threshold:
-        # binarized labels necessary when using make_scorer with needs_threshold
-        scorer = BinarizeScorer(scorer, is_unbinarize=is_unbinarize)
-
-    if is_agg:
-        # perform all the aggregation over tasks
-        scorer = AggScorer(scorer, funcs_agg=funcs_agg)
-
-    if not greater_is_better:
-        scorer = PositiveScorer(scorer)
-
-    return scorer
-
-
-class SklearnTrainer:
-    """Wrapper around sklearn that mimics pytorch lightning trainer."""
-
-    def __init__(self, hparams):
-        self.model = None
-        self.stage = None
-        self.hparams = deepcopy(hparams)
-        self.is_agg_target = self.hparams.data.aux_target == "agg_target"
-
-        scores = self.hparams.predictor.metrics
-        if isinstance(scores, str):
-            scores = [scores]
-
-        self.scores = {s: get_score(s) for s in scores}
-
-        if self.is_agg_target:
-            self.agg_txt_fun = {"": mean, "_max": max, "_min": min}
-            self.agg_scores = {
-                s: get_score(s, is_agg=True, funcs_agg=list(self.agg_txt_fun.values()))
-                for s in scores
-            }
-
-    def fit(self, model: Pipeline, datamodule: SklearnDataModule):
-        if self.is_agg_target:
-            model = MultiOutputClassifier(model)
-
-        data = datamodule.train_dataset
-        model.fit(data.X, data.Y)
-        self.model = model
-
-    def save_checkpoint(self, ckpt_path: Union[str, Path], weights_only: bool = False):
-        dump(self.model, ckpt_path)
-
-
-    def test(
-        self, dataloaders: DataLoader, ckpt_path: Union[str, Path], model: torch.nn.Module=None
-    ) -> list[dict[str, float]]:
-        data = dataloaders.dataset
-
-        if model is None:
-            model = self.model
-
-        if ckpt_path is not None and ckpt_path != "best":
-            model = load(ckpt_path)
-
-        if self.is_agg_target:
-            y_agg = data.Y[:, 1:]
-            y = data.Y[:, 0]
-
-            model_agg = deepcopy(model)
-            model = model_agg.estimators_.pop(0)  # first is not aggregated over
-        else:
-            y = data.Y
-
-        results = {
-            f"test/{self.stage}/{self.hparams.task}/{name}": score(
-                model, data.X, y
-            )
-            for name, score in self.scores.items()
-        }
-
-        if self.is_agg_target:
-            for name, agg_score in self.agg_scores.items():
-                aggregated = agg_score(model_agg, data.X, y_agg)
-                for agg, sffx in zip(aggregated, self.agg_txt_fun.keys()):
-                    key = f"test/{self.stage}/{self.hparams.task}/{name}_agg{sffx}"
-                    results[key] = agg
-
-        logger.info(results)
-
-        if wandb.run is not None:
-            # log to wandb if its active
-            wandb.run.log(results)
-
-        # return a list of dict just like pl trainer (where usually the list is an element for each data loader)
-        # here only works with one dataloader
-        return [results]
-
 
 def apply_representor(
     datamodule: pl.LightningDataModule,
     representor: pl.Trainer,
     is_eval_on_test: bool = True,
-    is_agg_target: bool = False,
     **kwargs,
 ) -> pl.LightningDataModule:
     """Apply a representor on every example (precomputed) of a datamodule and return a new datamodule."""
@@ -441,11 +260,6 @@ def apply_representor(
     sklearn_kwargs["num_workers"] = kwargs.get("num_workers", 8)
     sklearn_kwargs["seed"] = kwargs.get("seed", 123)
 
-    if is_agg_target:
-        # separate the main target with the ones to aggregate over
-        y_transform = lambda y: (y[0:1], y[1:])
-        sklearn_kwargs["dataset_kwargs"] = dict(y_transform=y_transform)
-
     # make a datamodule from features that are precomputed
     datamodule = SklearnDataModule(
         np.concatenate(X_train, axis=0),
@@ -484,4 +298,86 @@ def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
         shutil.rmtree(path)
 
 
+@contextlib.contextmanager
+def plot_config(
+    style="ticks",
+    context="talk",
+    palette="colorblind",
+    font_scale=1.15,
+    font="sans-serif",
+    is_ax_off=False,
+    is_rm_xticks=False,
+    is_rm_yticks=False,
+    rc={"lines.linewidth": 4},
+    set_kwargs=dict(),
+    despine_kwargs=dict(),
+    # pretty_renamer=dict(), #TODO
+):
+    """Temporary seaborn and matplotlib figure style / context / limits / ....
+
+    Parameters
+    ----------
+    style : dict, None, or one of {darkgrid, whitegrid, dark, white, ticks}
+        A dictionary of parameters or the name of a preconfigured set.
+
+    context : dict, None, or one of {paper, notebook, talk, poster}
+        A dictionary of parameters or the name of a preconfigured set.
+
+    palette : string or sequence
+        Color palette, see :func:`color_palette`
+
+    font : string
+        Font family, see matplotlib font manager.
+
+    font_scale : float, optional
+        Separate scaling factor to independently scale the size of the
+        font elements.
+
+    is_ax_off : bool, optional
+        Whether to turn off all axes.
+
+    is_rm_xticks, is_rm_yticks : bool, optional
+        Whether to remove the ticks and labels from y or x axis.
+
+    rc : dict, optional
+        Parameter mappings to override the values in the preset seaborn
+        style dictionaries.
+
+    set_kwargs : dict, optional
+        kwargs for matplotlib axes. Such as xlim, ylim, ...
+
+    despine_kwargs : dict, optional
+        Arguments to `sns.despine`.
+    """
+    defaults = plt.rcParams.copy()
+
+    try:
+        rc["font.family"] = font
+        plt.rcParams.update(rc)
+
+        with sns.axes_style(style=style, rc=rc), sns.plotting_context(
+            context=context, font_scale=font_scale, rc=rc
+        ), sns.color_palette(palette):
+            yield
+            last_fig = plt.gcf()
+            for i, ax in enumerate(last_fig.axes):
+                ax.set(**set_kwargs)
+
+                if is_ax_off:
+                    ax.axis("off")
+
+                if is_rm_yticks:
+                    ax.axes.yaxis.set_ticks([])
+
+                if is_rm_xticks:
+                    ax.axes.xaxis.set_ticks([])
+
+        sns.despine(**despine_kwargs)
+
+    finally:
+        with warnings.catch_warnings():
+            # filter out depreciation warnings when resetting defaults
+            warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
+            # reset defaults
+            plt.rcParams.update(defaults)
 

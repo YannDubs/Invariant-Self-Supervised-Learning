@@ -23,7 +23,6 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from hydra import compose
-from joblib import load
 from omegaconf import Container, OmegaConf
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
@@ -33,13 +32,11 @@ from pytorch_lightning.plugins.environments import SLURMEnvironment
 from issl import ISSLModule, Predictor
 from issl.losses.dino import MAWeightUpdate
 from issl.helpers import check_import
-from issl.predictors import SklearnPredictor, get_representor_predictor
 from utils.cluster.nlprun import nlp_cluster
 from utils.data import get_Datamodule
 from utils.helpers import (
     ModelCheckpoint,
     NamespaceMap,
-    SklearnTrainer,
     apply_representor,
     cfg_save,
     format_resolver,
@@ -127,9 +124,6 @@ def main(cfg):
     finalize_stage_(
         stage,
         repr_cfg,
-        representor,
-        repr_trainer,
-        repr_datamodule,
         repr_res,
         finalize_kwargs,
         is_save_best=True,
@@ -137,63 +131,34 @@ def main(cfg):
 
     del repr_datamodule  # not used anymore and can be large
 
-    ############## REPRESENT ##############
-    if repr_cfg.representor.is_on_the_fly:
-        # this will perform representation on the fly.
-        on_fly_representor = representor
-        pre_representor = None
-    else:
-        # this is quicker but means that you cannot augment at test time and requires more RAM
-        on_fly_representor = None
-        pre_representor = repr_trainer
-
     ############## DOWNSTREAM PREDICTOR ##############
     pred_res_all = dict()
 
-    predictor = None
     for task in cfg.downstream_task.all_tasks:
         logger.info(f"Stage : Predict {task}")
         stage = "predictor"
         pred_cfg = set_downstream_task(cfg, task)
         pred_cfg = set_cfg(pred_cfg, stage)
         pred_datamodule = instantiate_datamodule_(
-            pred_cfg, pre_representor=pre_representor
+            pred_cfg, pre_representor=repr_trainer
         )
         pred_cfg = omegaconf2namespace(pred_cfg)
 
-        is_sklearn = pred_cfg.predictor.is_sklearn
         is_force_retrain = pred_cfg.predictor.is_force_retrain
         is_train = pred_cfg.predictor.is_train or is_force_retrain
         if is_train and not is_trained(pred_cfg, stage, is_force_retrain=is_force_retrain):
-            if is_sklearn:
-                assert not repr_cfg.representor.is_on_the_fly
-
-                kwargs = {}
-                if pred_cfg.is_sk_warm_start and isinstance(predictor, SklearnPredictor):
-                    # will warm start from previous sklearn run
-                    kwargs["old_predictor"] = predictor
-
-                predictor = SklearnPredictor(pred_cfg.predictor, **kwargs)
-                pred_trainer = SklearnTrainer(pred_cfg)
-            else:
-                predictor = Predictor(hparams=pred_cfg, representor=on_fly_representor)
-                pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+            predictor = Predictor(hparams=pred_cfg)
+            pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
 
             logger.info(f"Train predictor for {task} ...")
             fit_(pred_trainer, predictor, pred_datamodule, pred_cfg)
-            save_pretrained(pred_cfg, pred_trainer, stage, is_sklearn=is_sklearn)
+            save_pretrained(pred_cfg, pred_trainer, stage)
 
         else:
             logger.info(f"Load pretrained predictor for {task} ...")
-            if is_sklearn:
-                assert not repr_cfg.representor.is_on_the_fly
-                pred_trainer = SklearnTrainer(pred_cfg)
-                predictor = load_pretrained(repr_cfg, None, stage, is_sklearn=True)
-            else:
-                ReprPred = get_representor_predictor(on_fly_representor)
-                predictor = load_pretrained(pred_cfg, ReprPred, stage)
-                pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
-                placeholder_fit(pred_trainer, predictor)
+            predictor = load_pretrained(pred_cfg, Predictor, stage)
+            pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+            placeholder_fit(pred_trainer, predictor)
 
         pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
 
@@ -204,7 +169,6 @@ def main(cfg):
                 pred_datamodule,
                 pred_cfg,
                 stage,
-                is_sklearn=is_sklearn,
                 model=predictor
             )
         else:
@@ -213,14 +177,10 @@ def main(cfg):
         pred_res_all.update(pred_res)
         save_end_file(pred_cfg)
 
-    # TODO currently finalize_stage only stores the last predictor
-    # so if you return, will only return last result from last loop
+
     finalize_stage_(
         stage,
         pred_cfg,
-        predictor,
-        pred_trainer,
-        pred_datamodule,
         pred_res_all,
         finalize_kwargs,
     )
@@ -306,11 +266,6 @@ def set_downstream_task(cfg: Container, task: str):
             cfg.data_pred = OmegaConf.merge(cfg.data_repr, cfg.data_pred)
 
         cfg.downstream_task.name = task
-
-    if cfg.predictor.is_sklearn:
-        # don't cache if will only see once
-        with omegaconf.open_dict(cfg):
-            cfg.data_pred.kwargs.is_data_in_memory = False
 
     return cfg
 
@@ -402,7 +357,6 @@ def instantiate_datamodule_(
         cfgd.length = int(len(datamodule.train_dataset) * limit_train_batches)
     cfgd.shape = datamodule.shape
     cfgd.target_shape = datamodule.target_shape
-    cfgd.balancing_weights = datamodule.balancing_weights
     cfgd.aux_shape = datamodule.aux_shape
     cfgd.mode = datamodule.mode
     cfgd.aux_target = datamodule.aux_target
@@ -412,7 +366,6 @@ def instantiate_datamodule_(
             datamodule,
             pre_representor,
             is_eval_on_test=cfg.evaluation.is_eval_on_test,
-            is_agg_target=cfg.data.aux_target == "agg_target",
             **cfgd.kwargs,
         )
         datamodule.prepare_data()
@@ -455,8 +408,6 @@ def get_callbacks(
 
     if is_representor:
 
-        aux_target = cfg.data.kwargs.dataset_kwargs.aux_target
-
         if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
             # use momentum contrastive teacher, e.g. DINO
             callbacks += [MAWeightUpdate()]
@@ -484,19 +435,14 @@ def get_callbacks(
     return callbacks
 
 
-def get_logger(
-    cfg: NamespaceMap, module: pl.LightningModule, is_representor: bool
-) -> pl.loggers.base.LightningLoggerBase:
+def get_logger(cfg: NamespaceMap) -> pl.loggers.base.LightningLoggerBase:
     """Return correct logger."""
 
     kwargs = cfg.logger.kwargs
     # useful for different modes (e.g. wandb_kwargs)
     kwargs.update(cfg.logger.get(f"{cfg.logger.name}_kwargs", {}))
 
-    if cfg.logger.name == "csv":
-        pl_logger = CSVLogger(**kwargs)
-
-    elif cfg.logger.name == "wandb":
+    if cfg.logger.name == "wandb":
         check_import("wandb", "WandbLogger")
 
         # noinspection PyBroadException
@@ -528,19 +474,10 @@ def get_trainer(
 
     kwargs = dict(**cfg.trainer)
 
-    # PARALLEL PROCESSING
-    if kwargs["gpus"] > 1:
-        # TODO test
-        kwargs["sync_batchnorm"] = True
-        parallel_devices = [torch.device(f"cuda:{i}") for i in range(kwargs["gpus"])]
-        kwargs["plugins"] = DDPPlugin(
-            parallel_devices=parallel_devices, find_unused_parameters=True,
-        )
-
     # TRAINER
     trainer = pl.Trainer(
         plugins=[SLURMEnvironment(auto_requeue=False)], # lightning automatically detects slurm and tries to handle checkpointing but we want outside #6389
-        logger=get_logger(cfg, module, is_representor),
+        logger=get_logger(cfg),
         callbacks=get_callbacks(cfg, is_representor, dm=dm),
         **kwargs,
     )
@@ -580,18 +517,17 @@ def placeholder_fit(
 
 
 def save_pretrained(
-    cfg: NamespaceMap, trainer: pl.Trainer, stage: str, is_sklearn: bool = False
+    cfg: NamespaceMap, trainer: pl.Trainer, stage: str,
 ) -> None:
     """Send best checkpoint to main directory."""
 
-    if not is_sklearn:
-        # restore best checkpoint
-        best = trainer.checkpoint_callback.best_model_path
-        try:
-            trainer._checkpoint_connector.resume_start(best)
-        except AttributeError:
-            # Older versions of lightning
-            trainer.checkpoint_connector.resume_start(best)
+    # restore best checkpoint
+    best = trainer.checkpoint_callback.best_model_path
+    try:
+        trainer._checkpoint_connector.resume_start(best)
+    except AttributeError:
+        # Older versions of lightning
+        trainer.checkpoint_connector.resume_start(best)
 
     # save
     dest_path = Path(cfg.paths.pretrained.save)
@@ -626,19 +562,14 @@ def is_trained(cfg: NamespaceMap, stage: str, is_force_retrain: bool=False) -> b
 
 
 def load_pretrained(
-    cfg: NamespaceMap, Module: Optional[Type[pl.LightningModule]], stage: str, is_sklearn: bool=False, **kwargs
+    cfg: NamespaceMap, Module: Optional[Type[pl.LightningModule]], stage: str, **kwargs
 ) -> pl.LightningModule:
     """Load the best checkpoint from the latest run that has the same name as current run."""
     save_path = Path(cfg.paths.pretrained.load)
     filename = BEST_CHECKPOINT.format(stage=stage)
     # select the latest checkpoint matching the path
     checkpoint = get_latest_match(save_path / filename)
-
-    if is_sklearn:
-        loaded_module = load(checkpoint)
-    else:
-        loaded_module = Module.load_from_checkpoint(checkpoint, **kwargs)
-
+    loaded_module = Module.load_from_checkpoint(checkpoint, **kwargs)
     return loaded_module
 
 
@@ -648,7 +579,6 @@ def evaluate(
     datamodule: pl.LightningDataModule,
     cfg: NamespaceMap,
     stage: str,
-    is_sklearn: bool = False,
     model: torch.nn.Module=None
 ) -> dict:
     """Evaluate the trainer by logging all the metrics from the test set from the best model."""
@@ -664,10 +594,7 @@ def evaluate(
         eval_dataloader = datamodule.eval_dataloader(cfg.evaluation.is_eval_on_test)
 
         # logging correct stage
-        if is_sklearn:
-            trainer.stage = cfg.stage
-        else:
-            trainer.lightning_module.stage = cfg.stage
+        trainer.lightning_module.stage = cfg.stage
 
         test_res = trainer.test(dataloaders=eval_dataloader, ckpt_path=ckpt_path, model=model)[0]
 
@@ -723,9 +650,6 @@ def save_end_file(cfg):
 def finalize_stage_(
     stage: str,
     cfg: NamespaceMap,
-    module: pl.LightningModule,
-    trainer: pl.Trainer,
-    datamodule: pl.LightningDataModule,
     results: dict,
     finalize_kwargs: dict,
     is_save_best: bool = False,

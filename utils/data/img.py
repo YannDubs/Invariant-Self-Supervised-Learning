@@ -17,16 +17,8 @@ import numpy as np
 import numpy.typing as npt
 from torchvision.transforms import InterpolationMode
 import torch
-from PIL import Image
-from torch.utils.data import DataLoader
 from torchvision.datasets import (
     CIFAR10,
-    CIFAR100,
-    CocoCaptions,
-    ImageNet,
-    MNIST,
-    STL10,
-    ImageFolder,
 )
 from torchvision.transforms.functional_pil import _is_pil_image
 from torchvision.transforms import (
@@ -49,13 +41,11 @@ from torchvision.transforms import (
 )
 from tqdm import tqdm
 
-from issl.helpers import Normalizer, check_import, file_cache, tmp_seed, to_numpy, int_or_ratio
+from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy, int_or_ratio
 from .augmentations import get_simclr_augmentations
 from .base import ISSLDataModule, ISSLDataset
 from .helpers import (
-    Caltech101BalancingWeights,
     ImgAugmentor,
-    Pets37BalancingWeights,
     _get_img_pool, download_url,
     image_loader,
     np_img_resize,
@@ -75,10 +65,6 @@ try:
 except ImportError:
     pass
 
-try:
-    import clip  # only used for coco
-except ImportError:
-    pass
 
 EXIST_DATA = "data_exist.txt"
 IMG_EXTENSIONS = (
@@ -97,16 +83,6 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "Cifar10DataModule",
-    "Cifar100DataModule",
-    "STL10DataModule",
-    "STL10UnlabeledDataModule",
-    "Food101DataModule",
-    "Cars196DataModule",
-    "Pets37DataModule",
-    "PCamDataModule",
-    "Caltech101DataModule",
-    "MnistDataModule",
-    "ImagenetDataModule",
     "TinyImagenetDataModule",
 ]
 
@@ -143,14 +119,13 @@ class ISSLImgDataset(ISSLDataset):
         can normalize your data.
 
     normalization : str, optional
-        What dataset to use for the normalization, e.g., "clip" for standard online normalization. If `None`, uses the
-        default from the dataset. Only used if `is_normalize`.
+        What dataset to use for the normalization. If `None`, uses the default from the dataset.
+        Only used if `is_normalize`.
 
-    base_resize : {"resize","upscale_crop_eval", "clip_resize", None}, optional
+    base_resize : {"resize", None}, optional
         What resizing to apply. If "resize" uses the same standard resizing during train and test.
         If "scale_crop_eval" then (ONLY) during test first up scale to 1.1*size and then center crop (this
-        is used by SimCLR). If "clip_resize" during test first resize such that smallest side is
-        224 size and then center crops, during training same but random crop. If None does not perform any resizing.
+        is used by SimCLR).
 
     curr_split : str, optional
         Which data split you are considering.
@@ -536,25 +511,6 @@ class ISSLImgDataset(ISSLDataset):
 
         if self.base_resize == "resize":
             trnsfs += [Resize((shape[1], shape[2]))]
-        elif self.base_resize == "upscale_crop_eval":
-            if not self.is_train:
-                # this is what simclr does : first upscale by 10% then center crop
-                # `1.143` chosen so that 224 -> 256 as is standard for imagenet
-                trnsfs += [
-                    Resize((int(shape[1] * 1.143), int(shape[2] * 1.143))),
-                    CenterCrop((shape[1], shape[2])),
-                ]
-        elif self.base_resize == "clip_resize":
-            if self.is_train:
-                trnsfs += [Resize(224, interpolation=InterpolationMode.BICUBIC),
-                           RandomCrop(size=(224, 224))
-                           ]
-            else:
-                trnsfs += [
-                    # resize smallest to 224
-                    Resize(224, interpolation=InterpolationMode.BICUBIC),
-                    CenterCrop((224, 224)),
-                ]
         elif self.base_resize is None:
             pass  # no resizing
         else:
@@ -587,10 +543,6 @@ class ISSLImgDataset(ISSLDataset):
     def shapes(self) -> dict[str, tuple[int, ...]]:
         # Imp: In each child should assign "input" and "target"
         shapes = dict()
-
-        if self.base_resize in ["clip_resize"]:
-            # when using clip the shape should always be 224x224
-            shapes["input"] = (3, 224, 224)
 
         shapes["Mx"] = (self.n_Mxs,)
 
@@ -664,63 +616,6 @@ class ISSLImgDataModule(ISSLDataModule):
 
 ### Torchvision Datasets ###
 
-# MNIST #
-class MnistDataset(ISSLImgDataset, MNIST):
-    FOLDER = "MNIST"
-    attr_data_memory = "data"
-
-    def __init__(self, *args, curr_split= "train", **kwargs) -> None:
-        is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
-
-    # avoid duplicates by saving once at "MNIST" rather than at multiple  __class__.__name__
-    @property
-    def raw_folder(self) -> str:
-        return os.path.join(self.root, self.FOLDER, "raw")
-
-    @property
-    def processed_folder(self) -> str:
-        return os.path.join(self.root, self.FOLDER, "processed")
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super(MnistDataset, self).shapes
-        shapes["input"] = shapes.get("input", (1, 32, 32))
-        shapes["target"] = (10,)
-        return shapes
-
-    def get_img_target(self, index: int) -> tuple[Any, int]:
-        img, target = MNIST.__getitem__(self, index)
-        return img, target
-
-    def cache_targets_(self):
-        self.cached_targets = to_numpy(self.targets).copy()
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "MNIST"
-
-    @property
-    def standard_augmentations(self) -> list[str]:
-        return [
-            "x-translation--",
-            "y-translation--",
-            "rotation--",
-            "scale--",
-            "shear--",
-        ]
-
-
-class MnistDataModule(ISSLImgDataModule):
-    def __init__(self, *args, is_data_in_memory=True, **kwargs):
-        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return MnistDataset
-
 
 # Cifar10 #
 class Cifar10Dataset(ISSLImgDataset, CIFAR10):
@@ -729,11 +624,6 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
     def __init__(self, *args, curr_split = "train",  **kwargs) -> None:
         is_train = curr_split == "train"
         super().__init__(*args, curr_split=curr_split, train=is_train,  **kwargs)
-
-    @property
-    def label_names(self) -> list[str]:
-        return ['plane', 'car', 'bird', 'cat', 'deer',
-               'dog', 'frog', 'horse', 'ship', 'truck']
 
     @property
     def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
@@ -767,496 +657,6 @@ class Cifar10DataModule(ISSLImgDataModule):
     @property
     def Dataset(cls) -> Any:
         return Cifar10Dataset
-
-
-# Cifar100 #
-class Cifar100Dataset(ISSLImgDataset, CIFAR100):
-    attr_data_memory = "data"
-
-    def __init__(self, *args, curr_split = "train",  **kwargs) -> None:
-        is_train = curr_split == "train"
-        super().__init__(*args, curr_split=curr_split, train=is_train, **kwargs)
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super(Cifar100Dataset, self).shapes
-        shapes["input"] = shapes.get("input", (3, 32, 32))
-        shapes["target"] = (100,)
-        return shapes
-
-    def cache_targets_(self):
-        self.cached_targets = to_numpy(self.targets).copy()
-
-    def get_img_target(self, index: int) -> tuple[Any, int]:
-        img, target = CIFAR100.__getitem__(self, index)
-        return img, target
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "CIFAR100"
-
-    @property
-    def standard_augmentations(self) -> list[str]:
-        return ["simclr"]
-
-
-class Cifar100DataModule(ISSLImgDataModule):
-    def __init__(self, *args, is_data_in_memory=True, **kwargs):
-        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return Cifar100Dataset
-
-
-
-# STL10 #
-class STL10Dataset(ISSLImgDataset, STL10):
-    attr_data_memory = "data"
-
-    def __init__(self, *args, curr_split = "train",  **kwargs):
-        super().__init__(*args, curr_split=curr_split, split=curr_split,**kwargs)
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super(STL10Dataset, self).shapes
-        shapes["input"] = shapes.get("input", (3, 96, 96))
-        shapes["target"] = (10,)
-        return shapes
-
-    def get_img_target(self, index: int) -> tuple[Any, int]:
-        img, target = STL10.__getitem__(self, index)
-        return img, target
-
-    def cache_targets_(self):
-        self.cached_targets = to_numpy(self.labels).copy()
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "STL10"
-
-    @property
-    def standard_augmentations(self) -> list[str]:
-        return ["simclr"]
-
-
-class STL10DataModule(ISSLImgDataModule):
-    def __init__(self, *args, is_data_in_memory=True, **kwargs):
-        super().__init__(*args, is_data_in_memory=is_data_in_memory, **kwargs)
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return STL10Dataset
-
-# STL10 Unlabeled #
-class STL10UnlabeledDataset(STL10Dataset):
-    def __init__(self, *args, curr_split: str = "train", **kwargs):
-        curr_split = "train+unlabeled" if curr_split == "train" else curr_split
-        super().__init__(*args, curr_split=curr_split, **kwargs)
-
-
-class STL10UnlabeledDataModule(ISSLImgDataModule):
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return STL10UnlabeledDataset
-
-
-# Imagenet #
-class ImageNetDataset(ISSLImgDataset, ImageNet):
-
-    def __init__(
-        self,
-        root: str,
-        *args,
-        curr_split: str = "train",
-        base_resize: str = "upscale_crop_eval",
-        is_save_folder_structure: bool = True,  # avoid recomputing folder structure everytime
-        download=None,  # for compatibility
-        **kwargs,
-    ) -> None:
-
-        self.is_save_folder_structure = is_save_folder_structure
-        if os.path.isdir(path.join(root, "imagenet256")):
-            # use 256 if already resized
-            data_dir = path.join(root, "imagenet256")
-        elif os.path.isdir(path.join(root, "imagenet")):
-            data_dir = path.join(root, "imagenet")
-        else:
-            raise ValueError(
-                f"Imagenet data folder (imagenet256 or imagenet) not found in {root}."
-                "This has to be installed manually as download is not available anymore."
-            )
-
-        # imagenet test set is not available so it is standard to use the val split as test
-        split = "val" if curr_split == "test" else curr_split
-
-        super().__init__(
-            data_dir,
-            *args,
-            curr_split=curr_split,  # goes to ISSLImgDataset
-            split=split,  # goes to imagenet
-            base_resize=base_resize,
-            **kwargs,
-        )
-
-    def cache_targets_(self):
-        self.cached_targets = np.array(self.targets).copy()
-
-    @file_cache(filename="cached_classes.json")
-    def find_classes(self, directory: str, *args, **kwargs) -> tuple[list[str], dict[str, int]]:
-        classes = super().find_classes(directory, *args, **kwargs)
-        return classes
-
-    @file_cache(filename="cached_structure.json")
-    def make_dataset(self, directory: str, *args, **kwargs) -> list[tuple[str, int]]:
-        dataset = super().make_dataset(directory, *args, **kwargs)
-        return dataset
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super(ImageNetDataset, self).shapes
-        shapes["input"] = shapes.get("input", (3, 224, 224))
-        shapes["target"] = (1000,)
-        return shapes
-
-    def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
-        img, target = ImageNet.__getitem__(self, index)
-        return img, target
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "ImageNet"
-
-    @property
-    def _tmp_len(self) -> int:
-        return ImageNet.__len__(self)
-
-    @property
-    def standard_augmentations(self) -> list[str]:
-        return ["simclr-imagenet"]
-
-
-class ImagenetDataModule(ISSLImgDataModule):
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return ImageNetDataset
-
-### Tensorflow Datasets Modules ###
-class CachedImageFolder(ImageFolder):
-    @file_cache(filename="cached_classes.json")
-    def find_classes(self, directory, *args, **kwargs):
-        classes = super().find_classes(directory, *args, **kwargs)
-        return classes
-
-    @file_cache(filename="cached_structure.json")
-    def make_dataset(self, directory, *args, **kwargs):
-        dataset = super().make_dataset(directory, *args, **kwargs)
-        return dataset
-
-class TensorflowBaseDataset(ISSLImgDataset, CachedImageFolder):
-    """Base class for tensorflow-datasets.
-
-    Notes
-    -----
-    - By default will load the datasets in a format usable by CLIP.
-    - Only works for square cropping for now.
-
-    Parameters
-    ----------
-    root : str or Path
-        Path to directory for saving data.
-
-    split : str, optional
-        Split to use, depends on data but usually ["train","test"]
-
-    download : bool, optional
-        Whether to download the data if it is not existing.
-
-    kwargs :
-        Additional arguments to `ISSLImgDataset` and `ImageFolder`.
-
-    class attributes
-    ----------------
-    min_size : int, optional
-        Resizing of the smaller size of an edge to a certain value. If `None` does not resize.
-        Recommended for images that will be always rescaled to a smaller version (for memory gains).
-        Only used when downloading.
-    """
-    min_size = 256
-
-    def __init__(
-        self,
-        root: Union[str, Path],
-        curr_split: str = "train",
-        download: bool = True,
-        base_resize: str = "clip_resize",
-        normalization: str = "clip",
-        **kwargs,
-    ):
-        check_import("tensorflow_datasets", "TensorflowBaseDataset")
-
-        self.root = root
-        self._curr_split = curr_split  # for get dir (but cannot set curr_split yet)
-
-        if download and not self.is_exist_data:
-            self.download()
-
-        super().__init__(
-            root=self.get_dir(self.curr_split),
-            base_resize=base_resize,
-            curr_split=curr_split,
-            normalization=normalization,
-            **kwargs,
-        )
-        self.root = root  # overwrite root from tfds which is currently split folder
-
-    def get_dir(self, split: Optional[str] = None) -> Path:
-        """Return the main directory or the one for a split."""
-        main_dir = Path(self.root) / self.dataset_name
-        if split is None:
-            return main_dir
-        else:
-            return main_dir / split
-
-    @property
-    def is_exist_data(self) -> bool:
-        """Whether the data is available."""
-        is_exist = True
-        for split in self.get_available_splits():
-            check_file = self.get_dir(split) / EXIST_DATA
-            is_exist &= check_file.is_file()
-        return is_exist
-
-    def download(self) -> None:
-        """Download the data."""
-        tfds_splits = [self.to_tfds_split(s) for s in self.get_available_splits()]
-        tfds_datasets, metadata = tfds.load(
-            name=self.dataset_name,
-            batch_size=1,
-            data_dir=self.root,
-            as_supervised=True,
-            split=tfds_splits,
-            with_info=True,
-        )
-        np_datasets = tfds.as_numpy(tfds_datasets)
-        metadata.write_to_directory(self.get_dir())
-
-        for split, np_data in zip(self.get_available_splits(), np_datasets):
-            split_path = self.get_dir(split)
-            utils.helpers.remove_rf(split_path, not_exist_ok=True)
-            split_path.mkdir()
-            for i, (x, y) in enumerate(tqdm(np_data)):
-                if self.min_size is not None:
-                    x = np_img_resize(x, self.min_size)
-
-                x = x.squeeze()  # given as batch of 1 (and squeeze if single channel)
-                target = y.squeeze().item()
-
-                label_name = metadata.features["label"].int2str(target)
-                label_name = label_name.replace(" ", "_")
-                label_name = label_name.replace("/", "")
-
-                label_dir = split_path / label_name
-                label_dir.mkdir(exist_ok=True)
-
-                img_file = label_dir / f"{i}.jpeg"
-                Image.fromarray(x).save(img_file)
-
-        for split in self.get_available_splits():
-            check_file = self.get_dir(split) / EXIST_DATA
-            check_file.touch()
-
-        # remove all downloading files
-        utils.helpers.remove_rf(Path(metadata.data_dir))
-
-    def get_img_target(self, index: int) -> tuple[Any, npt.ArrayLike]:
-        img, target = CachedImageFolder.__getitem__(self, index)
-        return img, target
-
-    @property
-    def _tmp_len(self) -> int:
-        return CachedImageFolder.__len__(self)
-
-    def cache_targets_(self):
-        self.cached_targets = np.array(self.targets).copy()
-
-    def to_tfds_split(self, split: str) -> str:
-        """Change from a split to a tfds split."""
-
-        if split == "validation" and ("validation" not in self.get_available_splits()):
-            # when there is no validation set then the validation will come from training set
-            # by subsetting training
-            split = "train"
-
-        return split
-
-    @property
-    def standard_augmentations(self) -> list[str]:
-        return ["simclr-imagenet"]
-
-
-    @classmethod
-    @property
-    @abc.abstractmethod
-    def dataset_name(cls) -> str:
-        """Name of datasets to load, this should be the same as found at `www.tensorflow.org/datasets/catalog/`."""
-        ...
-
-
-# Food101 #
-class Food101Dataset(TensorflowBaseDataset):
-    min_size = 256
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super().shapes
-        shapes["input"] = shapes.get("input", (3, 224, 224))
-        shapes["target"] = (101,)
-        return shapes
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "food101"
-
-    def to_tfds_split(self, split: str) -> str:
-        # validation comes from train
-        renamer = dict(train="train", test="validation", validation="train")
-        return renamer[split]
-
-    @classmethod
-    def get_available_splits(cls) -> list[str]:
-        return ["train", "validation"]
-
-
-class Food101DataModule(ISSLImgDataModule):
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return Food101Dataset
-
-
-# Cars #
-class Cars196Dataset(TensorflowBaseDataset):
-    min_size = 256
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super().shapes
-        shapes["input"] = shapes.get("input", (3, 224, 224))
-        shapes["target"] = (196,)
-        return shapes
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "cars196"
-
-
-class Cars196DataModule(ISSLImgDataModule):
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return Cars196Dataset
-
-
-# Patch Camelyon #
-class PCamDataset(TensorflowBaseDataset):
-    min_size = None
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super().shapes
-        shapes["input"] = shapes.get("input", (3, 96, 96))
-        shapes["target"] = (2,)
-        return shapes
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "patch_camelyon"
-
-    @classmethod
-    def get_available_splits(cls) -> list[str]:
-        return ["train", "test", "validation"]
-
-
-class PCamDataModule(ISSLImgDataModule):
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return PCamDataset
-
-
-# note: not using flowers 102 dataset due to
-# https://github.com/tensorflow/datasets/issues/3022
-
-# Pets 37 #
-class Pets37Dataset(TensorflowBaseDataset):
-    min_size = 256
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super().shapes
-        shapes["input"] = shapes.get("input", (3, 224, 224))
-        shapes["target"] = (37,)
-        return shapes
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "oxford_iiit_pet"
-
-
-class Pets37DataModule(ISSLImgDataModule):
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return Pets37Dataset
-
-    @property
-    def balancing_weights(self) -> dict[str, float]:
-        return Pets37BalancingWeights  # should compute mean acc per class
-
-
-# Caltech 101 #
-class Caltech101Dataset(TensorflowBaseDataset):
-    min_size = 256
-
-    @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super().shapes
-        shapes["input"] = shapes.get("input", (3, 224, 224))
-        shapes["target"] = (102,)  # ?!? there are 102 classes in caltech 101
-        return shapes
-
-    @classmethod
-    @property
-    def dataset_name(cls) -> str:
-        return "caltech101"
-
-
-class Caltech101DataModule(ISSLImgDataModule):
-
-    @classmethod
-    @property
-    def Dataset(cls) -> Any:
-        return Caltech101Dataset
-
-    @property
-    def balancing_weights(self) -> dict[str, float]:
-        return Caltech101BalancingWeights  # should compute mean acc per class
 
 
 ### Other Datasets ###
