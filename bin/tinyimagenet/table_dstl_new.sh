@@ -46,10 +46,6 @@ decodability.kwargs.projector_kwargs.is_cosine=False
 "
 
 
-cell_large_proj="
-++decodability.kwargs.projector_kwargs.n_hid_layers=2
-++decodability.kwargs.projector_kwargs.hid_dim=2048
-"
 
 cell_dim="
 encoder.z_shape=2048
@@ -57,27 +53,6 @@ encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
 
-cell_asymm_small="
-$cell_dim
-encoder.aux_enc_base=resnet18
-"
-
-cell_asymm_large="
-$cell_dim
-encoder.aux_enc_base=resnet50
-++encoder.kwargs.arch_kwargs.is_resize_only_if_necessary=True
-"
-
-#cell_aug="
-#$cell_asymm_large
-#data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2.0
-#representor=dstl_noema_blured
-#"
-#
-#cell_epoch="
-#$cell_aug
-#update_trainer_repr.max_epochs=1000
-#"
 
 cell_aug="
 $cell_dim
