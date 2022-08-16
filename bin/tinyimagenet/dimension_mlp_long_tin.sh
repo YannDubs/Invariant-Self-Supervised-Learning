@@ -25,11 +25,11 @@ update_trainer_repr.max_epochs=1000
 "
 
 kwargs_multi="
-encoder.z_shape=128,256,512,1024,2048,4096,8192,16384
+encoder.z_dim=128,256,512,1024,2048,4096,8192,16384
 "
 
 kwargs_multi="
-encoder.z_shape=16384
+encoder.z_dim=16384
 "
 
 if [ "$is_plot_only" = false ] ; then

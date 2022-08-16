@@ -1126,22 +1126,6 @@ def rel_distance(x1, x2, detach_at=None, **kwargs):
         rel_dist = dist_intra_class / (dist_inter_class.detach() + 1e-5)
     return rel_dist
 
-def rel_variance(x1, x2, detach_at=None):
-    """
-    Return the relative distance of positive examples compaired to negative.
-    ~0 means that positives are essentially the same compared to negatives.
-    ~1 means that positives and negatives are essentially indistinguishable.
-    """
-    # Var[X] =  E[(X - X')^2] / 2 for iid X,X'
-    paired_variance = torch.cdist(x1, x2, p=2) ** 2 / 2
-    var_inter_class = paired_variance[~eye_like(paired_variance).bool()].mean()
-    var_intra_class = paired_variance.diag().mean()
-    rel_var = var_intra_class / (var_inter_class + 1e-5)
-    if detach_at is not None and detach_at > rel_var:
-        # only detach negatives, positives can still go to 0 var
-        rel_var = var_intra_class / (var_inter_class.detach() + 1e-5)
-    return rel_var
-
 def corrcoeff_to_eye_loss(x1,x2):
     batch_size, dim = x1.shape
     x1_norm = (x1 - x1.mean(1, keepdim=True)) / x1.std(1, keepdim=True)
@@ -1155,16 +1139,9 @@ def corrcoeff_to_eye_loss(x1,x2):
 
 
 class DistToEtf(nn.Module):
-    def __init__(
-        self,
-        z_shape,
-        is_exact_etf=False,
-        is_already_normalized=False,
-    ) :
+    def __init__(self, z_dim):
         super().__init__()
-        self.is_already_normalized = is_already_normalized
-        self.is_exact_etf = is_exact_etf
-        self.z_dim = z_shape if isinstance(z_shape, int) else prod(z_shape)
+        self.z_dim = z_dim
         self.running_mean = RunningMean(torch.zeros(self.z_dim))
 
     def get_etf_rep(self, z):
@@ -1172,22 +1149,13 @@ class DistToEtf(nn.Module):
         z_centered = z - z_mean
         return F.normalize(z_centered, p=2, dim=1)
 
-    def __call__(self, zx, za, is_return_pos_neg=False):
-        z_dim = zx.shape[1]
-
-        if not self.is_already_normalized:
-            zx = self.get_etf_rep(zx)
-            za = self.get_etf_rep(za)
+    def __call__(self, zx, za):
+        zx = self.get_etf_rep(zx)
+        za = self.get_etf_rep(za)
 
         MtM = zx @ za.T
-        if self.is_exact_etf:
-            pos_loss = (MtM.diagonal() - 1).pow(2).mean()  # want it to be 1
-            neg_loss = (1 / z_dim + MtM.masked_select(~eye_like(MtM).bool())).pow(2).mean()  # want it to be - 1 /dim
-        else:
-            pos_loss = (1 - MtM.diagonal()).mean()  # directly maximize
-            neg_loss = MtM.masked_select(~eye_like(MtM).bool()).mean()  # directly minimize
 
-        if is_return_pos_neg:
-            return pos_loss, neg_loss, pos_loss + neg_loss
+        pos_loss = (1 - MtM.diagonal()).mean()  # best: 1
+        neg_loss = MtM.masked_select(~eye_like(MtM).bool()).mean()  # best: - 1 /dim
 
-        return pos_loss + neg_loss
+        return pos_loss, neg_loss

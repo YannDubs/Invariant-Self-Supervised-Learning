@@ -160,29 +160,6 @@ class StrFormatter:
         """Update the substring replacer dictionary with a new one (missing keys will be prepended)."""
         self.substring_replace = update_prepending(self.substring_replace, new_dict)
 
-
-def getattr_from_oneof(list_of_obj: list, name: str) -> pl.callbacks.Callback:
-    """
-    Equivalent to `getattr` but on a list of objects and will return the attribute from the first
-    object that has it.
-    """
-    if len(list_of_obj) == 0:
-        # base case
-        raise AttributeError(f"{name} was not found.")
-
-    obj = list_of_obj[0]
-
-    try:
-        return getattr(obj, name)
-    except AttributeError:
-        try:
-            return getattr_from_oneof(list_of_obj[1:], name)
-        except AttributeError:
-            pass
-
-    raise AttributeError(f"{name} was not found in {list_of_obj}.")
-
-
 def replace_str(s, old, new, is_prfx=False, is_sffx=False):
     """replace optionally only at the start or end"""
     assert not (is_prfx and is_sffx)

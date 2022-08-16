@@ -47,8 +47,7 @@ timeout: 1440 # 24 hours
 
 ### PATHS ###
 experiment: ??? # set to the desired experiment name. **SET AS DESIRED**
-# TODO should add epoch and batchsize in those paths  (not doing for now for backward compatibility)
-long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/reg_${regularizer.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_shape}/zs_1/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr} # pretraining path
+long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_dim}/bs_${data_repr.kwargs.batch_size}/ep_${update_trainer_repr.max_epochs}/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr} # pretraining path
 long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/eppred_${trainer.max_epochs}/bspred_${data_pred.kwargs.batch_size}/addpred_${other.add_pred} # downstream task path
 paths: #! the best practice is not to modify those paths but to symlink them to the places you want
   relative_work: outputs/${now:%Y-%m-%d_%H-%M-%S}
@@ -137,23 +136,20 @@ data_repr:
 ### MODELS ###
 encoder: # modified in the encoder config files
   name: ???
-  z_shape: 1024 # dimensionality of the representation. **SET AS DESIRED**
+  z_dim: 1024 # dimensionality of the representation. **SET AS DESIRED**
   kwargs:
     in_shape: ${data.shape}
-    out_shape: ${encoder.z_shape} # do not change this (automatically set)
+    out_shape: ${encoder.z_dim} # do not change this (automatically set)
     architecture: ???
     arch_kwargs: {}
 
 online_evaluator: # online probing head. modified in the architecture config files
   name: ???
   kwargs:
-    in_shape: ${encoder.z_shape}
+    in_shape: ${encoder.z_dim}
     out_shape: ${data.target_shape}
     architecture: ???
     arch_kwargs: {}
-
-regularizer: # not used (backward compatibility for loading models)
-  name: none
 
 ### OPTIMIZER ###
 optimizer_issl: # optimizer for representation learning. modified in the optimizer config files

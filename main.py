@@ -9,15 +9,12 @@ from __future__ import annotations
 
 import copy
 import logging
-import math
 import os
 import shutil
-import subprocess
 import traceback
 from pathlib import Path
 from typing import Any, Optional, Type
 import sys
-import time
 
 import hydra
 import matplotlib.pyplot as plt
@@ -28,20 +25,14 @@ import torch
 from hydra import compose
 from joblib import load
 from omegaconf import Container, OmegaConf
-from pytorch_lightning.trainer.configuration_validator import verify_loop_configurations
 from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
-from pytorch_lightning.utilities import parsing
 from pytorch_lightning.plugins.environments import SLURMEnvironment
 
-import issl
 from issl import ISSLModule, Predictor
-from issl.callbacks import (
-    EffectiveDim,
-    MAWeightUpdate, RepresentationUMAP
-)
-from issl.helpers import check_import, prod
+from issl.losses.dino import MAWeightUpdate
+from issl.helpers import check_import
 from issl.predictors import SklearnPredictor, get_representor_predictor
 from utils.cluster.nlprun import nlp_cluster
 from utils.data import get_Datamodule
@@ -53,13 +44,11 @@ from utils.helpers import (
     cfg_save,
     format_resolver,
     get_latest_match,
-    getattr_from_oneof,
     list2str_resolver,
     log_dict,
     omegaconf2namespace,
     remove_rf,
     replace_keys,
-    set_debug,
 )
 
 try:
@@ -467,15 +456,6 @@ def get_callbacks(
     if is_representor:
 
         aux_target = cfg.data.kwargs.dataset_kwargs.aux_target
-        is_img_aux_target = cfg.data.mode == "image"
-        is_img_aux_target &= aux_target in ["representative", "input", "augmentation"]
-
-        if cfg.logger.is_can_plot_img:
-            callbacks += [EffectiveDim(cfg.encoder.z_shape)]
-
-        if cfg.logger.is_can_plot_img and cfg.evaluation.representor.is_online_eval and dm is not None:
-            # can only plot if you have labels
-            callbacks += [RepresentationUMAP(dm)]
 
         if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
             # use momentum contrastive teacher, e.g. DINO
@@ -490,8 +470,7 @@ def get_callbacks(
                 if callback_kwargs.get("dm", False):
                     callback_kwargs["dm"] = dm
 
-                modules = [issl.callbacks, pl.callbacks]
-                Callback = getattr_from_oneof(modules, name)
+                Callback = getattr(pl.callbacks, name)
                 new_callback = Callback(**callback_kwargs)
 
                 if isinstance(new_callback, BaseFinetuning) and not is_representor:

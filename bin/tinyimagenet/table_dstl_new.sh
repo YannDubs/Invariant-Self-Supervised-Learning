@@ -32,7 +32,7 @@ downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datare
 "
 
 cell_dim="
-encoder.z_shape=2048
+encoder.z_dim=2048
 encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "

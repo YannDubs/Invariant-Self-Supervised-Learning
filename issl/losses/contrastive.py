@@ -1,4 +1,4 @@
-"""Contrastive proxies to minimize R[A|Z] and thus ensure decodability."""
+"""Contrastive proxies to minimize ISSL log loss."""
 from __future__ import annotations
 
 import copy
@@ -16,7 +16,7 @@ from issl.helpers import prod, weights_init
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["SimCLR","CISSL"]
+__all__ = ["SimCLR", "CISSL"]
 
 class BaseContrastiveISSL(nn.Module):
     """Computes the ISSL loss using contrastive variational bound (i.e. with positive and negative examples).
@@ -27,8 +27,8 @@ class BaseContrastiveISSL(nn.Module):
 
     Parameters
     ----------
-    z_shape : sequence of int
-        Shape of the representation.
+    z_dim : int
+        Dimensionality of the representation.
 
     temperature : float, optional
         Temperature scaling in InfoNCE. Recommended less than 1.
@@ -57,7 +57,7 @@ class BaseContrastiveISSL(nn.Module):
 
     def __init__(
         self,
-        z_shape: Sequence[int],
+        z_dim: int,
         temperature: float = 0.07,
         is_pred_proj_same: bool = False,
         is_self_contrastive: bool = False,
@@ -74,8 +74,7 @@ class BaseContrastiveISSL(nn.Module):
         super().__init__()
         logger.info(f"Unused arguments {kwargs}.")
 
-        self.z_shape = [z_shape] if isinstance(z_shape, int) else z_shape
-        self.z_dim = prod(self.z_shape)
+        self.z_dim = z_dim
         self.is_pred_proj_same = is_pred_proj_same
         self.predictor_kwargs = self.process_kwargs(predictor_kwargs)
         self.projector_kwargs = self.process_kwargs(projector_kwargs)
@@ -106,14 +105,14 @@ class BaseContrastiveISSL(nn.Module):
 
     def process_kwargs(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
-        kwargs["in_shape"] = kwargs.get("in_shape", self.z_shape)
-        kwargs["out_shape"] = kwargs.get("out_shape", prod(self.z_shape))
+        kwargs["in_shape"] = kwargs.get("in_shape", self.z_dim)
+        kwargs["out_shape"] = kwargs.get("out_shape", self.z_dim)
         self.out_dim = kwargs["out_shape"]
         return kwargs
 
     def forward(
-        self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, parent: Any
-    ) -> tuple[torch.Tensor, dict, dict]:
+        self, z: torch.Tensor, z_tgt: torch.Tensor, _, __, ___
+    ) -> tuple[torch.Tensor, dict]:
         """Contrast examples and compute the upper bound on R[A|Z].
     
         Parameters
@@ -123,9 +122,6 @@ class BaseContrastiveISSL(nn.Module):
 
         z_tgt : Tensor shape=[2 * batch_size, *x_shape]
             Representation from the other branch.
-
-        parent : ISSLModule, optional
-            Parent module.
     
         Returns
         -------
@@ -134,20 +130,7 @@ class BaseContrastiveISSL(nn.Module):
     
         logs : dict
             Additional values to log.
-    
-        other : dict
-            Additional values to return.
         """
-
-        if z.ndim != 2:
-            raise ValueError(
-                f"When using contrastive loss the representation needs to be flattened."
-            )
-
-        self.current_epoch = parent.current_epoch
-
-        new_batch_size, z_dim = z.shape
-        batch_size = new_batch_size // 2
 
         # shape: [2 * batch_size, 2 * batch_size]
         logits = self.compute_logits_p_Alz(z, z_tgt)
@@ -155,12 +138,7 @@ class BaseContrastiveISSL(nn.Module):
         # shape: [2 * batch_size]
         hat_H_mlz, logs = self.compute_loss(logits)
 
-        # shape: [batch_size]
-        hat_H_mlz = (hat_H_mlz[:batch_size] + hat_H_mlz[batch_size:]) / 2
-
-        other = dict()
-
-        return hat_H_mlz, logs, other
+        return hat_H_mlz.mean(), logs
 
     def compute_logits_p_Alz(
         self, z_src: torch.Tensor, z_tgt: torch.Tensor,

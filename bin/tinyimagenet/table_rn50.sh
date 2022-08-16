@@ -23,13 +23,13 @@ data_repr.kwargs.batch_size=256
 "
 
 cell_rn_50="
-encoder.z_shape=2048
+encoder.z_dim=2048
 architecture@encoder=resnet50
 "
 
 cell_dim="
 $cell_rn_50
-encoder.z_shape=512
+encoder.z_dim=512
 encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "

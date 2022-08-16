@@ -61,7 +61,7 @@ class Predictor(pl.LightningModule):
             representor.set_represent_mode_()
             representor.stage = "pred_repr"
             self.representor = representor
-            pred_in_shape = self.hparams.kwargs.in_shape # use in_shape instead of z_shape in case you modify z (eg using get_Mx)
+            pred_in_shape = self.hparams.kwargs.in_shape # use in_shape instead of z_dim in case you modify z (eg using get_Mx)
 
         else:
             self.representor = torch.nn.Identity()
@@ -335,7 +335,7 @@ class OnlineEvaluator(torch.nn.Module):
             y = y[0]  # only return the real label assumed to be first
 
         with torch.no_grad():
-            # Shape: [batch, *z_shape]
+            # Shape: [batch, z_dim]
             z = encoder(x)
 
         z = z.detach()

@@ -9,8 +9,8 @@ import pytorch_lightning as pl
 import torch
 
 from issl import get_Architecture
-from issl.helpers import DistToEtf, OrderedSet, append_optimizer_scheduler_, rel_variance
-from issl.losses import get_loss_decodability, get_regularizer
+from issl.helpers import DistToEtf, OrderedSet, append_optimizer_scheduler_
+from issl.losses import get_loss_decodability
 from issl.predictors import OnlineEvaluator
 
 __all__ = ["ISSLModule"]
@@ -30,7 +30,6 @@ class ISSLModule(pl.LightningModule):
         self.loss_decodability = get_loss_decodability(encoder=self.encoder,
             **self.hparams.decodability.kwargs
         )
-        self.loss_regularizer = get_regularizer(**self.hparams.regularizer.kwargs)
 
         if self.hparams.evaluation.representor.is_online_eval:
             # replaces pl_bolts.callbacks.SSLOnlineEvaluator because training
@@ -42,9 +41,7 @@ class ISSLModule(pl.LightningModule):
         # input example to get shapes for summary
         self.example_input_array = torch.randn(10, *self.hparams.data.shape).sigmoid()
 
-        self.dist_to_etf = DistToEtf(z_shape=self.hparams.encoder.z_shape)
-
-        self._save = dict()
+        self.dist_to_etf = DistToEtf(z_dim=self.hparams.encoder.z_dim)
 
     def load_state_dict(self, state_dict, *args, **kwargs):
         # TODO rm this is just for backward compatibility
@@ -90,68 +87,28 @@ class ISSLModule(pl.LightningModule):
         if encoder is None:
             encoder = self.encoder
 
-        # shape: [batch_size, *z_shape]
+        # shape: [batch_size, *z_dim]
         z = encoder(x, **kwargs)
 
         return z
 
-    def step(self, batch: list) -> tuple[torch.Tensor, dict, dict]:
+    def step(self, batch: list) -> tuple[torch.Tensor, dict]:
 
         x, (_, aux_target) = batch
 
         z = self(x)  # only encode the input (ie if asymmetry between X and A)
         z_tgt = None
 
-        beta = self.hparams.representor.loss.beta
-        if self.loss_regularizer is not None or math.isclose(beta, 0):
-            # `sample_eff` is proxy to ensure Z = Z_a. shape: [batch_size]
-            regularize, s_logs, s_other = self.loss_regularizer(z, aux_target, self)
-        else:
-            regularize, s_logs, s_other = None, dict(), dict()
-
-        # `decodability` is proxy for R_f[A|Z]. shape: [batch_size]
-        decodability, d_logs, d_other = self.loss_decodability(z, z_tgt, x, aux_target, self)
-        loss, logs, other = self.loss(decodability, regularize)
+        loss, logs = self.loss_decodability(z, z_tgt, x, aux_target, self)
 
         # to log (dict)
-        logs.update(d_logs)
-        logs.update(s_logs)
-        logs["z_norm_l2"] = z.norm(dim=1, p=2).mean()
-        logs["z_max"] = z.abs().max(dim=-1)[0].mean()
-        logs["z_norm_l1"] = z.norm(dim=1, p=1).mean()
+        logs["loss"] = loss
+        pos_loss, neg_loss = self.dist_to_etf(*z.detach().chunk(2, dim=0))
+        logs["etf_pos"] = pos_loss
+        logs["etf_neg"] = neg_loss
+        logs["dist_to_etf"] = pos_loss + neg_loss
 
-        z_x, z_a = z.detach().chunk(2, dim=0)
-        # estimate neural collapse
-        logs["rel_variance"] = rel_variance(z_x, z_a).mean()
-        # estimate etf
-        pos_loss, neg_loss, dist_to_etf = self.dist_to_etf(z_x, z_a, is_return_pos_neg=True)
-        logs["etf_pos"] = pos_loss.mean()
-        logs["etf_neg"] = neg_loss.mean()
-        logs["dist_to_etf"] = dist_to_etf.mean()
-
-        # any additional information that can be useful (dict)
-        other.update(d_other)
-        other.update(s_other)
-        other["X"] = x[0].detach().float().cpu()
-        other["Z"] = z_x.float().cpu()
-
-        return loss, logs, other
-
-    def loss(
-        self, decodability: torch.Tensor, regularize: Optional[torch.Tensor]
-    ) -> tuple[torch.Tensor, dict, dict]:
-
-        # E_x[...]. shape: shape: []
-        # ensure that using float32 because small / large beta can cause issues in half precision
-        decodability = decodability.float().mean(0)
-        regularize = regularize.float().mean(0) if regularize is not None else 0.0
-        loss = decodability + self.hparams.representor.loss.beta * regularize
-
-        logs = dict(loss=loss, decodability=decodability, regularize=regularize)
-
-        other = dict()
-
-        return loss, logs, other
+        return loss, logs
 
     def training_step(
         self, batch: torch.Tensor, batch_idx: int, optimizer_idx: int = 0
@@ -161,11 +118,7 @@ class ISSLModule(pl.LightningModule):
 
         # MODEL
         if curr_opt == "issl":
-
-            loss, logs, other = self.step(batch)
-
-            # Imp: waiting for torch lightning #1243
-            self._save["train"] = other
+            loss, logs = self.step(batch)
 
         # ONLINE EVALUATOR
         elif curr_opt == "evaluator":
@@ -186,9 +139,7 @@ class ISSLModule(pl.LightningModule):
     def test_val_step(
         self, batch: torch.Tensor, batch_idx: int, step: str
     ) -> Optional[torch.Tensor]:
-        loss, logs, other = self.step(batch)
-
-        self._save[step] = other
+        loss, logs = self.step(batch)
 
         if self.hparams.evaluation.representor.is_online_eval:
             _, online_logs = self.evaluator(batch, self)

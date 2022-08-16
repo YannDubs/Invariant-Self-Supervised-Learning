@@ -3,6 +3,6 @@ name: ${decodability.kwargs.mode}
 # all arguments to get_loss_decodability (see docstrings)
 kwargs:
   mode: ???
-  z_shape: ${encoder.z_shape}
+  z_dim: ${encoder.z_dim}
   projector_kwargs:
     architecture: "mlp"
