@@ -352,7 +352,7 @@ def instantiate_datamodule_(
         datamodule.setup()
 
         # changes due to the representations
-        cfgd.shape = (datamodule.train_dataset.X.shape[-1],)
+        cfgd.shape = datamodule.train_dataset.X.shape[-1]
 
     n_devices = max(cfgt.gpus * cfgt.num_nodes, 1)
     eff_batch_size = n_devices * cfgd.kwargs.batch_size

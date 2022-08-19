@@ -22,10 +22,10 @@ timeout=$time
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.25 decodability.kwargs.n_equivalence_classes=24000" #"data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.5 decodability.kwargs.n_equivalence_classes=20000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.n_equivalence_classes=16384" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2 decodability.kwargs.n_equivalence_classes=12000"
+  for kwargs_dep in  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.25 decodability.kwargs.n_equivalence_classes=24000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.5 decodability.kwargs.n_equivalence_classes=20000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.n_equivalence_classes=16384" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2 decodability.kwargs.n_equivalence_classes=12000"
   do
 
-    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs #-m >> logs/"$experiment".log 2>&1 &
+    python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 
     sleep 10
 

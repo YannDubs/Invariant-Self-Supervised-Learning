@@ -66,7 +66,6 @@ class MLP(nn.Module):
         bias_hidden = Norm == nn.Identity
         self.is_cosine = is_cosine
 
-        breakpoint()
         self.pre_block = nn.Sequential(
             nn.Linear(self.in_dim, hid_dim, bias=bias_hidden),
             Norm(hid_dim),
