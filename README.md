@@ -5,9 +5,9 @@
 This repostiory contains pretrained weights from and the original implementation of [Improving Self-Supervised Learning by Characterizing Idealized Representations](https://github.com/YannDubs/Invariant-Self-Supervised-Learning),
 which derives a simple uniying framework for invariant self-supervised learning (ISSL).
 Our framework provides actionable insights into ISSL that lead to important empirical gains such as how to:
-- [**Simplify non-contrastive ISSL using our DISSL objective**](#DISSL) (no momentum encoders / no stop-gradients / ... )
-- [**Choose the dimensionality of representations**](#Dimensionality) 
-- [**Choose the architecture of projection probes**](#Projection-heads) 
+- [**Simplify non-contrastive ISSL using our DISSL objective**](#dissl-tinyimagenet) (no momentum encoders / no stop-gradients / ... )
+- [**Choose the dimensionality of representations**](#dimensionality) 
+- [**Choose the architecture of projection probes**](#projection-heads) 
 - [**Choose the augmentations**](#augmentations)
 
 The following provides the code to reproduce our key results and load our ImageNet pretrained models.
@@ -17,14 +17,11 @@ The following provides the code to reproduce our key results and load our ImageN
 (GIF)
 
 Our DISSL objective is a very simple non-contrastive objective that outperforms previous baselines. 
-Here we provide pretrained weights on ImageNet, a minimal DISSL implementation and code to reproduce our TinyImageNet results.
+Here we provide pretrained weights on ImageNet and a minimal DISSL implementation.
 
 Loading pretrained weights: [![Loading pretrained](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_code.ipynb)
 
 Minimal code: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_code.ipynb)
-
-
-### Pretrained weights on ImageNet
 
 We release our pretrained weights on torch hub. 
 To load any of our model use:
@@ -56,7 +53,7 @@ Details below.
 For our ImageNet models we used [VISSL](www.vissl.ai). The exact commands can be seen on this (still uncleaned/undocumented) [VISSL fork](https://github.com/YannDubs/vissl) and we aim to incorporate DISSL in the main VISSL soon.
 
 
-## TinyImageNet results
+### DISSL TinyImageNet
 
 Once you [installed ISSL](#installation) you can reproduce the following results by running `bin/tinyimagenet/table1_distillation.sh` (subset of right column of table 1 in the paper).
 The results will be seen in `results/exp_table1_distillation`
@@ -71,7 +68,7 @@ The results will be seen in `results/exp_table1_distillation`
 
 WandB monitoring curves: [see here](https://wandb.ai/issl/issl_opensource/groups/table1_distillation)
 
-## Dimensionality
+### Dimensionality
 
 In our paper we characterize exactly the minimal and sufficient dimensionality depending on the probing architecture.
 For linear probes it's much larger than standard dimensionalities, which suggests that one would gain important gains by increasing dimensionality. 
@@ -81,7 +78,7 @@ The following figure will then be saved in `results/exp_fig7c_dimensions`.
 
 (Figure)
 
-## Projection heads
+### Projection heads
 
 
 In our paper, we prove that one of the two projection heads needs to have the same architecture as the dowsntream probe.
@@ -104,7 +101,7 @@ The following results will be seen in `results/exp_table1_distillation`
 
 
 
-## Augmentations
+### Augmentations
 
 In our paper we characterize exactly optimal sample efficiency as a function of how coarse the equivalence class induced by augmentations are.
 In particular, our theory suggests that stronger label-preserving augmentations improve performance.
