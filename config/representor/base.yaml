@@ -2,6 +2,3 @@ name: base
 is_force_retrain: False # force retraining even if exists
 is_train: True # whether to train the compressor, if not will load a pretrained representor if it exists
 is_switch_x_aux_trgt: False # whether to switch x and aux_trgt. Useful if want to have augmentations as inputs.
-
-loss:
-  beta: 1e-1

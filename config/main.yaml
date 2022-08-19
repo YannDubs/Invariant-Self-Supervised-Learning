@@ -47,7 +47,7 @@ timeout: 1440 # 24 hours
 
 ### PATHS ###
 experiment: ??? # set to the desired experiment name. **SET AS DESIRED**
-long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_dim}/bs_${data_repr.kwargs.batch_size}/ep_${update_trainer_repr.max_epochs}/beta_${format:${representor.loss.beta},.1e}/seed_${seed}/addrepr_${other.add_repr} # pretraining path
+long_name_repr: exp_${experiment}/datarepr_${data_repr.name}/augrepr_${list2str:${data_repr.kwargs.dataset_kwargs.a_augmentations}}/repr_${representor.name}/dec_${decodability.name}/enc_${encoder.name}/optrepr_${optimizer_issl.name}/schedrepr_${scheduler_issl.name}/zdim_${encoder.z_dim}/bs_${data_repr.kwargs.batch_size}/ep_${update_trainer_repr.max_epochs}/beta_1.0e-01/seed_${seed}/addrepr_${other.add_repr} # pretraining path
 long_name_pred: ${long_name_repr}/datapred_${data_pred.name}/pred_${predictor.name}/optpred_${optimizer_pred.name}/schedpred_${scheduler_pred.name}/eppred_${trainer.max_epochs}/bspred_${data_pred.kwargs.batch_size}/addpred_${other.add_pred} # downstream task path
 paths: #! the best practice is not to modify those paths but to symlink them to the places you want
   relative_work: outputs/${now:%Y-%m-%d_%H-%M-%S}

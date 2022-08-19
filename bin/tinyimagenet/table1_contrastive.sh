@@ -15,7 +15,6 @@ time=10000
 kwargs="
 experiment=$experiment
 $base_kwargs_tin
-seed=1
 timeout=$time
 representor=cissl
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr]
@@ -28,7 +27,6 @@ representor=simclr
 "
 
 cell_ours="
-representor=cissl
 "
 
 cell_dim="
@@ -47,10 +45,6 @@ $cell_aug
 update_trainer_repr.max_epochs=1000
 "
 
-cell_epoch_noaug="
-$cell_dim
-update_trainer_repr.max_epochs=1000
-"
 
 if [ "$is_plot_only" = false ] ; then
   for kwargs_dep in "$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
