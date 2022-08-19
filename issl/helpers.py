@@ -7,9 +7,11 @@ import numbers
 import operator
 import random
 import sys
+import json
+from pathlib import Path
 from argparse import Namespace
 from collections.abc import MutableMapping, MutableSet, Sequence
-from functools import reduce
+from functools import reduce, wraps
 
 from typing import Any, Optional
 import logging
@@ -28,6 +30,22 @@ except:
     pass
 
 logger = logging.getLogger(__name__)
+
+def file_cache(filename):
+    """Decorator to cache the output of a function to disk."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(self, directory, *args, **kwargs):
+            filepath = Path(directory) / filename
+            if filepath.is_file():
+                out = json.loads(filepath.read_text())
+            else:
+                logger.info(f"Precomputing cache at {filepath}")
+                out = f(self, directory, *args, **kwargs)
+                filepath.write_text(json.dumps(out))
+            return out
+        return decorated
+    return decorator
 
 class RunningMean(nn.Module):
     """Keep track of an exponentially moving average"""
@@ -281,10 +299,12 @@ def freeze_module_(model):
 
 
 MEANS = {
+    "imagenet": [0.485, 0.456, 0.406],
     "tiny-imagenet-200": [0.480, 0.448, 0.398],
     "cifar10": [0.4914009, 0.48215896, 0.4465308],
 }
 STDS = {
+    "imagenet": [0.229, 0.224, 0.225],
     "tiny-imagenet-200": [0.277, 0.269, 0.282],
     "cifar10": [0.24703279, 0.24348423, 0.26158753],
 }

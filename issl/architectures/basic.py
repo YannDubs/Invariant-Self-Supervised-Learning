@@ -45,8 +45,8 @@ class MLP(nn.Module):
 
     def __init__(
         self,
-        in_dim: int,
-        out_dim: int,
+        in_shape: int,# temporary should be dim
+        out_shape: int, # temporary should be dim
         n_hid_layers: int = 2,
         hid_dim: int = 2048,
         norm_layer: str = "batch",
@@ -56,8 +56,8 @@ class MLP(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.in_dim = in_dim
-        self.out_dim = out_dim
+        self.in_dim = in_shape
+        self.out_dim = out_shape
         self.n_hid_layers = n_hid_layers
         self.hid_dim = hid_dim
         Activation = get_Activation(activation)
@@ -66,8 +66,9 @@ class MLP(nn.Module):
         bias_hidden = Norm == nn.Identity
         self.is_cosine = is_cosine
 
+        breakpoint()
         self.pre_block = nn.Sequential(
-            nn.Linear(in_dim, hid_dim, bias=bias_hidden),
+            nn.Linear(self.in_dim, hid_dim, bias=bias_hidden),
             Norm(hid_dim),
             Activation(),
         )
@@ -84,7 +85,7 @@ class MLP(nn.Module):
 
         # using flatten linear to have bottleneck size
         PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
-        self.post_block = PostBlock(hid_dim, out_dim, **kwargs)
+        self.post_block = PostBlock(hid_dim, self.out_dim, **kwargs)
 
         self.reset_parameters()
 

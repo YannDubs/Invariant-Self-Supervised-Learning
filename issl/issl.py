@@ -78,8 +78,8 @@ class ISSLModule(pl.LightningModule):
         # to log (dict)
         logs["loss"] = loss
         pos_loss, neg_loss = self.dist_to_etf(*z.detach().chunk(2, dim=0))
-        logs["etf_pos"] = pos_loss
-        logs["etf_neg"] = neg_loss
+        logs["cosine_pos"] = 1 - pos_loss
+        logs["cosine_neg"] = neg_loss
         logs["dist_to_etf"] = pos_loss + neg_loss
 
         return loss, logs

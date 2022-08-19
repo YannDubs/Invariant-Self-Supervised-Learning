@@ -1,5 +1,5 @@
 base_kwargs_tin="
-++logger.wandb_kwargs.project=tinyimagenet
+++logger.wandb_kwargs.project=issl_opensource
 architecture@encoder=resnet18
 architecture@online_evaluator=linear
 downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-4_datarepr]

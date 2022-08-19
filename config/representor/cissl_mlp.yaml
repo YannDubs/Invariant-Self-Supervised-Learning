@@ -4,7 +4,7 @@ defaults:
   - override /decodability: cissl
 
 representor:
-  name: cntr_mlp
+  name: cissl_mlp
 
 decodability:
   kwargs:

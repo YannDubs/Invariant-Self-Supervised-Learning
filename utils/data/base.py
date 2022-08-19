@@ -31,11 +31,10 @@ class ISSLDataset(abc.ABC):
 
     Parameters
     -----------
-    aux_target : {"input", "representative", "augmentation", "target", "agg_target", "Mx", None}, optional
+    aux_target : {"input", "representative", "augmentation", "target",  "Mx", None}, optional
         Auxiliary target to append to the target. This will be used to minimize R[aux_target|Z]. `"input"` is the input
         example X, "representative" is a representative of the equivalence class, `"sample_p_Alx"` is some
-        augmented source A(x). "target" is the target. "agg_target" is the aggregated targets (`n_agg_tasks` of them).
-        "Mx" is the maximal invariant. `None` appends nothing.
+        augmented source A(x). "target" is the target. "Mx" is the maximal invariant. `None` appends nothing.
 
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|x). I.e. this should define the
@@ -47,16 +46,6 @@ class ISSLDataset(abc.ABC):
     normalization : str, optional
         Name of the normalization. If `None`, uses the default from the dataset. Only used if
         `is_normalize`.
-
-    n_agg_tasks : int, optional
-        Number of aggregated tasks to add if `aux_target="agg_target"`. Will make `n_agg_tasks` random
-        k-ary classification tasks. Note that for the theory to work you should not treat it as a
-        multi task problem but train a separate model for each aggregated task.
-
-    max_k_ary_agg : int, optional
-        (Included) upper bound on the k-ary clf for each `n_agg_tasks` subtasks. E.g. if 4 will
-        sample from binary, 3-ary, or 4-ary. Should be in ]1,n_target[. If `null` uses the maximum
-        of n_Mx -1.
 
     seed : int, optional
         Pseudo random seed.
@@ -70,8 +59,6 @@ class ISSLDataset(abc.ABC):
         a_augmentations: Sequence[str] = {},
         is_normalize: bool = False,
         normalization: Optional[str] = None,
-        n_agg_tasks: int = 10,
-        max_k_ary_agg: int = 2,
         seed: int = 123,
         **kwargs,
     ) -> None:
@@ -80,23 +67,11 @@ class ISSLDataset(abc.ABC):
         self.a_augmentations = deepcopy(a_augmentations)
         self.seed = seed
         self.is_normalize = is_normalize
-        self.n_agg_tasks = n_agg_tasks
-        self.max_k_ary_agg = max_k_ary_agg
-        self.shape_agg_target = None
         self.is_cache_data = False
 
         self.normalization = (
             self.dataset_name if normalization is None else normalization
         )
-
-        if self.max_k_ary_agg is None:
-            self.max_k_ary_agg = self.get_shapes()[0][0] - 1  # maxumum
-
-        if self.aux_target == "agg_target":
-            self.agg_tgt_mapper = self.get_agg_tgt_mapper()
-            self.shape_agg_target = tuple(
-                len(np.unique(m)) for m in self.agg_tgt_mapper
-            )
 
 
     @classmethod
@@ -141,24 +116,6 @@ class ISSLDataset(abc.ABC):
         """Return dictionary giving the shape `input`, `target`."""
         ...
 
-    def get_agg_tgt_mapper(self) -> list[npt.ArrayLike]:
-        """Update the number of aggregated tasks to add."""
-        agg_tgt_mapper = []
-        n_Mx = self.get_shapes()[0][0]
-
-        assert (n_Mx > self.max_k_ary_agg) and (self.n_agg_tasks > 0)
-        with tmp_seed(self.seed):
-            while len(agg_tgt_mapper) < self.n_agg_tasks:
-                # number of labels
-                k = np.random.randint(2, self.max_k_ary_agg + 1)
-                mapper = np.random.randint(0, k, size=n_Mx)
-                if len(np.unique(mapper)) < k:
-                    # some classes weren't sampled: go again
-                    continue
-                agg_tgt_mapper.append(mapper)
-
-        return agg_tgt_mapper
-
     def __getitem__(self, index: int) -> tuple[Any, Any]:
 
         x, target, Mx = self.get_x_target_Mx(index)
@@ -186,9 +143,6 @@ class ISSLDataset(abc.ABC):
         elif self.aux_target == "target":
             # duplicate but makes code simpler
             to_add = target
-        elif self.aux_target == "agg_target":
-            # add aggregated targets
-            to_add = [m[target] for m in self.agg_tgt_mapper]
         elif self.aux_target == "Mx":
             to_add = Mx
         else:
@@ -197,11 +151,10 @@ class ISSLDataset(abc.ABC):
         return to_add
 
     def get_shapes(self,) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
-        """Return `shapes` for the target, aux_target, all agg_target."""
+        """Return `shapes` for the target, aux_target."""
         shapes = self.shapes
         shapes["representative"] = shapes["input"]
         shapes["augmentation"] = shapes["input"]
-        shapes["agg_target"] = self.shape_agg_target
         shapes[None] = None
 
         return shapes["target"], shapes[self.aux_target]
@@ -333,12 +286,6 @@ class ISSLDataModule(LightningDataModule):
         """Download and save data on file if needed."""
         raise NotImplementedError()
 
-    @classmethod
-    @property
-    def mode(cls) -> str:
-        """Says what is the mode/type of data. E.g. images, distributions, ...."""
-        raise NotImplementedError()
-
     def get_train_dataset_subset(self, **dataset_kwargs):
         train_dataset = self.get_train_dataset(**dataset_kwargs)
         if self.subset_train_size is not None:
@@ -377,7 +324,6 @@ class ISSLDataModule(LightningDataModule):
 
             if self.is_val_on_test:
                 logger.info("Validate on the test set.")
-                # was breakpoint here
                 self.val_dataset = self.get_test_dataset_proc(**self.dataset_kwargs)
             else:
                 self.val_dataset = self.get_val_dataset(**self.dataset_kwargs)

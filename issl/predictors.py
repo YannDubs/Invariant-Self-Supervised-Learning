@@ -45,9 +45,6 @@ class Predictor(pl.LightningModule):
         -------
         Y_pred : torch.Tensor of shape=[batch_size, *target_shape]
             First is for predicting the task, all others are for the agg tasks.
-
-        Y_preds_agg : list of tensors of shape=[batch_size, *target_shape]
-            First is for predicting the task, all others are for the agg tasks.
         """
         # shape: [batch_size,  *target_shape]
         Y_pred = self.predictor(z)
@@ -57,7 +54,7 @@ class Predictor(pl.LightningModule):
         x, y = batch
 
         # list of Y_hat. Each Y_hat shape: [batch_size,  *target_shape]
-        Y_hat, Ys_hat_agg = self(x)
+        Y_hat = self(x)
 
         # Shape: [batch, 1]
         loss, logs = self.loss(Y_hat, y)

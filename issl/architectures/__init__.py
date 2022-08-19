@@ -23,7 +23,7 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
     Return
     ------
     Architecture : uninstantiated nn.Module
-        Architecture that can be instantiated by `Architecture(in_shape, out_shape)`
+        Architecture that can be instantiated by `Architecture(in_dim, out_shape)`
     """
     if architecture == "mlp":
         return partial(MLP, **kwargs)

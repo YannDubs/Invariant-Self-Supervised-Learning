@@ -24,7 +24,6 @@ import pytorch_lightning as pl
 import torch
 from hydra import compose
 from omegaconf import Container, OmegaConf
-from pytorch_lightning.callbacks.finetuning import BaseFinetuning
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.plugins.environments import SLURMEnvironment
 
@@ -34,7 +33,6 @@ from issl.helpers import check_import
 from utils.cluster.nlprun import nlp_cluster
 from utils.data import get_Datamodule
 from utils.helpers import (
-    ModelCheckpoint,
     NamespaceMap,
     apply_representor,
     cfg_save,
@@ -77,13 +75,11 @@ def main_except(cfg):
 
 
 def main(cfg):
-    breakpoint()
     logger.info(os.uname().nodename)
 
     ############## STARTUP ##############
     logger.info("Stage : Startup")
     begin(cfg)
-    finalize_kwargs = dict(modules={}, trainers={}, datamodules={}, cfgs={}, results={})
 
     ############## REPRESENTATION LEARNING ##############
     logger.info("Stage : Representor")
@@ -96,43 +92,33 @@ def main(cfg):
     is_train = repr_cfg.representor.is_train or is_force_retrain
     if is_train and not is_trained(repr_cfg, stage, is_force_retrain=is_force_retrain):
         representor = ISSLModule(hparams=repr_cfg)
-        repr_trainer = get_trainer(repr_cfg, representor, dm=repr_datamodule, is_representor=True)
-        representor = initialize_representor_(representor, repr_datamodule, repr_trainer, repr_cfg)
+        repr_trainer = get_trainer(repr_cfg, dm=repr_datamodule, is_representor=True)
 
         logger.info("Train representor ...")
         fit_(repr_trainer, representor, repr_datamodule, repr_cfg)
         save_pretrained(repr_cfg, repr_trainer, stage)
     else:
         logger.info("Load pretrained representor ...")
-        if repr_cfg.representor.is_use_init:
-            # for online pretrained SSL models simply load the pretrained model (init)
-            representor = ISSLModule(hparams=repr_cfg)
-        else:
-            representor = load_pretrained(repr_cfg, ISSLModule, stage)
-        repr_trainer = get_trainer(repr_cfg, representor, is_representor=True)
+        representor = load_pretrained(repr_cfg, ISSLModule, stage)
+        repr_trainer = get_trainer(repr_cfg, is_representor=True)
         placeholder_fit(repr_trainer, representor)
         repr_cfg.evaluation.representor.ckpt_path = None  # eval loaded model
 
     if repr_cfg.evaluation.representor.is_evaluate:
         logger.info("Evaluate representor ...")
-        repr_res = evaluate(
+        evaluate(
             repr_trainer, repr_datamodule, repr_cfg, stage, model=representor
         )
-    else:
-        repr_res = load_results(repr_cfg, stage)
 
     finalize_stage_(
         stage,
         repr_cfg,
-        repr_res,
-        finalize_kwargs,
         is_save_best=True,
     )
 
     del repr_datamodule  # not used anymore and can be large
 
     ############## DOWNSTREAM PREDICTOR ##############
-    pred_res_all = dict()
 
     for task in cfg.downstream_task.all_tasks:
         logger.info(f"Stage : Predict {task}")
@@ -148,7 +134,7 @@ def main(cfg):
         is_train = pred_cfg.predictor.is_train or is_force_retrain
         if is_train and not is_trained(pred_cfg, stage, is_force_retrain=is_force_retrain):
             predictor = Predictor(hparams=pred_cfg)
-            pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+            pred_trainer = get_trainer(pred_cfg, is_representor=False)
 
             logger.info(f"Train predictor for {task} ...")
             fit_(pred_trainer, predictor, pred_datamodule, pred_cfg)
@@ -157,37 +143,32 @@ def main(cfg):
         else:
             logger.info(f"Load pretrained predictor for {task} ...")
             predictor = load_pretrained(pred_cfg, Predictor, stage)
-            pred_trainer = get_trainer(pred_cfg, predictor, is_representor=False)
+            pred_trainer = get_trainer(pred_cfg, is_representor=False)
             placeholder_fit(pred_trainer, predictor)
 
         pred_cfg.evaluation.predictor.ckpt_path = None  # eval loaded model
 
         if pred_cfg.evaluation.predictor.is_evaluate:
             logger.info(f"Evaluate predictor for {task} ...")
-            pred_res = evaluate(
+            evaluate(
                 pred_trainer,
                 pred_datamodule,
                 pred_cfg,
                 stage,
                 model=predictor
             )
-        else:
-            pred_res = load_results(pred_cfg, stage)
 
-        pred_res_all.update(pred_res)
         save_end_file(pred_cfg)
 
 
     finalize_stage_(
         stage,
         pred_cfg,
-        pred_res_all,
-        finalize_kwargs,
     )
 
     ############## SHUTDOWN ##############
 
-    finalize(**finalize_kwargs)
+    finalize(repr_cfg)
 
 
 def begin(cfg: Container) -> None:
@@ -295,7 +276,7 @@ def set_cfg(cfg: Container, stage: str) -> Container:
 
         logger.info(f"Name : {cfg.long_name}.")
 
-        # rescaling learning rate depening on batch size
+        # rescaling learning rate depending on batch size
         lr_stage = "issl" if cfg.stage == "repr" else cfg.stage
         batch_size = cfg.data.kwargs.batch_size
         if batch_size != 256:
@@ -358,7 +339,6 @@ def instantiate_datamodule_(
     cfgd.shape = datamodule.shape
     cfgd.target_shape = datamodule.target_shape
     cfgd.aux_shape = datamodule.aux_shape
-    cfgd.mode = datamodule.mode
     cfgd.aux_target = datamodule.aux_target
     cfgd.normalized = datamodule.normalized
     if pre_representor is not None:
@@ -373,31 +353,13 @@ def instantiate_datamodule_(
 
         # changes due to the representations
         cfgd.shape = (datamodule.train_dataset.X.shape[-1],)
-        cfgd.mode = "vector"
 
     n_devices = max(cfgt.gpus * cfgt.num_nodes, 1)
-    eff_batch_size = n_devices * cfgd.kwargs.batch_size * cfgt.accumulate_grad_batches
+    eff_batch_size = n_devices * cfgd.kwargs.batch_size
     cfgd.n_train_batches = 1 + cfgd.length // eff_batch_size
     cfgd.max_steps = cfgt.max_epochs * cfgd.n_train_batches
 
     return datamodule
-
-
-def initialize_representor_(
-    module: ISSLModule,
-    datamodule: pl.LightningDataModule,
-    trainer: pl.Trainer,
-    cfg: NamespaceMap,
-) -> None:
-    """Additional steps needed for initialization of the compressor + logging."""
-
-    # save number of parameters for the main model (not online optimizer but with coder)
-    n_param = sum(
-        p.numel() for p in module.get_specific_parameters("all") if p.requires_grad
-    )
-    log_dict(trainer, {"n_param": n_param}, is_param=True)
-
-    return module
 
 
 def get_callbacks(
@@ -407,12 +369,11 @@ def get_callbacks(
     callbacks = []
 
     if is_representor:
-
         if hasattr(cfg.decodability, "is_ema") and cfg.decodability.is_ema:
             # use momentum contrastive teacher, e.g. DINO
             callbacks += [MAWeightUpdate()]
 
-    callbacks += [ModelCheckpoint(**cfg.checkpoint.kwargs)]
+    callbacks += [pl.callbacks.ModelCheckpoint(**cfg.checkpoint.kwargs)]
 
     for name, kwargs in cfg.callbacks.items():
         try:
@@ -423,11 +384,7 @@ def get_callbacks(
 
                 Callback = getattr(pl.callbacks, name)
                 new_callback = Callback(**callback_kwargs)
-
-                if isinstance(new_callback, BaseFinetuning) and not is_representor:
-                    pass  # don't add finetuner during prediction
-                else:
-                    callbacks.append(new_callback)
+                callbacks.append(new_callback)
 
         except AttributeError:
             pass
@@ -468,7 +425,7 @@ def get_logger(cfg: NamespaceMap) -> pl.loggers.base.LightningLoggerBase:
 
 
 def get_trainer(
-    cfg: NamespaceMap, module: pl.LightningModule, is_representor: bool, dm: pl.LightningDataModule=None,
+    cfg: NamespaceMap,  is_representor: bool, dm: pl.LightningDataModule=None,
 ) -> pl.Trainer:
     """Instantiate trainer."""
 
@@ -523,11 +480,7 @@ def save_pretrained(
 
     # restore best checkpoint
     best = trainer.checkpoint_callback.best_model_path
-    try:
-        trainer._checkpoint_connector.resume_start(best)
-    except AttributeError:
-        # Older versions of lightning
-        trainer.checkpoint_connector.resume_start(best)
+    trainer._checkpoint_connector.resume_start(best)
 
     # save
     dest_path = Path(cfg.paths.pretrained.save)
@@ -573,16 +526,14 @@ def load_pretrained(
     return loaded_module
 
 
-# noinspection PyBroadException
 def evaluate(
     trainer: pl.Trainer,
     datamodule: pl.LightningDataModule,
     cfg: NamespaceMap,
     stage: str,
     model: torch.nn.Module=None
-) -> dict:
+):
     """Evaluate the trainer by logging all the metrics from the test set from the best model."""
-    test_res = dict()
     to_save = dict()
 
     try:
@@ -613,30 +564,6 @@ def evaluate(
     except:
         logger.exception("Failed to evaluate. Skipping this error:")
 
-    return test_res
-
-
-def load_results(cfg: NamespaceMap, stage: str) -> dict:
-    """
-    Load the results that were previously saved or return empty dict. Useful in case you
-    preempted but still need access to the results.
-    """
-    # noinspection PyBroadException
-    try:
-        filename = RESULTS_FILE.format(stage=stage)
-        path = Path(cfg.paths.results) / filename
-
-        # dict of "test","train" ... where subdicts are keys and results
-        results = pd.read_csv(path, index_col=0).to_dict()
-
-        results = {
-            f"{mode}/{k}": v
-            for mode, sub_dict in results.items()
-            for k, v in sub_dict.items()
-        }
-        return results
-    except:
-        return dict()
 
 def save_end_file(cfg):
     """"save end file to make sure that you don't retrain if preemption"""
@@ -650,10 +577,8 @@ def save_end_file(cfg):
 def finalize_stage_(
     stage: str,
     cfg: NamespaceMap,
-    results: dict,
-    finalize_kwargs: dict,
     is_save_best: bool = False,
-) -> None:
+) :
     """Finalize the current stage."""
     logger.info(f"Finalizing {stage}.")
 
@@ -671,18 +596,8 @@ def finalize_stage_(
 
     save_end_file(cfg)
 
-    finalize_kwargs["results"][stage] = results
-    finalize_kwargs["cfgs"][stage] = cfg
-
-def finalize(
-    modules: dict[str, pl.LightningModule],
-    trainers: dict[str, pl.Trainer],
-    datamodules: dict[str, pl.LightningDataModule],
-    cfgs: dict[str, NamespaceMap],
-    results: dict[str, dict],
-) -> Any:
+def finalize(cfg: NamespaceMap):
     """Finalizes the script."""
-    cfg = cfgs["representor"]  # this is always in
 
     logger.info("Stage : Shutdown")
 
@@ -695,7 +610,7 @@ def finalize(
     logging.shutdown()
 
 
-def smooth_exit(cfg: NamespaceMap) -> None:
+def smooth_exit(cfg: NamespaceMap):
     """Everything to run in case you get preempted / exit."""
 
     training_chckpnt = Path(cfg.paths.checkpoint)

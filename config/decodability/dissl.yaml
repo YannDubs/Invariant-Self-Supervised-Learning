@@ -14,7 +14,6 @@ kwargs:
     bottleneck_size: ${decodability.kwargs.predictor_kwargs.bottleneck_size}
     hid_dim: 1024
     n_hid_layers: 1
-    is_cosine: True
     norm_layer: "batch"
   predictor_kwargs:
     architecture: "linear"

@@ -17,7 +17,7 @@ defaults:
   - checkpoint@checkpoint_repr: last
   - optimizer@optimizer_issl: Adam_lr3e-3_w0
   - scheduler@scheduler_issl: cosine
-  - decodability: contrastive
+  - decodability: cissl
   - representor: base # actual model used for SSL
 
   # ONLINE EVALUATOR / PROBING HEAD #

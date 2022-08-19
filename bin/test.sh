@@ -19,7 +19,7 @@ timeout=$time
 
 # every arguments that you are sweeping over
 kwargs_multi="
-representor=cntr
+representor=cissl
 "
 
 if [ "$is_plot_only" = false ] ; then

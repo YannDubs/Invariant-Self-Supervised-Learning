@@ -3,7 +3,7 @@ defaults:
 
 # all arguments to ContrastiveISSL (see docstrings)
 kwargs:
-  mode: contrastive
+  mode: cissl
   predictor_kwargs: # this is on the student branch (should be the same as downstream)
     architecture: "linear"
     out_shape: 128

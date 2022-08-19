@@ -3,13 +3,9 @@ from __future__ import annotations
 import abc
 import copy
 import logging
-import multiprocessing
-import os
 from collections.abc import Callable, Sequence
-import time
 from functools import partial
 from multiprocessing import Pool
-from os import path
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -17,53 +13,33 @@ import numpy as np
 import numpy.typing as npt
 from torchvision.transforms import InterpolationMode
 import torch
-from torchvision.datasets import (
-    CIFAR10,
-)
+from torchvision.datasets import CIFAR10,ImageFolder
 from torchvision.transforms.functional_pil import _is_pil_image
 from torchvision.transforms import (
-    CenterCrop,
     ColorJitter,
     Compose,
-    Lambda,
     RandomAffine,
     RandomApply,
-    RandomCrop,
     RandomErasing,
     RandomGrayscale,
-    RandomHorizontalFlip,
     RandomResizedCrop,
-    RandomRotation,
     RandomVerticalFlip,
     Resize,
-    ToPILImage,
     ToTensor,
 )
-from tqdm import tqdm
 
-from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy, int_or_ratio
+from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy, int_or_ratio, file_cache
 from .augmentations import get_simclr_augmentations
 from .base import ISSLDataModule, ISSLDataset
 from .helpers import (
     ImgAugmentor,
     _get_img_pool, download_url,
-    image_loader,
-    np_img_resize,
     unzip,
     random_split_cache
 )
 
-import utils.helpers # avoids circular imports
+import utils.helpers  # avoids circular imports
 
-try:
-    import tensorflow_datasets as tfds  # only used for tfds data
-except ImportError:
-    pass
-
-try:
-    import pycocotools  # only used for coco
-except ImportError:
-    pass
 
 
 EXIST_DATA = "data_exist.txt"
@@ -395,44 +371,20 @@ class ISSLImgDataset(ISSLDataset):
 
         augmentations = dict(
             PIL={
-                "rotation--": RandomRotation(15),
-                "y-translation--": RandomAffine(0, translate=(0, 0.15)),
-                "x-translation--": RandomAffine(0, translate=(0.15, 0)),
-                "shear--": RandomAffine(0, shear=15),
-                "scale--": RandomAffine(0, scale=(0.8, 1.2)),
-                "D4-group": Compose(
-                    [
-                        RandomHorizontalFlip(p=0.5),
-                        RandomVerticalFlip(p=0.5),
-                        RandomApply([RandomRotation((90, 90))], p=0.5),
-                    ]
-                ),
-                "rotation": RandomRotation(45),
                 "y-translation": RandomAffine(0, translate=(0, 0.25)),
                 "x-translation": RandomAffine(0, translate=(0.25, 0)),
-                "shear": RandomAffine(0, shear=25),
                 "scale": RandomAffine(0, scale=(0.6, 1.4)),
                 "color": RandomApply(
-                    [
-                        ColorJitter(
-                            brightness=0.4, contrast=0.4, saturation=0.4, hue=0.2
-                        )
-                    ],
-                    p=0.8,
+                    [ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.2)], p=0.8
                 ),
                 "gray": RandomGrayscale(p=0.2),
-                "hflip": RandomHorizontalFlip(p=0.5),
-                "vflip": RandomVerticalFlip(p=0.5),
                 "resize-crop": RandomResizedCrop(
                     size=(shape[1], shape[2]),
                     scale=(0.2, 1.0),
                     ratio=(3 / 4, 4 / 3),
                     interpolation=InterpolationMode.BICUBIC,
                 ),
-                "resize": Resize(
-                    min(shape[1], shape[2]), interpolation=InterpolationMode.BICUBIC
-                ),
-                "crop": RandomCrop(size=(shape[1], shape[2])),
+                "vflip": RandomVerticalFlip(p=0.5),
                 "simclr-imagenet": get_simclr_augmentations(
                     shape[-1], dataset="imagenet", strength=self.simclr_aug_strength
                 ),
@@ -444,9 +396,6 @@ class ISSLImgDataset(ISSLDataset):
             # might not be possible depending on the dataset
             augmentations["PIL"]["simclr"] = get_simclr_augmentations(
                 shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength
-            )
-            augmentations["PIL"]["whitening_simclr"] = get_simclr_augmentations(
-                shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength, is_whitening=True
             )
             augmentations["PIL"]["blured_simclr"] = get_simclr_augmentations(
                 shape[-1], dataset=self.dataset_name, strength=self.simclr_aug_strength, is_force_blur=True,
@@ -608,11 +557,6 @@ class ISSLImgDataModule(ISSLDataModule):
                 self.data_dir, curr_split=split, download=True, **self.dataset_kwargs
             )
 
-    @classmethod
-    @property
-    def mode(cls) -> str:
-        return "image"
-
 
 ### Torchvision Datasets ###
 
@@ -660,6 +604,16 @@ class Cifar10DataModule(ISSLImgDataModule):
 
 
 ### Other Datasets ###
+class CachedImageFolder(ImageFolder):
+    @file_cache(filename="cached_classes.json")
+    def find_classes(self, directory, *args, **kwargs):
+        classes = super().find_classes(directory, *args, **kwargs)
+        return classes
+
+    @file_cache(filename="cached_structure.json")
+    def make_dataset(self, directory, *args, **kwargs):
+        dataset = super().make_dataset(directory, *args, **kwargs)
+        return dataset
 
 class ExternalImgDataset(ISSLImgDataset):
     """Base class for external datasets that are neither torchvision nor tensorflow. Images will be

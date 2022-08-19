@@ -149,14 +149,14 @@ class DINO(nn.Module):
 
         # shape=[batch_size*2, z_dim]
         # have to use x and x_tilde directly because the encoder is different now
-        z_tilde = self.teacher_encoder(torch.cat([x, x_tilde]), dim=0)
+        z_tilde = self.teacher_encoder(torch.cat([x, x_tilde], dim=0))
 
         # shape: [batch_size*2, M_shape].
         student_M = self.projector(z).float()
         teacher_M = self.teacher_proj(z_tilde).float()
 
         # shape: [].
-        loss, logs = super().loss(student_M, teacher_M)
+        loss, logs = self.loss(student_M, teacher_M)
 
         return loss, logs
 
@@ -164,6 +164,7 @@ class DINO(nn.Module):
         self, z: torch.Tensor, z_tgt: torch.Tensor,
     ) -> tuple[torch.Tensor, dict]:
 
+        # shape: [batch_size, n_nequiv].
         z_x, z_a = z.chunk(2, dim=0)
         z_tgt_x, z_tgt_a = z_tgt.chunk(2, dim=0)
 

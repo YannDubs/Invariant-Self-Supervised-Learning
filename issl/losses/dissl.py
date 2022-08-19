@@ -42,7 +42,6 @@ class DISSL(nn.Module):
             "bottleneck_size": 512,
             "hid_dim": 1024,
             "n_hid_layers": 1,
-            "is_cosine": True,
             "norm_layer": "batch"
         },
         predictor_kwargs: dict[str, Any] = {
@@ -106,7 +105,7 @@ class DISSL(nn.Module):
             Additional values to monitor.
         """
 
-        # shape: [batch_size, M_shape]. Make sure not half prec
+        # shape: [2 * batch_size, n_nequiv]. Make sure not half prec
         logits_assign = self.projector(z_tgt).float() / self.temperature_assign
         logits_predict = self.predictor(z).float() / self.temperature
 

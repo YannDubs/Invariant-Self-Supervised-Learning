@@ -4,4 +4,4 @@ defaults:
   - override /decodability: cissl
 
 representor:
-  name: cntr
+  name: cissl

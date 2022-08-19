@@ -31,9 +31,7 @@ class ResNet(nn.Module):
     out_shape : int or tuple
         Size of the output.
 
-    base : {'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
-           'wide_resnet50_2', 'wide_resnet101_2'}, optional
+    base : {'resnet18', 'resnet34', 'resnet50', ...}, optional
         Base resnet to use, any model `torchvision.models.resnet` should work (the larger models were
         not tested).
 
@@ -64,7 +62,7 @@ class ResNet(nn.Module):
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
 
-        self.resnet = torchvision.models.__dict__[base](num_classes=self.out_dim, **kwargs)
+        self.resnet = torchvision.models.__dict__[base](**kwargs)
 
         if self.is_channel_out_dim:
             self.update_out_chan_()
@@ -116,13 +114,9 @@ class ResNet(nn.Module):
             weights_init(self.resnet.conv1)
 
         if in_shape[1] < 50:
-            # following https://github.com/htdt/self-supervised/blob/d24f3c722ac4e945161a9cd8c830bf912403a8d7/model
-            # .py#L19
+            # following https://github.com/htdt/self-supervised/blob/d24f3c722ac4e945161a9cd8c830bf912403a8d7/model.py#L19
             # this should only be removed for cifar
             self.resnet.maxpool = nn.Identity()
-
-    def forward_out_chan(self, Y_pred):
-        return self.resnet.avgpool(Y_pred)
 
     def forward(self, X):
         Y_pred = self.resnet(X)

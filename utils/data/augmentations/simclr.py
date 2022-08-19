@@ -15,8 +15,10 @@ from torchvision.transforms import InterpolationMode
 
 
 def get_simclr_augmentations(
-    input_height: int, dataset: Optional[str] = None, strength : float =1.0, # multiply all numeric values
-    is_whitening:bool=False, is_force_blur : bool=False
+    input_height: int,
+    dataset: Optional[str] = None,
+    strength : float =1.0,  # multiply all numeric values
+    is_force_blur : bool=False
 ) -> Callable[..., Any]:
     dataset = dataset.lower()
 
@@ -43,31 +45,17 @@ def get_simclr_augmentations(
 
     gaussian_blur = gaussian_blur or is_force_blur
 
-    if is_whitening:
-        color_jitter = transforms.ColorJitter(col_s1, col_s1, col_s1, col_s2)
-        data_transforms = [
-            transforms.RandomApply([color_jitter], p=0.8),
-            transforms.RandomGrayscale(p=p_gray),
-            transforms.RandomResizedCrop(
-                size=input_height,
-                scale=(crop_s, 1.0),
-                interpolation=InterpolationMode.BICUBIC,
-            ),
-            transforms.RandomHorizontalFlip(p=0.5),
-        ]
-
-    else:
-        color_jitter = transforms.ColorJitter(col_s1, col_s1, col_s1, col_s2)
-        data_transforms = [
-            transforms.RandomResizedCrop(
-                size=input_height,
-                scale=(crop_s, 1.0),
-                interpolation=InterpolationMode.BICUBIC,
-            ),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomApply([color_jitter], p=0.8),
-            transforms.RandomGrayscale(p=p_gray),
-        ]
+    color_jitter = transforms.ColorJitter(col_s1, col_s1, col_s1, col_s2)
+    data_transforms = [
+        transforms.RandomResizedCrop(
+            size=input_height,
+            scale=(crop_s, 1.0),
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomApply([color_jitter], p=0.8),
+        transforms.RandomGrayscale(p=p_gray),
+    ]
 
     if gaussian_blur:
         # need to check if correct implementation because most people used different gaussian blur

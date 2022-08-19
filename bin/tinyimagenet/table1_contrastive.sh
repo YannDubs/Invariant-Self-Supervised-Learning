@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-experiment="table_cntr_final"
+experiment="table1_contrastive"
 notes="
-**Goal**: run the main table for contrastive.
+**Goal**: compares contrastive methods (table 1 contrastive column).
 "
 
 # parses special mode for running the script
@@ -17,19 +17,19 @@ experiment=$experiment
 $base_kwargs_tin
 seed=1
 timeout=$time
-representor=cntr
+representor=cissl
 downstream_task.all_tasks=[torchlogisticw1e-4_datarepr,torchlogisticw1e-5_datarepr,torchlogisticw1e-6_datarepr]
 seed=1
 "
+# use seed=1,2,3 for three seeds
 
 cell_baseline="
 representor=simclr
 "
 
 cell_ours="
-representor=cntr
+representor=cissl
 "
-
 
 cell_dim="
 encoder.z_dim=2048
@@ -39,7 +39,7 @@ encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 
 cell_aug="
 $cell_dim
-representor=cntr_coarse
+representor=cissl_coarse
 "
 
 cell_epoch="
@@ -53,7 +53,7 @@ update_trainer_repr.max_epochs=1000
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_epoch" "$cell_epoch_noaug"  #"$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
+  for kwargs_dep in "$cell_baseline" "$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch"
   do
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 

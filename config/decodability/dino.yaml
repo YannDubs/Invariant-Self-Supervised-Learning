@@ -5,7 +5,7 @@ is_ema: True # teacher is exponential moving average of the student
 
 # all arguments to DINO (see docstrings)
 kwargs:
-  mode: dino_self_distillation
+  mode: dino
   n_equivalence_classes: 1000 # output of DINO's teacher
   student_temperature:  0.1
   n_epochs: ${trainer.max_epochs}

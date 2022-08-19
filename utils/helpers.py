@@ -274,16 +274,6 @@ def apply_representor(
     return datamodule
 
 
-class ModelCheckpoint(pl.callbacks.ModelCheckpoint):
-    def on_load_checkpoint(self, *args, **kwargs):
-        super().on_load_checkpoint(*args, **kwargs)
-
-        # trick to keep only one model because pytorch lightning by default doesn't save
-        # best k_models, so when preempting they stack up. Open issue. This is only correct for k=1
-        self.best_k_models = {}
-        self.best_k_models[self.best_model_path] = self.best_model_score
-        self.kth_best_model_path = self.best_model_path
-
 
 def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
     """Remove a file or a folder"""
@@ -298,7 +288,7 @@ def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
         shutil.rmtree(path)
 
 
-@contextlib.contextmanager
+@contextmanager
 def plot_config(
     style="ticks",
     context="talk",
