@@ -54,9 +54,14 @@ if [ "$is_plot_only" = false ] ; then
     sleep 10
 
   done
-fi
-
-python utils/aggregate.py \
+else
+  python utils/aggregate.py \
+       +collect_data.params_to_add.aug_strength="data_repr.kwargs.dataset_kwargs.simclr_aug_strength" \
        experiment=$experiment  \
        agg_mode=[summarize_metrics] \
        $add_kwargs
+
+
+  python -c 'import pandas as pd; df=pd.read_csv("results/exp_table1_contrastive/summarized_metrics_predictor.csv"); print(df.loc[df["optpred"]=="SGD_lr3.0e-01_w1.0e-05",["repr","zdim","ep","aug_strength","test/pred/acc_mean"]])'
+fi
+

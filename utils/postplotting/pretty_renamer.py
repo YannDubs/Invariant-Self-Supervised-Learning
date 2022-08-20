@@ -50,5 +50,5 @@ PRETTY_RENAMER = StrFormatter(
         "Decodability": "ISSL Loss",
         "Augmentation": "Aug.",
     },
-    to_upper=["Cifar10", "Mnist", "Mlp", "Adam", "Dissl", "Cntr"],
+    to_upper=["Cifar10", "Mnist", "Mlp", "Adam", "Dissl", "Cissl"],
 )

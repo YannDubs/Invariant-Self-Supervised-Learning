@@ -44,6 +44,8 @@ They are all ResNet50 trained with a batch size of 3072.
 ## Reproducing main results 
 
 To reproduce our key TinyImageNet results you need to `pip install -r requirements.txt` and run the desired script in `bin/tinyimagenet/*.sh`.
+To run the script without slurm use `bin/tinyimagenet/*.sh -s none`.
+If you want to use slurm then you need to define the desired configs in `config/server` for an example see `nlprun` or `vector` which can be called using `bin/tinyimagenet/*.sh -s <server_name>`.
 Details below.
 
 For our ImageNet models we used [VISSL](www.vissl.ai). The exact commands can be seen on this (still uncleaned/undocumented) [VISSL fork](https://github.com/YannDubs/vissl) and we aim to incorporate DISSL in the main VISSL soon.
@@ -69,8 +71,9 @@ WandB monitoring curves: [see here](https://wandb.ai/issl/issl_opensource/groups
 In our paper we characterize exactly the minimal and sufficient dimensionality depending on the probing architecture.
 For linear probes it's much larger than standard dimensionalities, which suggests that one would gain important gains by increasing dimensionality. 
 Figure 7c of our paper shows empirically that this is indeed the case.
-To reproduce a similar figure (single seed) run `bin/tinyimagenet/fig7c_dimensions.sh`.
-The following figure will then be saved in `results/exp_fig7c_dimensions`.
+To reproduce a similar figure (single seed) run `bin/tinyimagenet/fig7c_dimensions.sh -s none`.
+Once the script is finished you can collect and print the results by running `bin/tinyimagenet/fig7c_dimensions.sh -v "" -a is_force_gpu=False`.
+The following figure will then be saved in `results/exp_fig7c_dimensions/lines_zdim_cisslall.pdf`.
 
 (Figure)
 
@@ -84,14 +87,15 @@ This is to ensure that the SSL representations are pretrained the same way as th
 
 This is the difference between our CISSL and SimCLR. 
 The left column in Table 1 of our paper shows empirically that this improves performance.
-To reproduce a similar table (single seed) run `bin/tinyimagenet/table1_contrastive.sh`.
-The following results will be seen in `results/exp_table1_distillation`
+To reproduce a similar table (single seed) run `bin/tinyimagenet/table1_contrastive.sh -s none` (no servers/slurm).
+Once the script is finished you can collect and print the results by running `bin/tinyimagenet/table1_contrastive.sh -v "" -a is_force_gpu=False`.
+You should get the following results printed:
 
 | Model    | TinyImageNet Linear probing acc. |
 |:---------|---------------------------------:|
-| SimCLR   |                            44.6% |
+| SimCLR   |                            45.1% |
 | CISSL    |                            45.8% |
-| + dim.   |                            47.5% |
+| + dim.   |                            47.6% |
 | + epochs |                            48.6% |
  | + aug.   |                            50.1% |
 

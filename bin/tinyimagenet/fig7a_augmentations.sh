@@ -17,12 +17,12 @@ experiment=$experiment
 $base_kwargs_tin
 seed=1
 representor=dissl
-downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogistic_datarepr01test,torchlogistic_datarepr001test,torchlogistic_datarepr0002test,torchlogistic_datarepr03test,torchlogistic_datarepr003test]
+downstream_task.all_tasks=[torchlogistic_datarepr,torchlogisticw1e-5_datarepr,torchlogistic_datarepr01test,torchlogistic_datarepr001test,torchlogistic_datarepr0002test]
 timeout=$time
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.n_equivalence_classes=16384" #"data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.25 decodability.kwargs.n_equivalence_classes=24000"# "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.5 decodability.kwargs.n_equivalence_classes=20000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.n_equivalence_classes=16384" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=2 decodability.kwargs.n_equivalence_classes=12000"
+  for kwargs_dep in  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.25 decodability.kwargs.n_equivalence_classes=24000"  "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=0.5 decodability.kwargs.n_equivalence_classes=20000" "data_repr.kwargs.dataset_kwargs.simclr_aug_strength=1 decodability.kwargs.n_equivalence_classes=16384"
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -30,11 +30,8 @@ if [ "$is_plot_only" = false ] ; then
     sleep 10
 
   done
-fi
-
-
-
-# Makes the desired line plot
+else
+  # Makes the desired line plot
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
@@ -54,3 +51,7 @@ python utils/aggregate.py \
        +plot_scatter_lines.is_legend=False \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
+fi
+
+
+

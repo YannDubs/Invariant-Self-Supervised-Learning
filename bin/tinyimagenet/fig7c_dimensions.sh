@@ -40,7 +40,7 @@ downstream_task.all_tasks=[torchmlpw1e-4_datarepr,torchmlpw1e-5_datarepr,torchml
 "
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in  "$linear" #"$mlp"
+  for kwargs_dep in  "$mlp" #"$linear" #
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
@@ -48,20 +48,18 @@ if [ "$is_plot_only" = false ] ; then
     sleep 10
 
   done
-fi
+else
 
-
-#TODO keep only the desired one
 python utils/aggregate.py \
        experiment=$experiment  \
        patterns.representor=null \
        +collect_data.params_to_add.task="task" \
        +col_val_subset.repr=["cissl","cissl_mlp"] \
-       +col_val_subset.task=["torchlogisticw1e-5_datarepr"] \
+       +col_val_subset.task=["torchlogisticw1e-6_datarepr"] \
        +plot_scatter_lines.x="zdim" \
        +plot_scatter_lines.y="test/pred/acc" \
        +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
-       +plot_scatter_lines.filename="lines_zdim_1e-5" \
+       +plot_scatter_lines.filename="lines_zdim_1e-6" \
        +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
        +kwargs.pretty_renamer.Cntr="Linear" \
        +plot_scatter_lines.hue="repr" \
@@ -70,59 +68,25 @@ python utils/aggregate.py \
         +plot_scatter_lines.legend_out=False \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
-#
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       patterns.representor=null \
-#       +collect_data.params_to_add.task="task" \
-#       +col_val_subset.repr=["cissl","cissl_mlp"] \
-#       +col_val_subset.task=["torchlogisticw1e-6_datarepr"] \
-#       +plot_scatter_lines.x="zdim" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
-#       +plot_scatter_lines.filename="lines_zdim_1e-6" \
-#       +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
-#       +kwargs.pretty_renamer.Cntr="Linear" \
-#       +plot_scatter_lines.hue="repr" \
-#       +plot_scatter_lines.logbase_x=2 \
-#        +plot_scatter_lines.legend=True \
-#        +plot_scatter_lines.legend_out=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
-#
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       patterns.representor=null \
-#       +collect_data.params_to_add.task="task" \
-#       +col_val_subset.repr=["cissl","cissl_mlp"] \
-#       +col_val_subset.task=["torchlogisticw1e-4_datarepr"] \
-#       +plot_scatter_lines.x="zdim" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
-#       +plot_scatter_lines.filename="lines_zdim_1e-4" \
-#       +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
-#       +kwargs.pretty_renamer.Cntr="Linear" \
-#       +plot_scatter_lines.hue="repr" \
-#       +plot_scatter_lines.logbase_x=2 \
-#        +plot_scatter_lines.legend=True \
-#        +plot_scatter_lines.legend_out=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
-#
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       patterns.representor=null \
-#       +collect_data.params_to_add.task="task" \
-#       +col_val_subset.repr=["cissl","cissl_mlp"] \
-#       +plot_scatter_lines.x="zdim" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
-#       +plot_scatter_lines.filename="lines_zdim_cisslall" \
-#       +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
-#       +kwargs.pretty_renamer.Cntr="Linear" \
-#       +plot_scatter_lines.hue="repr" \
-#       +plot_scatter_lines.logbase_x=2 \
-#         +plot_scatter_lines.legend=True \
-#        +plot_scatter_lines.legend_out=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
+
+python utils/aggregate.py \
+       experiment=$experiment  \
+       patterns.representor=null \
+       +collect_data.params_to_add.task="task" \
+       +col_val_subset.repr=["cissl","cissl_mlp"] \
+       +plot_scatter_lines.x="zdim" \
+       +plot_scatter_lines.y="test/pred/acc" \
+       +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
+       +plot_scatter_lines.filename="lines_zdim_cisslall" \
+       +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
+       +kwargs.pretty_renamer.Cntr="Linear" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.logbase_x=2 \
+         +plot_scatter_lines.legend=True \
+        +plot_scatter_lines.legend_out=False \
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
+
+fi
+
+
