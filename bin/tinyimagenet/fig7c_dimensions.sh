@@ -52,24 +52,24 @@ fi
 
 
 #TODO keep only the desired one
-#python utils/aggregate.py \
-#       experiment=$experiment  \
-#       patterns.representor=null \
-#       +collect_data.params_to_add.task="task" \
-#       +col_val_subset.repr=["cissl","cissl_mlp"] \
-#       +col_val_subset.task=["torchlogisticw1e-5_datarepr"] \
-#       +plot_scatter_lines.x="zdim" \
-#       +plot_scatter_lines.y="test/pred/acc" \
-#       +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
-#       +plot_scatter_lines.filename="lines_zdim_1e-5" \
-#       +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
-#       +kwargs.pretty_renamer.Cntr="Linear" \
-#       +plot_scatter_lines.hue="repr" \
-#       +plot_scatter_lines.logbase_x=2 \
-#        +plot_scatter_lines.legend=True \
-#        +plot_scatter_lines.legend_out=False \
-#       agg_mode=[plot_scatter_lines] \
-#       $add_kwargs
+python utils/aggregate.py \
+       experiment=$experiment  \
+       patterns.representor=null \
+       +collect_data.params_to_add.task="task" \
+       +col_val_subset.repr=["cissl","cissl_mlp"] \
+       +col_val_subset.task=["torchlogisticw1e-5_datarepr"] \
+       +plot_scatter_lines.x="zdim" \
+       +plot_scatter_lines.y="test/pred/acc" \
+       +plot_scatter_lines.cols_to_max=["task","pred","optpred","schedpred","eppred","bspred","addpred"] \
+       +plot_scatter_lines.filename="lines_zdim_1e-5" \
+       +kwargs.pretty_renamer.Cntr_Mlp="MLP" \
+       +kwargs.pretty_renamer.Cntr="Linear" \
+       +plot_scatter_lines.hue="repr" \
+       +plot_scatter_lines.logbase_x=2 \
+        +plot_scatter_lines.legend=True \
+        +plot_scatter_lines.legend_out=False \
+       agg_mode=[plot_scatter_lines] \
+       $add_kwargs
 #
 #python utils/aggregate.py \
 #       experiment=$experiment  \

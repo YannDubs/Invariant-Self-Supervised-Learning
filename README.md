@@ -17,11 +17,7 @@ The following provides the code to reproduce our key results and load our ImageN
 (GIF)
 
 Our DISSL objective is a very simple non-contrastive objective that outperforms previous baselines. 
-Here we provide pretrained weights on ImageNet and a minimal DISSL implementation.
-
-Loading pretrained weights: [![Loading pretrained](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_code.ipynb)
-
-Minimal code: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_code.ipynb)
+We provide pretrained weights on ImageNet and a minimal DISSL implementation (see [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_code.ipynb)).
 
 We release our pretrained weights on torch hub. 
 To load any of our model use:

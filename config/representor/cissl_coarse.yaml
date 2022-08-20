@@ -10,4 +10,4 @@ data_repr:
   kwargs:
     dataset_kwargs:
       simclr_aug_strength: 2.0 # increase the strength of simclr augmentation
-      a_augmentations: ["blured_simclr"] # add bluring to standard augmentations
+      a_augmentations: ["blured_simclr"] # add bluring to standard augmentationss

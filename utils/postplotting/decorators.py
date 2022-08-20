@@ -6,7 +6,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from issl.helpers import plot_config
+from utils.helpers import plot_config
 import logging
 from .helpers import aggregate, assert_sns_vary_only_param, get_default_args, save_fig
 

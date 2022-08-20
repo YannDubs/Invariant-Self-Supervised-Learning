@@ -25,7 +25,7 @@ seed=1
 # to get the other models we simply evaluated the oens that were pretrained in `table_dstl_clean.sh`
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "decodability.lambda_maximality=2.5,2.7"# ""
+  for kwargs_dep in "decodability.kwargs.lambda_maximality=2.5,2.7" # ""
   do
 
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
