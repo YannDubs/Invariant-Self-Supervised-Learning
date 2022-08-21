@@ -41,17 +41,12 @@ class BaseContrastiveISSL(nn.Module):
         proba 0.5 to current and positive.
 
     projector_kwargs : dict, optional
-        Arguments to get `Projector` from `get_Architecture`. Note that is `out_shape` is <= 1
+        Arguments to get `Projector` from `get_Architecture`. Note that is `out_dim` is <= 1
         it will be a percentage of z_dim. To use no projector set `mode=Identity`.
 
     predictor_kwargs : dict, optional
-        Arguments to get `Predictor` from `get_Architecture`. Note that is `out_shape` is <= 1
+        Arguments to get `Predictor` from `get_Architecture`. Note that is `out_dim` is <= 1
         it will be a percentage of z_dim. To use no predictor set `mode=Identity`.
-
-    References
-    ----------
-    [1] Song, Jiaming, and Stefano Ermon. "Multi-label contrastive predictive coding." Advances in
-    Neural Information Processing Systems 33 (2020).
     """
 
     def __init__(
@@ -66,7 +61,7 @@ class BaseContrastiveISSL(nn.Module):
             "n_hid_layers": 1,
             "norm_layer": "batch",
         },
-        predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_shape": 128},
+        predictor_kwargs: dict[str, Any] = {"architecture": "linear", "out_dim": 128},
         **kwargs
     ) -> None:
 
@@ -104,9 +99,9 @@ class BaseContrastiveISSL(nn.Module):
 
     def process_kwargs(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
-        kwargs["in_shape"] = kwargs.get("in_shape", self.z_dim)
-        kwargs["out_shape"] = kwargs.get("out_shape", self.z_dim)
-        self.out_dim = kwargs["out_shape"]
+        kwargs["in_dim"] = kwargs.get("in_dim", self.z_dim)
+        kwargs["out_dim"] = kwargs.get("out_dim", self.z_dim)
+        self.out_dim = kwargs["out_dim"]
         return kwargs
 
     def forward(
@@ -144,7 +139,7 @@ class BaseContrastiveISSL(nn.Module):
     ) -> torch.Tensor:
         """Compute the logits for the contrastive predictor p(A|Z)."""
 
-        # shape: [2*batch_size, out_shape]
+        # shape: [2*batch_size, out_dim]
         # normalize to use cosine similarity
         z_src = F.normalize(self.predictor(z_src), dim=1, p=2)
         z_tgt = F.normalize(self.projector(z_tgt), dim=1, p=2)

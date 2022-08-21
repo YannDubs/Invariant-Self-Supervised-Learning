@@ -28,7 +28,7 @@ class ResNet(nn.Module):
         first conv, and remove the max pooling layer as done (for cifar10) in
         https://gist.github.com/y0ast/d91d09565462125a1eb75acc65da1469.
 
-    out_shape : int or tuple
+    out_dim : int
         Size of the output.
 
     base : {'resnet18', 'resnet34', 'resnet50', ...}, optional
@@ -49,7 +49,7 @@ class ResNet(nn.Module):
     def __init__(
         self,
         in_shape: Sequence[int],
-        out_shape: Sequence[int],
+        out_dim: int,
         base: str = "resnet18",
         is_channel_out_dim: bool=False,
         bottleneck_channel: Optional[int] = None,
@@ -57,8 +57,7 @@ class ResNet(nn.Module):
     ):
         super().__init__()
         self.in_shape = in_shape
-        self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
-        self.out_dim = prod(self.out_shape)
+        self.out_dim = out_dim
         self.is_channel_out_dim = is_channel_out_dim
         self.bottleneck_channel = bottleneck_channel
 
@@ -120,7 +119,6 @@ class ResNet(nn.Module):
 
     def forward(self, X):
         Y_pred = self.resnet(X)
-        Y_pred = Y_pred.unflatten(dim=-1, sizes=self.out_shape)
         return Y_pred
 
     def reset_parameters(self):

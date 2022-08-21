@@ -24,7 +24,7 @@ class ISSLModule(pl.LightningModule):
 
         cfge = self.hparams.encoder.kwargs
         Architecture = get_Architecture(cfge.architecture, **cfge.arch_kwargs)
-        self.encoder = Architecture(cfge.in_shape, cfge.out_shape)
+        self.encoder = Architecture(cfge.in_shape, cfge.out_dim)
 
         self.loss_decodability = get_loss_decodability(encoder=self.encoder,
             **self.hparams.decodability.kwargs

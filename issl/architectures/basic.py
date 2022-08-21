@@ -11,8 +11,7 @@ from issl.architectures.helpers import get_Activation, get_Normalization
 from issl.helpers import (batch_flatten, batch_unflatten, prod,
                           weights_init, BatchNorm1d)
 
-# TODO clean you don't need flattens anymore
-__all__ = ["MLP", "FlattenLinear", "FlattenCosine"]
+__all__ = ["MLP", "Linear", "Cosine"]
 
 
 class MLP(nn.Module):
@@ -45,8 +44,8 @@ class MLP(nn.Module):
 
     def __init__(
         self,
-        in_shape: int,# temporary should be dim
-        out_shape: int, # temporary should be dim
+        in_dim: int,
+        out_dim: int, # temporary should be dim
         n_hid_layers: int = 2,
         hid_dim: int = 2048,
         norm_layer: str = "batch",
@@ -56,8 +55,8 @@ class MLP(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.in_dim = in_shape
-        self.out_dim = out_shape
+        self.in_dim = in_dim
+        self.out_dim = out_dim
         self.n_hid_layers = n_hid_layers
         self.hid_dim = hid_dim
         Activation = get_Activation(activation)
@@ -83,7 +82,7 @@ class MLP(nn.Module):
         self.hidden_block = nn.Sequential(*layers)
 
         # using flatten linear to have bottleneck size
-        PostBlock = FlattenCosine if self.is_cosine else FlattenLinear
+        PostBlock = Cosine if self.is_cosine else Linear
         self.post_block = PostBlock(hid_dim, self.out_dim, **kwargs)
 
         self.reset_parameters()
@@ -102,16 +101,14 @@ class MLP(nn.Module):
 
 
 
-class FlattenLinear(nn.Module):
-    """
-    Linear that can take a multi dimensional array as input and output . E.g. for predicting an image use
-    `out_shape=(32,32,3)` and this will predict 32*32*3 and then reshape.
+class Linear(nn.Module):
+    """Extended linear layer with optional batchnorm and cosine similarity.
 
     Parameters
     ----------
-    in_shape : tuple or int
+    in_dim : int
 
-    out_shape : tuple or int
+    out_dim : int
 
     bottleneck_size : int, optional
         Whether to add a bottleneck in the linear layer, this is equivalent to constraining the linear layer to be
@@ -128,21 +125,18 @@ class FlattenLinear(nn.Module):
 
     def __init__(
         self,
-        in_shape: Sequence[int],
-        out_shape: Sequence[int],
+        in_dim: int,
+        out_dim: int,
         bottleneck_size : Optional[int]=None,
         is_batchnorm_bottleneck: bool =True,
         **kwargs
     ) -> None:
         super().__init__()
 
-        self.in_shape = [in_shape] if isinstance(in_shape, int) else in_shape
-        self.out_shape = [out_shape] if isinstance(out_shape, int) else out_shape
+        self.in_dim = in_dim
+        self.out_dim = out_dim
         self.bottleneck_size = bottleneck_size
         self.is_batchnorm_bottleneck = is_batchnorm_bottleneck
-
-        in_dim = prod(self.in_shape)
-        out_dim = prod(self.out_shape)
 
         if self.bottleneck_size is not None:
             self.bottleneck = nn.Linear(in_dim, self.bottleneck_size, bias=False)
@@ -158,8 +152,7 @@ class FlattenLinear(nn.Module):
     def reset_parameters(self):
         weights_init(self)
 
-
-    def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
 
         if self.bottleneck_size is not None:
             X = self.bottleneck(X)
@@ -171,18 +164,7 @@ class FlattenLinear(nn.Module):
 
         return out
 
-
-    def forward(self, X: torch.Tensor) -> torch.Tensor:
-        # flattens in_shape
-        X = X.flatten(start_dim=X.ndim - len(self.in_shape))
-
-        out = self.forward_flatten(X)
-
-        # unflattened out_shape
-        out = out.unflatten(dim=-1, sizes=self.out_shape)
-        return out
-
-class FlattenCosine(FlattenLinear):
+class Cosine(Linear):
     """Cosine similarity between inputs and weights."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, bias=False, **kwargs)
@@ -198,7 +180,7 @@ class FlattenCosine(FlattenLinear):
         except AttributeError:
             pass  # make sure ok  if call reset_param before weight_norm
 
-    def forward_flatten(self, X: torch.Tensor) -> torch.Tensor:
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         unit_X = F.normalize(X, dim=-1, p=2)
-        return super().forward_flatten(unit_X)
+        return super().forward(unit_X)
 

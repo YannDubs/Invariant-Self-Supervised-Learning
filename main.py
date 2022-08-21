@@ -59,7 +59,7 @@ FILE_END = "end.txt"
 CONFIG_FILE = "config.yaml"
 
 
-@hydra.main(config_name="main", config_path="config")
+@hydra.main(config_name="main", config_path="config", version_base="1.1")
 def main_except(cfg):
     try:
         if cfg.is_nlp_cluster:
@@ -337,7 +337,7 @@ def instantiate_datamodule_(
         # if limit_train_batches is in percentage
         cfgd.length = int(len(datamodule.train_dataset) * limit_train_batches)
     cfgd.shape = datamodule.shape
-    cfgd.target_shape = datamodule.target_shape
+    cfgd.target_dim = datamodule.target_dim
     cfgd.aux_shape = datamodule.aux_shape
     cfgd.aux_target = datamodule.aux_target
     cfgd.normalized = datamodule.normalized
@@ -354,7 +354,7 @@ def instantiate_datamodule_(
         # changes due to the representations
         cfgd.shape = datamodule.train_dataset.X.shape[-1]
 
-    n_devices = max(cfgt.gpus * cfgt.num_nodes, 1)
+    n_devices = max(cfgt.devices * cfgt.num_nodes, 1)
     eff_batch_size = n_devices * cfgd.kwargs.batch_size
     cfgd.n_train_batches = 1 + cfgd.length // eff_batch_size
     cfgd.max_steps = cfgt.max_epochs * cfgd.n_train_batches

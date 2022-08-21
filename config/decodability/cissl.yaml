@@ -6,10 +6,10 @@ kwargs:
   mode: cissl
   predictor_kwargs: # this is on the student branch (should be the same as downstream)
     architecture: "linear"
-    out_shape: 128
+    out_dim: 128
   projector_kwargs: # this is on the teacher branch (should be unconstrained)
     architecture: "mlp"
-    out_shape: ${decodability.kwargs.predictor_kwargs.out_shape}
+    out_dim: ${decodability.kwargs.predictor_kwargs.out_dim}
     hid_dim: 1024
     n_hid_layers: 1
     norm_layer: "batch"

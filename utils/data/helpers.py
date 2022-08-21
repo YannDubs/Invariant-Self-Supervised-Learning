@@ -8,13 +8,11 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
-import numpy as np
-import torch
 from sklearn.model_selection import train_test_split
 from torch import randperm
 from torch.utils.data import Dataset, Subset
 from torchvision.datasets.folder import default_loader
-from torchvision.transforms import Compose, functional as F_trnsf
+from torchvision.transforms import Compose
 from tqdm import tqdm
 from torch._utils import _accumulate
 
@@ -179,20 +177,6 @@ def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
         path.unlink()
     elif path.is_dir:
         shutil.rmtree(path)
-
-
-
-
-def np_img_resize(np_imgs: np.ndarray, size: Union[Sequence[int], int]) -> np.ndarray:
-    """Batch-wise resizing numpy images."""
-    if np_imgs.ndim == 3:
-        np_imgs = np_imgs[:, :, :, None]
-
-    torch_imgs = torch.from_numpy(np_imgs.transpose((0, 3, 1, 2))).contiguous()
-    torch_imgs = F_trnsf.resize(torch_imgs, size=size)
-    np_imgs = to_numpy(torch_imgs).transpose((0, 2, 3, 1))
-    return np_imgs
-
 
 def unzip(filename: Union[str, Path], is_rm: bool = True) -> None:
     """Unzip file and optionally removes it."""

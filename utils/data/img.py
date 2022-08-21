@@ -11,7 +11,6 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
-from torchvision.transforms import InterpolationMode
 import torch
 from torchvision.datasets import CIFAR10,ImageFolder
 from torchvision.transforms.functional_pil import _is_pil_image
@@ -22,13 +21,12 @@ from torchvision.transforms import (
     RandomApply,
     RandomErasing,
     RandomGrayscale,
-    RandomResizedCrop,
     RandomVerticalFlip,
     Resize,
     ToTensor,
 )
 
-from issl.helpers import Normalizer, check_import, tmp_seed, to_numpy, int_or_ratio, file_cache
+from issl.helpers import Normalizer, check_import, to_numpy, int_or_ratio, file_cache
 from .augmentations import get_simclr_augmentations
 from .base import ISSLDataModule, ISSLDataset
 from .helpers import (
@@ -74,17 +72,14 @@ class ISSLImgDataset(ISSLDataset):
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|img). I.e. this should define the
         coarsest possible equivalence relation with respect to which to be invariant. It can be a set of augmentations
-        (see self.augmentations) and/or "label" or "perm_label" or "data-standard" or "coarser". In the "label" case
-        it samples randomly an image with the same label (slow if too many labels). "perm_label" then similar but it
-        randomly samples an image with a different (but fixed => permutation) label. "data-standard" appends the standard
-        augmentation for that dataset. "coarser" use a coarser grain equivalence class than the actual one, specifically,
-        targets modulo 2.
+        (see self.augmentations) and/or "label" or "data-standard". "data-standard" appends the standard augmentation for
+        that dataset.
 
     train_x_augmentations : set of str or "a_augmentations" , optional
         Augmentations to use for the source input, i.e., p(X|img). I.e. standard augmentations that are
         used to essentially increase the dataset size. This is different from p(A|img). Can be a set of string as in
         `a_augmentations`. In the latter case, will use the same as `"a_augmentations"` which is
-        standard in ISSL but not theoretically necessary. Note that this cannot be "label" or "perm_label".
+        standard in ISSL but not theoretically necessary.
 
     val_x_augmentations : set of str or "train_x_augmentations" or "a_augmentations", optional
         list of augmentation to use during evaluation.
@@ -106,18 +101,6 @@ class ISSLImgDataset(ISSLDataset):
     curr_split : str, optional
         Which data split you are considering.
 
-    is_shuffle_targets : bool, optional
-        Shuffle targets which is useful if want labels to be uncorrelated with inputs.
-        
-    is_shuffle_Mx : bool, optional
-        Shuffle the maximal invariants.
-
-    n_sub_label : int, optional
-        Number of sub equivalence classes to augment to when using `a_augmentations=label` or `a_augmentations=permlabel`.
-        Specifically instead of augmenting uniformly to images inside the label class, will do so in a subpartition of the
-        label class of size. There will be n_sub_label subpartitions. This is useful to know exactly the number of
-        equivalence classes you are learning, while being somewhat realistic.
-
     simclr_aug_strength : float, optional
         Strength of standard simCLR augmentations.
 
@@ -135,9 +118,6 @@ class ISSLImgDataset(ISSLDataset):
         normalization: Optional[str] = None,
         base_resize: str = "resize",
         curr_split: str = "train",
-        is_shuffle_targets: bool = False,
-        is_shuffle_Mx: bool = False,
-        n_sub_label: int = 1,
         simclr_aug_strength: float = 1.0,
         **kwargs,
     ):
@@ -152,33 +132,9 @@ class ISSLImgDataset(ISSLDataset):
             **kwargs,
         )
 
-        self.is_Mx_aug = False
-        self.is_coarser_Mx = False
-        self.perm_Mx = None
-        self.n_sub_label = n_sub_label
-        self.is_shuffle_targets = is_shuffle_targets
-        self.is_shuffle_Mx = is_shuffle_Mx
         self.simclr_aug_strength = simclr_aug_strength
 
         self.cache_targets_()  # cache only targets
-
-        if self.is_shuffle_targets:
-            # need to shuffle before computing Mx
-            self.shuffle_targets_()
-
-        if "label" in self.a_augmentations:
-            self.is_Mx_aug = True
-            self.a_augmentations.remove("label")
-        if "perm_label" in self.a_augmentations:
-            assert not self.is_Mx_aug, "cannot have `label` and `perm_label`"
-            self.is_Mx_aug = True
-            # Mx permuter simply increases by 1. Attention: self.n_Mxs must be computed later
-            self.perm_Mx = lambda x: (x + 1) % self.n_Mxs
-            self.a_augmentations.remove("perm_label")
-        if "coarser" in self.a_augmentations:
-            self.is_coarser_Mx = True
-            self.is_Mx_aug = True
-            self.a_augmentations.remove("coarser")
 
         self.train_x_augmentations = train_x_augmentations
         self.val_x_augmentations = val_x_augmentations
@@ -249,50 +205,13 @@ class ISSLImgDataset(ISSLDataset):
         self.cached_data = cached_data
         self.is_cache_data = True
 
-    def shuffle_targets_(self):
-        with tmp_seed(self.seed):
-            np.random.shuffle(self.cached_targets)  # inplace
-
     @property
     def Mxs(self) -> np.ndarray:
         """Return an np.array of M(X), one for each example."""
         if hasattr(self, "_Mxs"):
             return self._Mxs
 
-        if self.is_Mx_aug:
-            targets = self.cached_targets
-            if self.n_sub_label > 1:
-                assert len(self) % self.n_sub_label == 0
-                with tmp_seed(self.seed):
-                    self._Mxs = targets * self.n_sub_label
-                    for t in np.unique(targets):
-                        idcs_t = targets == t
-                        sub_labels_t = np.random.randint(
-                            self.n_sub_label, size=idcs_t.sum()
-                        )
-                        if self.is_train:
-                            # ensure that at least one ex per sub label during training
-                            assert len(sub_labels_t) > self.n_sub_label
-                            sub_labels_t[: self.n_sub_label] = np.arange(
-                                self.n_sub_label
-                            )
-                            np.random.shuffle(sub_labels_t)
-
-                        self._Mxs[idcs_t] += sub_labels_t
-                    # the remainder (i.e. Mx % n_sub_label) will give the sub class
-                    # the main part (i.e. Mx // n_sub_label) will give the targets
-            else:
-                self._Mxs = targets
-        else:
-            self._Mxs = np.array(range(len(self)))
-
-        if self.is_coarser_Mx:
-            targets = self.cached_targets
-            self._Mxs = targets % 2
-
-        if self.is_shuffle_Mx:
-            with tmp_seed(self.seed):
-                np.random.shuffle(self._Mxs)
+        self._Mxs = np.array(range(len(self)))
 
         return self._Mxs
 
@@ -371,25 +290,17 @@ class ISSLImgDataset(ISSLDataset):
 
         augmentations = dict(
             PIL={
-                "y-translation": RandomAffine(0, translate=(0, 0.25)),
-                "x-translation": RandomAffine(0, translate=(0.25, 0)),
                 "scale": RandomAffine(0, scale=(0.6, 1.4)),
                 "color": RandomApply(
                     [ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.2)], p=0.8
                 ),
                 "gray": RandomGrayscale(p=0.2),
-                "resize-crop": RandomResizedCrop(
-                    size=(shape[1], shape[2]),
-                    scale=(0.2, 1.0),
-                    ratio=(3 / 4, 4 / 3),
-                    interpolation=InterpolationMode.BICUBIC,
-                ),
                 "vflip": RandomVerticalFlip(p=0.5),
                 "simclr-imagenet": get_simclr_augmentations(
                     shape[-1], dataset="imagenet", strength=self.simclr_aug_strength
                 ),
             },
-            tensor={"erasing": RandomErasing(value=0.5),},
+            tensor={"erasing": RandomErasing(value=0.5)},
         )
 
         try:
@@ -405,52 +316,14 @@ class ISSLImgDataset(ISSLDataset):
 
         return augmentations
 
-    def get_img_from_Mx(self, Mx: int) -> Any:
-        """Sample a random image from the corresponding equivalence class."""
-
-        # TODO not working well if subsetted dataset. E.g. there's small chance that augmenting to validation
-        # if underlying augmentation data is splitted. ~Ok as we don't this for prediction
-
-        if self.perm_Mx is not None:
-            # modify the target you are looking for, using the permuter
-            Mx = self.perm_Mx(Mx)
-
-        Mxs = self.Mxs
-        if not isinstance(Mxs, torch.Tensor):
-            Mxs = torch.tensor(Mxs)
-
-        choices = (Mxs == Mx).nonzero(as_tuple=True)[0]
-        index = choices[torch.randint(len(choices), size=[])]
-
-        img, _ = self.get_img_target_cached(index)
-
-        return img
-
     def sample_p_Alx(self, _: Any, Mx: Any) -> Any:
         # load raw image
-        if self.is_Mx_aug:
-            img = self.get_img_from_Mx(Mx)
-        else:
-            index = Mx
-            img, _ = self.get_img_target_cached(index)
+        index = Mx
+        img, _ = self.get_img_target_cached(index)
 
         # augment it as desired
         a = self.sample_p_AlI(img)
         return a
-
-    def get_representative(self, Mx: Any) -> Any:
-        if self.is_Mx_aug:
-            # TODO one issue is that representative will actually be different during test / val /train
-            with tmp_seed(self.seed, is_cuda=False):
-                # to fix the representative use the same seed. Note that cannot set seed inside
-                # dataloader because forked subprocess. In any case we only need non cuda.
-                representative = self.get_img_from_Mx(Mx)
-        else:
-            # representative is simply the non augmented example
-            index = Mx
-            representative, _ = self.get_img_target_cached(index)
-
-        return self.base_transform(representative)
 
     def get_base_transform(self) -> Callable[..., Any]:
         """Return the base transform, ie train or test."""
@@ -470,7 +343,6 @@ class ISSLImgDataset(ISSLDataset):
         if self.is_normalize and self.is_color:
             # only normalize colored images
             # raise if can't normalize because you specifically gave `is_normalize`
-            # TODO normalization for clip will not affect plotting => if using VAE with clip will look wrong
             trnsfs += [Normalizer(self.normalization, is_raise=True)]
 
         return Compose(trnsfs)
@@ -487,15 +359,6 @@ class ISSLImgDataset(ISSLDataset):
     def is_color(self) -> bool:
         shape = self.shapes["input"]
         return shape[0] == 3
-
-    @property
-    def shapes(self) -> dict[str, tuple[int, ...]]:
-        # Imp: In each child should assign "input" and "target"
-        shapes = dict()
-
-        shapes["Mx"] = (self.n_Mxs,)
-
-        return shapes
 
 
 class ISSLImgDataModule(ISSLDataModule):
@@ -570,10 +433,10 @@ class Cifar10Dataset(ISSLImgDataset, CIFAR10):
         super().__init__(*args, curr_split=curr_split, train=is_train,  **kwargs)
 
     @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super(Cifar10Dataset, self).shapes
+    def shapes(self) -> dict[str, Union[int,tuple[int, ...]]]:
+        shapes = {}
         shapes["input"] = shapes.get("input", (3, 32, 32))
-        shapes["target"] = (10,)
+        shapes["target"] = 10
         return shapes
 
     def get_img_target(self, index: int) -> tuple[Any, int]:
@@ -639,7 +502,6 @@ class ExternalImgDataset(ISSLImgDataset):
     """
 
     min_size = 256
-    required_packages = []
 
     def __init__(
         self,
@@ -649,8 +511,6 @@ class ExternalImgDataset(ISSLImgDataset):
         curr_split: str = "train",
         **kwargs,
     ) -> None:
-        for p in self.required_packages:
-            check_import(p, type(self).__name__)
 
         self.root = Path(root)
         if download and not self.is_exist_data:
@@ -769,7 +629,6 @@ class TinyImagenetDataset(ExternalImgDataset):
 
     split_to_tmp = dict(test="tmp_test", train="tmp_train")
     split_to_old = dict(test="val", train="train")
-    required_packages = []
     min_size = None
     urls = [
         "http://cs231n.stanford.edu/tiny-imagenet-200.zip",
@@ -820,10 +679,10 @@ class TinyImagenetDataset(ExternalImgDataset):
         old_split.rename(tmp_split)
 
     @property
-    def shapes(self) -> dict[Optional[str], tuple[int, ...]]:
-        shapes = super().shapes
+    def shapes(self) -> dict[str, Union[int,tuple[int, ...]]]:
+        shapes = {}
         shapes["input"] = shapes.get("input", (3, 64, 64))
-        shapes["target"] = (200,)
+        shapes["target"] = 200
         return shapes
 
     @property
@@ -868,5 +727,3 @@ class TinyImagenetDataModule(ISSLImgDataModule):
     @property
     def Dataset(cls) -> Any:
         return TinyImagenetDataset
-
-

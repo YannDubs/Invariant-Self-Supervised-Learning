@@ -2,5 +2,5 @@ name: torch_logisticw${format:${optimizer_pred.kwargs.weight_decay},.1e}
 kwargs:
   architecture: linear
   arch_kwargs:
-    out_shape: ${data.target_shape}
+    out_dim: ${data.target_dim}
     # in shape automatic

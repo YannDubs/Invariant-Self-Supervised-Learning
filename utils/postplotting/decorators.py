@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from collections import Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt

@@ -365,7 +365,7 @@ def prediction_loss(
     Parameters
     ----------
     Y_hat : Tensor
-        Predictions.  Should be shape (batch_size, *Y_shape).
+        Predictions.  Should be shape (batch_size, Y_dim).
 
     y : Tensor
         Targets.
@@ -373,7 +373,7 @@ def prediction_loss(
     is_classification : bool, optional
         Whether we are in a classification task, in which case we use log loss instead of (r)mse.
     """
-    # shape : [batch_size, *Y_shape]
+    # shape : [batch_size, Y_dim]
     if is_classification:
         loss = F.cross_entropy(Y_hat, y.squeeze().long(), reduction="none")
     else:
@@ -487,7 +487,6 @@ def get_lr_scheduler(
     if is_warmup_lr:
         assert scheduler_type == "CosineAnnealingLR"
         assert warmup_multiplier == 1.0
-        check_import("pl_bolts", "CosineAnnealingLR with warmup")
         kwargs = copy.deepcopy(kwargs)
         # the following will remove warmup_epochs => should no give
         # epochs = epochs - warmup_epochs

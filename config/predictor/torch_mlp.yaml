@@ -2,5 +2,5 @@ name: torch_mlpw${format:${optimizer_pred.kwargs.weight_decay},.1e}l${format:${o
 kwargs:
   architecture: mlp
   arch_kwargs:
-    out_shape: ${data.target_shape}
+    out_dim: ${data.target_dim}
     # in shape automatic

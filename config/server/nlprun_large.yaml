@@ -16,4 +16,4 @@ hydra:
     mem_gb: 40
 
     max_num_timeout: 50 # allow resume from checkpointing
-    gres: gpu:${trainer.gpus}
+    gres: gpu:${trainer.devices}

@@ -1,6 +1,5 @@
 # Lossy Compression for Lossless Prediction [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/YannDubs/lossyless/blob/main/LICENSE) [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 
-[Loading]
 
 This repostiory contains pretrained weights from and the original implementation of [Improving Self-Supervised Learning by Characterizing Idealized Representations](https://github.com/YannDubs/Invariant-Self-Supervised-Learning),
 which derives a simple uniying framework for invariant self-supervised learning (ISSL).
@@ -10,59 +9,75 @@ Our framework provides actionable insights into ISSL that lead to important empi
 - [**Choose the architecture of projection probes**](#projection-heads) 
 - [**Choose the augmentations**](#augmentations)
 
-The following provides the code to reproduce our key results and load our ImageNet pretrained models.
-  
+The following provides the code load our ImageNet pretrained models, to reproduce our key results, and minimal notebook implementations of our DISSL [![DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_dissl.ipynb) and CISSL [![Training](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_cissl.ipynb
+).
+
+
 ## DISSL
 
 (GIF)
 
 Our DISSL objective is a very simple non-contrastive objective that outperforms previous baselines. 
-We provide pretrained weights on ImageNet and a minimal DISSL implementation (see [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_code.ipynb)).
 
 We release our pretrained weights on torch hub. 
 To load any of our model use:
 ```python
 import torch
 
-model = torch.hub.load('YannDubs/ISSL:main', 'resnet50')
+model = torch.hub.load('YannDubs/Invariant-Self-Supervised-Learning:main', 'dissl_resnet50_d8192_e800_m8')
 ```
 
 Here are all available models with their respective linear probing performance on ImageNet.
 They are all ResNet50 trained with a batch size of 3072.
 
-| Epochs | Dimensionality | Multi-crop   | ImageNet top-1 acc. |       TorchHub name |          Weights | 
-|--------|----------------|--------------|--------------------:|--------------------:|-----------------:|
-| 100    | 2048           | 2x224        |                66.3 | dissl_e100_d2048_m2 |        [model]() | 
-| 100    | 8192           | 2x224        |                67.7 | dissl_e100_d8192_m2 |        [model]() | 
-| 400    | 2048           | 2x224        |                70.4 | dissl_e400_d2048_m2 |        [model]() | 
-| 400    | 2048           | 2x160 + 4x96 |                71.4 | dissl_e400_d2048_m6 |        [model]() |     
-| 400    | 8192           | 2x160 + 4x96 |                72.6 | dissl_e400_d8192_m6 |        [model]() | 
-| 800    | 2048           | 2x224 + 6x96 |                     | dissl_e800_d2048_m8 |        [model]() |
-| 800    | 8192           | 2x224 + 6x96 |                     | dissl_e800_d8192_m8 |        [model]() |
+| Epochs | Dimensionality | Multi-crop   | ImageNet top-1 acc. |                TorchHub name |          Weights | 
+|--------|----------------|--------------|--------------------:|-----------------------------:|-----------------:|
+| 100    | 2048           | 2x224        |                66.3 | dissl_resnet50_d2048_e100_m2 |        [model]() | 
+| 100    | 8192           | 2x224        |                67.7 | dissl_resnet50_d8192_e100_m2 |        [model]() | 
+| 400    | 2048           | 2x224        |                70.4 | dissl_resnet50_d2048_e400_m2 |        [model]() | 
+| 400    | 2048           | 2x160 + 4x96 |                71.4 | dissl_resnet50_d2048_e400_m6 |        [model]() |     
+| 400    | 8192           | 2x160 + 4x96 |                72.6 | dissl_resnet50_d8192_e400_m6 |        [model]() |
+| 800    | 8192           | 2x224 + 6x96 |                     | dissl_resnet50_d8192_e800_m8 |        [model]() |
+
+We also provide a minimal DISSL implementation: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_dissl.ipynb)
 
 
 ## Reproducing main results 
 
-To reproduce our key TinyImageNet results you need to `pip install -r requirements.txt` and run the desired script in `bin/tinyimagenet/*.sh`.
+
+
+To reproduce our key TinyImageNet results you need to install ISSL (see below) and run the desired script in `bin/tinyimagenet/*.sh`.
 To run the script without slurm use `bin/tinyimagenet/*.sh -s none`.
 If you want to use slurm then you need to define the desired configs in `config/server` for an example see `nlprun` or `vector` which can be called using `bin/tinyimagenet/*.sh -s <server_name>`.
-Details below.
+
+<details>
+<summary><b>Installation</b></summary>
+
+1. Clone repository
+2. Install [PyTorch](https://pytorch.org/) >=  1.9
+3. `pip install -r requirements.txt`. 
+
+If you have issues try installing out exact dependencies using `conda env update --file environment.yaml`.
+
+</details>
 
 For our ImageNet models we used [VISSL](www.vissl.ai). The exact commands can be seen on this (still uncleaned/undocumented) [VISSL fork](https://github.com/YannDubs/vissl) and we aim to incorporate DISSL in the main VISSL soon.
 
 
 ### DISSL TinyImageNet
 
-Once you [installed ISSL](#installation) you can reproduce the following results by running `bin/tinyimagenet/table1_distillation.sh` (subset of right column of table 1 in the paper).
-The results will be seen in `results/exp_table1_distillation`
+The right column in Table 1 of our paper shows empirically that DISSL outperforms DINO on TinyImageNet.
+To reproduce a similar table (single seed) run `bin/tinyimagenet/table1_distillation.sh -s none` (no servers/slurm).
+Once the script is finished you can collect and print the results by running `bin/tinyimagenet/table1_distillation.sh -v "" -a is_force_gpu=False`.
+You should get the following results printed:
 
 | Model    | TinyImageNet Linear probing acc. |
 |:---------|---------------------------------:|
-| DINO     |                            43.6% |
-| DISSL    |                            45.9% |
-| + dim.   |                            47.7% |
-| + epochs |                            49.7% |
- | + aug.   |                            50.1% |
+| DINO     |                            43.3% |
+| DISSL    |                            45.1% |
+| + dim.   |                            48.0% |
+| + epochs |                            49.0% |
+ | + aug.   |                            50.7% |
 
 WandB monitoring curves: [see here](https://wandb.ai/issl/issl_opensource/groups/table1_distillation)
 
@@ -73,7 +88,7 @@ For linear probes it's much larger than standard dimensionalities, which suggest
 Figure 7c of our paper shows empirically that this is indeed the case.
 To reproduce a similar figure (single seed) run `bin/tinyimagenet/fig7c_dimensions.sh -s none`.
 Once the script is finished you can collect and print the results by running `bin/tinyimagenet/fig7c_dimensions.sh -v "" -a is_force_gpu=False`.
-The following figure will then be saved in `results/exp_fig7c_dimensions/lines_zdim_cisslall.pdf`.
+The following figure will then be saved in `results/exp_fig7c_dimensions/fig7c.pdf`.
 
 (Figure)
 
@@ -93,11 +108,16 @@ You should get the following results printed:
 
 | Model    | TinyImageNet Linear probing acc. |
 |:---------|---------------------------------:|
-| SimCLR   |                            45.1% |
+| SimCLR   |                            45.2% |
 | CISSL    |                            45.8% |
 | + dim.   |                            47.6% |
-| + epochs |                            48.6% |
- | + aug.   |                            50.1% |
+| + epochs |                                % |
+ | + aug.   |                                % |
+
+WandB monitoring curves: [see here](https://wandb.ai/issl/issl_opensource/groups/table1_distillation)
+
+
+We also provide a minimal CISSL implementation: [![Minimal training of CISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_cissl.ipynb)
 
 
 
@@ -107,7 +127,7 @@ In our paper we characterize exactly optimal sample efficiency as a function of 
 In particular, our theory suggests that stronger label-preserving augmentations improve performance.
 Figure 7a of our paper shows empirically that this is indeed the case.
 To reproduce a similar figure (single seed) run `bin/tinyimagenet/fig7a_augmentations.sh`.
-The following figure will then be saved in `results/exp_fig7a_augmentations`.
+The following figure will then be saved as `results/exp_fig7a_augmentations/fig7a.pdf`.
 
 (Figure)
 

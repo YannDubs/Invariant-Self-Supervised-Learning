@@ -1,7 +1,7 @@
 ##### the following will be updated at run time #####
 length: ???
 shape: ???
-target_shape: ???
+target_dim: ???
 aux_shape: ???
 n_train_batches: ???
 max_steps: ??? # max number of steps for training

@@ -6,8 +6,8 @@ notes="
 "
 
 # parses special mode for running the script
-source `dirname $0`/../utils.sh
-source `dirname $0`/base_tin.sh
+source "$(dirname $0)"/../utils.sh
+source "$(dirname $0)"/base_tin.sh
 
 time=10000
 
@@ -35,19 +35,19 @@ encoder.kwargs.arch_kwargs.is_channel_out_dim=True
 +encoder.kwargs.arch_kwargs.bottleneck_channel=512
 "
 
-cell_aug="
+cell_epoch="
 $cell_dim
-representor=cissl_coarse
+update_trainer_repr.max_epochs=1000
 "
 
-cell_epoch="
-$cell_aug
-update_trainer_repr.max_epochs=1000
+cell_aug="
+$cell_epoch
+representor=cissl_coarse
 "
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_aug" "$cell_epoch"  #"$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch" #"$cell_baseline" #
+  for kwargs_dep in "$cell_aug" #"$cell_aug"   #"$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch" #"$cell_baseline" #
   do
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 
@@ -62,6 +62,6 @@ else
        $add_kwargs
 
 
-  python -c 'import pandas as pd; df=pd.read_csv("results/exp_table1_contrastive/summarized_metrics_predictor.csv"); print(df.loc[df["optpred"]=="SGD_lr3.0e-01_w1.0e-05",["repr","zdim","ep","aug_strength","test/pred/acc_mean"]])'
+  python -c 'import pandas as pd; df=pd.read_csv("results/exp_table1_contrastive/summarized_metrics_predictor.csv"); print(df.groupby(["jid","repr","zdim","ep","aug_strength"]).max()["test/pred/acc_mean"])'
 fi
 

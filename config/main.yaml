@@ -111,7 +111,8 @@ trainer: # this can be any arguments to a pytorch lightning trainer https://pyto
   val_check_interval: 1.0 # required to use check_val_every_n_epoch
 
   # ENGINEERING / SPEED #
-  gpus: 1 # number of GP
+  accelerator: 'gpu'
+  devices: 1
   num_nodes: 1  # number gpu nodes
   precision: 16 # use 16 bit for speed # TODO use "b16" once it is not experiemntal (maybe lightning 1.6)
 
@@ -139,15 +140,15 @@ encoder: # modified in the encoder config files
   z_dim: 1024 # dimensionality of the representation. **SET AS DESIRED**
   kwargs:
     in_shape: ${data.shape}
-    out_shape: ${encoder.z_dim} # do not change this (automatically set)
+    out_dim: ${encoder.z_dim} # do not change this (automatically set)
     architecture: ???
     arch_kwargs: {}
 
 online_evaluator: # online probing head. modified in the architecture config files
   name: ???
   kwargs:
-    in_shape: ${encoder.z_dim}
-    out_shape: ${data.target_shape}
+    in_dim: ${encoder.z_dim}
+    out_dim: ${data.target_dim}
     architecture: ???
     arch_kwargs: {}
 

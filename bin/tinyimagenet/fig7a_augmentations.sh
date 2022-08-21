@@ -44,7 +44,7 @@ python utils/aggregate.py \
        +plot_scatter_lines.x="n_downstream_samples" \
        +plot_scatter_lines.y="test/pred/acc" \
        +plot_scatter_lines.cols_to_max=["pred","optpred"] \
-       +plot_scatter_lines.filename="lines_acc_samples_aug_card" \
+       +plot_scatter_lines.filename="fig7a" \
        +plot_scatter_lines.hue="augmentation_strength" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \

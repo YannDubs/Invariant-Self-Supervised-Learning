@@ -43,17 +43,17 @@ class Predictor(pl.LightningModule):
 
         Returns
         -------
-        Y_pred : torch.Tensor of shape=[batch_size, *target_shape]
+        Y_pred : torch.Tensor of shape=[batch_size, target_dim]
             First is for predicting the task, all others are for the agg tasks.
         """
-        # shape: [batch_size,  *target_shape]
+        # shape: [batch_size, target_dim]
         Y_pred = self.predictor(z)
         return Y_pred
 
     def step(self, batch: torch.Tensor) -> tuple[torch.Tensor, dict]:
         x, y = batch
 
-        # list of Y_hat. Each Y_hat shape: [batch_size,  *target_shape]
+        # list of Y_hat. Each Y_hat shape: [batch_size,  target_dim]
         Y_hat = self(x)
 
         # Shape: [batch, 1]
@@ -135,14 +135,14 @@ class OnlineEvaluator(torch.nn.Module):
 
     Parameters
     ----------
-    in_shape : int
+    in_dim : int
         Input dimension.
 
-    out_shape : tuple of int
-        Shape of the output
+    out_dim : int
+        Size of the output
 
     architecture : str or Callable
-        If module should be instantiated using `Architecture(in_shape, n_equivalence_classes)`. If str will be given to
+        If module should be instantiated using `Architecture(in_dim, out_dim)`. If str will be given to
         `get_Architecture`.
 
     arch_kwargs : dict, optional
@@ -151,14 +151,14 @@ class OnlineEvaluator(torch.nn.Module):
 
     def __init__(
         self,
-        in_shape: Sequence[int],
-        out_shape: Sequence[int],
+        in_dim: int,
+        out_dim: int,
         architecture: Union[str, Callable],
         arch_kwargs: dict[str, Any] = {},
     ) -> None:
         super().__init__()
         Architecture = get_Architecture(architecture, **arch_kwargs)
-        self.model = Architecture(in_shape, out_shape)
+        self.model = Architecture(in_dim, out_dim)
 
         self.reset_parameters()
 
@@ -179,7 +179,7 @@ class OnlineEvaluator(torch.nn.Module):
 
         z = z.detach()
 
-        # Shape: [batch, *Y_shape]
+        # Shape: [batch, Y_dim]
         Y_hat = self.model(z)
 
         # Shape: [batch]

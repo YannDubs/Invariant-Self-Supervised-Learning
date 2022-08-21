@@ -3,5 +3,6 @@
 # run on cpu
 
 trainer:
-  gpus: 0
+  accelerator: "cpu"
+  devices: "auto"
   precision: 32 # 16 does not work for cpu
