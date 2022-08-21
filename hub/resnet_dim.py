@@ -36,6 +36,8 @@ def update_dim_resnet_(resnet, z_dim, bottleneck_channel=None, is_residual=None)
     else:
         resizer = BottleneckExpand(current_zdim, bottleneck_channel, z_dim, is_residual=is_residual)
 
+    # this is a hack to avoid modifying the original resnet.
+    # but naming is not ideal: avg pool is now actually resizer + avg pool
     resnet.avgpool = nn.Sequential(resizer, resnet.avgpool)
 
 class BottleneckExpand(nn.Module):

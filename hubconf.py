@@ -14,6 +14,9 @@ def preprocessor():
         torchvision.transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
+def _replace_dict_prefix(d, prefix, replace_with = ""):
+    return { k.replace(prefix, replace_with, 1) if k.startswith(prefix) else k: v for k,v in d.items()}
+
 def _dissl(base, dim=None, sffx="", pretrained=True, **kwargs):
     resnet = torchvision.models.__dict__[base](pretrained=False, **kwargs)
     if dim is not None:
@@ -24,6 +27,8 @@ def _dissl(base, dim=None, sffx="", pretrained=True, **kwargs):
         dir_path = "https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha"
         ckpt_path = f"{dir_path}/dissl_{base}_d{dim}{sffx}.torch"
         state_dict = torch.hub.load_state_dict_from_url(url=ckpt_path, map_location="cpu")
+        # torchvision models do not have a resizer
+        state_dict = _replace_dict_prefix(state_dict, "resizer", replace_with="avgpool.0")
         resnet.load_state_dict(state_dict, strict=True)
 
     return resnet
