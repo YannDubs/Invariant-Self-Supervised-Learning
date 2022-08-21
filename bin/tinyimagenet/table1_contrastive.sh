@@ -47,7 +47,7 @@ representor=cissl_coarse
 
 
 if [ "$is_plot_only" = false ] ; then
-  for kwargs_dep in "$cell_aug" #"$cell_aug"   #"$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch" #"$cell_baseline" #
+  for kwargs_dep in "$cell_aug" "$cell_epoch"   #"$cell_ours"  "$cell_dim"  "$cell_aug" "$cell_epoch" #"$cell_baseline" #
   do
     python "$main" +hydra.job.env_set.WANDB_NOTES="\"${notes}\"" $kwargs $kwargs_multi $kwargs_dep $add_kwargs -m >> logs/"$experiment".log 2>&1 &
 

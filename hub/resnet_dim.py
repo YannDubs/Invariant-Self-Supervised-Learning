@@ -105,8 +105,8 @@ def init_std_modules(module):
     # all standard layers
     if isinstance(module, nn.modules.conv._ConvNd):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/d5ed58d623be27aada78035d2a19e2854f8b6437/timm/models/layers/weight_init.py
-        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module)
-        nn.init.trunc_normal_(module, std=math.sqrt(1 / fan_in) / .87962566103423978)
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
+        nn.init.trunc_normal_(module.weight, std=math.sqrt(1 / fan_in) / .87962566103423978)
         try:
             nn.init.zeros_(module.bias)
         except AttributeError:

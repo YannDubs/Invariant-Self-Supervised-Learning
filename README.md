@@ -28,14 +28,14 @@ model = torch.hub.load('YannDubs/Invariant-Self-Supervised-Learning:main', 'diss
 ```
 
 Here are all available models with their respective linear probing performance on ImageNet.
-They are all ResNet50 trained with a batch size of 3072.
+They are all ResNet50 trained with a batch size of 2560 and 16fp on 8 A100.
 
 | Epochs | Dimensionality | Multi-crop   | ImageNet top-1 acc. |                TorchHub name |          Weights | 
 |--------|----------------|--------------|--------------------:|-----------------------------:|-----------------:|
-| 100    | 2048           | 2x224        |                66.3 | dissl_resnet50_d2048_e100_m2 |        [model]() | 
-| 100    | 8192           | 2x224        |                67.7 | dissl_resnet50_d8192_e100_m2 |        [model]() | 
-| 400    | 2048           | 2x224        |                70.4 | dissl_resnet50_d2048_e400_m2 |        [model]() | 
-| 400    | 2048           | 2x160 + 4x96 |                71.4 | dissl_resnet50_d2048_e400_m6 |        [model]() |     
+| 100    | 2048           | 2x224        |                66.4 | dissl_resnet50_dNone_e100_m2 |        [model]() | 
+| 100    | 8192           | 2x224        |                67.6 | dissl_resnet50_d8192_e100_m2 |        [model]() | 
+| 400    | 2048           | 2x224        |                70.4 | dissl_resnet50_dNone_e400_m2 |        [model]() | 
+| 400    | 2048           | 2x160 + 4x96 |                71.5 | dissl_resnet50_dNone_e400_m6 |        [model]() |     
 | 400    | 8192           | 2x160 + 4x96 |                72.6 | dissl_resnet50_d8192_e400_m6 |        [model]() |
 | 800    | 8192           | 2x224 + 6x96 |                     | dissl_resnet50_d8192_e800_m8 |        [model]() |
 
@@ -79,7 +79,8 @@ You should get the following results printed:
 | + epochs |                            49.0% |
  | + aug.   |                            50.7% |
 
-WandB monitoring curves: [see here](https://wandb.ai/issl/issl_opensource/groups/table1_distillation)
+Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/table1_distillation"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
+
 
 ### Dimensionality
 
@@ -90,7 +91,13 @@ To reproduce a similar figure (single seed) run `bin/tinyimagenet/fig7c_dimensio
 Once the script is finished you can collect and print the results by running `bin/tinyimagenet/fig7c_dimensions.sh -v "" -a is_force_gpu=False`.
 The following figure will then be saved in `results/exp_fig7c_dimensions/fig7c.pdf`.
 
-(Figure)
+<p float="left" align="middle">
+<img src="media/fig7c.png" alt="Fig7c: Effect of dimensionality" width="400"/>
+</p>
+
+
+Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/fig7c_dimensions"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
+
 
 ### Projection heads
 
@@ -114,7 +121,7 @@ You should get the following results printed:
 | + epochs |                                % |
  | + aug.   |                                % |
 
-WandB monitoring curves: [see here](https://wandb.ai/issl/issl_opensource/groups/table1_distillation)
+Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/table1_distillation"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
 
 
 We also provide a minimal CISSL implementation: [![Minimal training of CISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_cissl.ipynb)
@@ -131,30 +138,4 @@ The following figure will then be saved as `results/exp_fig7a_augmentations/fig7
 
 (Figure)
 
-
-
-[//]: # (## Cite)
-
-[//]: # ()
-[//]: # (You can read the full paper [here]&#40;https://arxiv.org/abs/2106.10800&#41;. Please cite our paper if you use our model:)
-
-[//]: # ()
-[//]: # (```bibtex)
-
-[//]: # (@inproceedings{)
-
-[//]: # (    dubois2021lossy,)
-
-[//]: # (    title={Lossy Compression for Lossless Prediction},)
-
-[//]: # (    author={Yann Dubois and Benjamin Bloem-Reddy and Karen Ullrich and Chris J. Maddison},)
-
-[//]: # (    booktitle={Neural Compression: From Information Theory to Applications -- Workshop @ ICLR 2021},)
-
-[//]: # (    year={2021},)
-
-[//]: # (    url={https://arxiv.org/abs/2106.10800})
-
-[//]: # (})
-
-[//]: # (```)
+Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/fig7a_augmentations"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>

@@ -21,23 +21,23 @@ def _dissl(base, dim=None, sffx="", pretrained=True, **kwargs):
     resnet.fc = torch.nn.Identity()
 
     if pretrained:
-        dir_path = "https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0"
-        ckpt_path = f"{dir_path}/dissl_{base}_d{dim}{sffx}.pt"
+        dir_path = "https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha"
+        ckpt_path = f"{dir_path}/dissl_{base}_d{dim}{sffx}.torch"
         state_dict = torch.hub.load_state_dict_from_url(url=ckpt_path, map_location="cpu")
         resnet.load_state_dict(state_dict, strict=True)
 
     return resnet
 
-def dissl_resnet50_d2048_e100_m2(pretrained=True, **kwargs):
+def dissl_resnet50_dNone_e100_m2(pretrained=True, **kwargs):
     return _dissl(base="resnet50", dim=None, sffx="_e100_m2", pretrained=pretrained, **kwargs)
 
 def dissl_resnet50_d8192_e100_m2(pretrained=True, **kwargs):
     return _dissl(base="resnet50", dim=8192, sffx="_e100_m2", pretrained=pretrained, **kwargs)
 
-def dissl_resnet50_d2048_e400_m2(pretrained=True, **kwargs):
+def dissl_resnet50_dNone_e400_m2(pretrained=True, **kwargs):
     return _dissl(base="resnet50", dim=None, sffx="_e400_m2", pretrained=pretrained, **kwargs)
 
-def dissl_resnet50_d2048_e400_m6(pretrained=True, **kwargs):
+def dissl_resnet50_dNone_e400_m6(pretrained=True, **kwargs):
     return _dissl(base="resnet50", dim=None, sffx="_e400_m6", pretrained=pretrained, **kwargs)
 
 def dissl_resnet50_d8192_e400_m6(pretrained=True, **kwargs):
