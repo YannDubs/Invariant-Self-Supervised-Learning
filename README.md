@@ -39,6 +39,8 @@ They are all ResNet50 trained with a batch size of 2560 and 16fp on 8 A100.
 | 400    | 8192           | 2x160 + 4x96 |                72.6 | dissl_resnet50_d8192_e400_m6 |        [model]() |
 | 800    | 8192           | 2x224 + 6x96 |                     | dissl_resnet50_d8192_e800_m8 |        [model]() |
 
+For an example of how to use the pretrained models see: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/torchhub.ipynb). 
+
 We also provide a minimal DISSL implementation: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_dissl.ipynb)
 
 
