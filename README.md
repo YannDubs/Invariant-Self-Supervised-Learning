@@ -9,8 +9,7 @@ Our framework provides actionable insights into ISSL that lead to important empi
 - [**Choose the architecture of projection probes**](#projection-heads) 
 - [**Choose the augmentations**](#augmentations)
 
-The following provides the code load our ImageNet pretrained models, to reproduce our key results, and minimal notebook implementations of our DISSL [![DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_dissl.ipynb) and CISSL [![Training](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_cissl.ipynb
-).
+The following provides the code load our ImageNet pretrained models, to reproduce our key results, and minimal notebook implementations of our DISSL [![DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_dissl.ipynb) and CISSL [![Training](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_cissl.ipynb).
 
 
 ## DISSL
@@ -39,9 +38,9 @@ They are all ResNet50 trained with a batch size of 2560 and 16fp on 8 A100.
 | 400    | 8192           | 2x160 + 4x96 |                72.6 | dissl_resnet50_d8192_e400_m6 |        [model]() |
 | 800    | 8192           | 2x224 + 6x96 |                     | dissl_resnet50_d8192_e800_m8 |        [model]() |
 
-For an example of how to use the pretrained models see: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/torchhub.ipynb). 
+For an example of how to use the pretrained models see: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/torchhub.ipynb). 
 
-We also provide a minimal DISSL implementation: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_dissl.ipynb)
+We also provide a minimal DISSL implementation: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_dissl.ipynb)
 
 
 ## Reproducing main results 
@@ -126,7 +125,7 @@ You should get the following results printed:
 Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/table1_distillation"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
 
 
-We also provide a minimal CISSL implementation: [![Minimal training of CISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/lossyless/blob/main/notebooks/minimal_cissl.ipynb)
+We also provide a minimal CISSL implementation: [![Minimal training of CISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_cissl.ipynb)
 
 
 
