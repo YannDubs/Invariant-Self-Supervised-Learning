@@ -23,7 +23,8 @@ To load any of our model use:
 ```python
 import torch
 
-model = torch.hub.load('YannDubs/Invariant-Self-Supervised-Learning:main', 'dissl_resnet50_d8192_e800_m8')
+model = torch.hub.load('YannDubs/Invariant-Self-Supervised-Learning:main', 
+                       'dissl_resnet50_d8192_e800_m8')
 ```
 
 Here are all available models with their respective linear probing performance on ImageNet.
@@ -93,7 +94,7 @@ Once the script is finished you can collect and print the results by running `bi
 The following figure will then be saved in `results/exp_fig7c_dimensions/fig7c.pdf`.
 
 <p float="left" align="middle">
-<img src="media/fig7c.png" alt="Fig7c: Effect of dimensionality" width="400"/>
+<img src="assets/fig7c.png" alt="Fig7c: Effect of dimensionality" width="400"/>
 </p>
 
 
