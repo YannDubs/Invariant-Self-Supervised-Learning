@@ -27,8 +27,8 @@ PRETTY_RENAMER = StrFormatter(
         "Test/Pred Train/": "Train ",
         "Train/Pred/": "Train ",
         "Test/Repr/": "Test ",
-        #"Zdim": r"$\mathcal{Z}$ dim.",
-        "Zdim": r"Dimension $d$",
+        "Zdim": r"$\mathcal{Z}$ dim.",
+        #"Zdim": r"Dimension $d$",
         "Pred": "Downstream Pred.",
         "Repr": "ISSL",
         "N Equiv": "# Equiv.", #r"$|\mathcal{X}/{\sim}|$",
@@ -50,5 +50,5 @@ PRETTY_RENAMER = StrFormatter(
         "Decodability": "ISSL Loss",
         "Augmentation": "Aug.",
     },
-    to_upper=["Cifar10", "Mnist", "Mlp", "Adam", "Dissl", "Cntr"],
+    to_upper=["Cifar10", "Mnist", "Mlp", "Adam", "Dissl", "Cissl"],
 )

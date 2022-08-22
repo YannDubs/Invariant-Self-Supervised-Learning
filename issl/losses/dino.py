@@ -114,15 +114,15 @@ class DINO(nn.Module):
 
     @torch.no_grad()
     def update_center(self, teacher_output):
-        # shape: [batch_size, M_shape]
+        # shape: [batch_size, n_equiv]
         batch_center = torch.mean(teacher_output, dim=0, keepdim=True)
         # ema update
         self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
 
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
-        kwargs["in_shape"] = kwargs.get("in_shape", self.z_dim)
-        kwargs["out_shape"] = kwargs.get("out_shape", self.n_equivalence_classes)
+        kwargs["in_dim"] = kwargs.get("in_dim", self.z_dim)
+        kwargs["out_dim"] = kwargs.get("out_dim", self.n_equivalence_classes)
         return kwargs
 
     def forward(
@@ -151,7 +151,7 @@ class DINO(nn.Module):
         # have to use x and x_tilde directly because the encoder is different now
         z_tilde = self.teacher_encoder(torch.cat([x, x_tilde], dim=0))
 
-        # shape: [batch_size*2, M_shape].
+        # shape: [batch_size*2, n_equiv].
         student_M = self.projector(z).float()
         teacher_M = self.teacher_proj(z_tilde).float()
 
@@ -181,7 +181,7 @@ class DINO(nn.Module):
         logits_student = M_student / self.student_temperature
         logits_teacher = (M_teacher - self.center) / self.teacher_temperature
 
-        # p(M|Z). shape: [batch_size, M_shape]
+        # p(M|Z). shape: [batch_size, n_equiv]
         p_Mlz = F.softmax(logits_teacher, dim=-1)
 
         # shape: []

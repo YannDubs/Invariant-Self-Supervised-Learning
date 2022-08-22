@@ -23,7 +23,7 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
     Return
     ------
     Architecture : uninstantiated nn.Module
-        Architecture that can be instantiated by `Architecture(in_dim, out_shape)`
+        Architecture that can be instantiated by `Architecture(in_shape, out_shape)`
     """
     if architecture == "mlp":
         return partial(MLP, **kwargs)
@@ -32,10 +32,10 @@ def get_Architecture(architecture: str, **kwargs) -> Any:
         return partial(torch.nn.Identity, **kwargs)
 
     elif architecture == "linear":
-        return partial(FlattenLinear, **kwargs)
+        return partial(Linear, **kwargs)
 
     elif architecture == "cosine":
-        return partial(FlattenCosine, **kwargs)
+        return partial(Cosine, **kwargs)
 
     elif architecture == "resnet":
         return partial(ResNet, **kwargs)

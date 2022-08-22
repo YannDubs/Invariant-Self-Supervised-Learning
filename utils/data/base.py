@@ -11,13 +11,9 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Optional, Union
 
-import numpy as np
-import numpy.typing as npt
-
-from issl.helpers import tmp_seed
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from utils.data.helpers import BalancedSubset, CachedSubset, subset2dataset
+from utils.data.helpers import BalancedSubset, subset2dataset
 
 DIR = Path(__file__).parents[2].joinpath("data")
 logger = logging.getLogger(__name__)
@@ -31,10 +27,9 @@ class ISSLDataset(abc.ABC):
 
     Parameters
     -----------
-    aux_target : {"input", "representative", "augmentation", "target",  "Mx", None}, optional
-        Auxiliary target to append to the target. This will be used to minimize R[aux_target|Z]. `"input"` is the input
-        example X, "representative" is a representative of the equivalence class, `"sample_p_Alx"` is some
-        augmented source A(x). "target" is the target. "Mx" is the maximal invariant. `None` appends nothing.
+    aux_target : {"augmentation",  None}, optional
+        Auxiliary target to append to the target. This will be used to minimize R[aux_target|Z].
+        example X,  `"sample_p_Alx"` is some augmented source A(x). `None` appends nothing.
 
     a_augmentations : set of str, optional
         Augmentations that should be used to construct the axillary target, i.e., p(A|x). I.e. this should define the
@@ -87,11 +82,6 @@ class ISSLDataset(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def get_representative(self, Mx: Any) -> Any:
-        """Return a representative element for current Mx."""
-        ...
-
-    @abc.abstractmethod
     def sample_p_Alx(self, x: Any, Mx: Any) -> Any:
         """Return some augmentation A of X sampled from p(A|X)."""
         ...
@@ -100,15 +90,6 @@ class ISSLDataset(abc.ABC):
     def set_eval_(self):
         """Set the dataset into evaluation mode."""
         ...
-
-    @property
-    def idx_to_class(self):
-        """Dictionary mapping index to class name."""
-        if hasattr(self, "class_to_idx"):
-            return {v: k for k, v in self.class_to_idx.items()}
-        else:
-            # if no class name just return the index in string
-            return {i: str(i) for i in range(self.shapes["target"][0])}
 
     @property
     @abc.abstractmethod
@@ -131,29 +112,17 @@ class ISSLDataset(abc.ABC):
     def get_aux_target(self, x: Any, target: Any, Mx: Any) -> Any:
         """Appends an additional target."""
 
-        if self.aux_target == "input":
-            # the input
-            to_add = x
-        elif self.aux_target == "representative":
-            # representative element from same equivalence class
-            to_add = self.get_representative(Mx)
-        elif self.aux_target == "augmentation":
+        if self.aux_target == "augmentation":
             # augmented example
             to_add = self.sample_p_Alx(x, Mx)
-        elif self.aux_target == "target":
-            # duplicate but makes code simpler
-            to_add = target
-        elif self.aux_target == "Mx":
-            to_add = Mx
         else:
             raise ValueError(f"Unknown aux_target={self.aux_target}")
 
         return to_add
 
-    def get_shapes(self,) -> tuple[tuple[int, ...], Optional[tuple[int, ...]]]:
+    def get_shapes(self,) -> tuple[int, Optional[tuple[int, ...]]]:
         """Return `shapes` for the target, aux_target."""
         shapes = self.shapes
-        shapes["representative"] = shapes["input"]
         shapes["augmentation"] = shapes["input"]
         shapes[None] = None
 
@@ -306,7 +275,7 @@ class ISSLDataModule(LightningDataModule):
     def set_info_(self) -> None:
         """Sets some information from the dataset."""
         dataset = self.dataset
-        self.target_shape, self.aux_shape = dataset.get_shapes()
+        self.target_dim, self.aux_shape = dataset.get_shapes()
         self.shape = dataset.shapes["input"]
         self.aux_target = dataset.aux_target
         self.normalized = dataset.normalization if dataset.is_normalize else None

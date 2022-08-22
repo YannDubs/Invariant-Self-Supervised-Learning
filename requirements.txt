@@ -4,7 +4,6 @@ einops
 hydra-colorlog
 hydra-core
 hydra-submitit-launcher
-hydra-optuna-sweeper
 matplotlib
 pandas
 pytorch-lightning
@@ -14,4 +13,3 @@ seaborn
 wandb
 rich
 torchmetrics
-umap-learn

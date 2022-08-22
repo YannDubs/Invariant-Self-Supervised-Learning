@@ -176,33 +176,6 @@ def replace_keys(
     }
 
 
-# credits : https://gist.github.com/simon-weber/7853144
-@contextmanager
-def all_logging_disabled(highest_level=logging.CRITICAL):
-    """
-    A context manager that will prevent any logging messages
-    triggered during the body from being processed.
-
-    :param highest_level: the maximum logging level in use.
-      This would only need to be changed if a custom level greater than CRITICAL
-      is defined.
-    """
-    # two kind-of hacks here:
-    #    * can't get the highest logging level in effect => delegate to the user
-    #    * can't get the current module-level override => use an undocumented
-    #       (but non-private!) interface
-
-    previous_level = logging.root.manager.disable
-
-    logging.disable(highest_level)
-
-    try:
-        with warnings.catch_warnings():
-            yield
-    finally:
-        logging.disable(previous_level)
-
-
 # noinspection PyBroadException
 def log_dict(trainer: pl.Trainer, to_log: dict, is_param: bool) -> None:
     """Safe logging of param or metrics."""
@@ -213,8 +186,6 @@ def log_dict(trainer: pl.Trainer, to_log: dict, is_param: bool) -> None:
             trainer.logger.log_metrics(to_log)
     except:
         pass
-
-
 
 def apply_representor(
     datamodule: pl.LightningDataModule,
@@ -272,8 +243,6 @@ def apply_representor(
     )
 
     return datamodule
-
-
 
 def remove_rf(path: Union[str, Path], not_exist_ok: bool = False) -> None:
     """Remove a file or a folder"""
@@ -370,4 +339,3 @@ def plot_config(
             warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
             # reset defaults
             plt.rcParams.update(defaults)
-

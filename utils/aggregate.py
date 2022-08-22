@@ -24,16 +24,6 @@ import hydra
 import torch
 from omegaconf import OmegaConf
 
-try:
-    import sklearn.metrics
-except:
-    pass
-
-try:
-    import optuna
-except:
-    pass
-
 MAIN_DIR = os.path.abspath(str(Path(__file__).parents[1]))
 CURR_DIR = os.path.abspath(str(Path(__file__).parents[0]))
 sys.path.append(MAIN_DIR)
@@ -57,13 +47,12 @@ from utils.postplotting import (  # isort:skip
     table_summarizer,
     filename_format,
 )
-from utils.postplotting.helpers import aggregate, save_fig  # isort:skip
-from utils.visualizations.helpers import kwargs_log_scale  # isort:skip
+from utils.postplotting.helpers import aggregate, kwargs_log_scale  # isort:skip
 
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(config_path=f"{MAIN_DIR}/config", config_name="aggregate")
+@hydra.main(config_path=f"{MAIN_DIR}/config", config_name="aggregate", version_base="1.1")
 def main_cli(cfg):
     # uses main_cli sot that `main` can be called from notebooks.
     return main(cfg)

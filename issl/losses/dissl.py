@@ -76,8 +76,8 @@ class DISSL(nn.Module):
 
     def process_shapes(self, kwargs: dict) -> dict:
         kwargs = copy.deepcopy(kwargs)  # ensure mutable object is ok
-        kwargs["in_shape"] = kwargs.get("in_shape", self.z_dim)
-        kwargs["out_shape"] = kwargs.get("out_shape", self.n_equivalence_classes)
+        kwargs["in_dim"] = kwargs.get("in_dim", self.z_dim)
+        kwargs["out_dim"] = kwargs.get("out_dim", self.n_equivalence_classes)
         return kwargs
 
     def get_Mx(self, z_tgt):

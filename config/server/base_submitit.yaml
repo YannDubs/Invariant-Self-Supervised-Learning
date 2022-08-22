@@ -13,7 +13,7 @@ hydra:
     # number of cpus to use for each task
     cpus_per_task: 8
     # number of gpus to use on each node
-    gpus_per_node: ${trainer.gpus}
+    gpus_per_node: ${trainer.devices}
     # number of tasks to spawn on each node
     tasks_per_node: 1 # number of tasks on single machine
     # memory to reserve for the job on each node (in GB)

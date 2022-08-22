@@ -15,18 +15,3 @@ hydra:
     max_num_timeout: 30 # allow resume from checkpointing
     additional_parameters:
       qos: normal # normal, high, deadline, nopreemption (this is the stream of execution )
-
-# NOTE:
-# I also had to change the command in submitit. specifically in submitit/slurm/slurm.py
-# somewhere : /h/yannd/.conda/envs/lossyless/lib/python3.8/site-packages/submitit/slurm/
-# function: _make_sbatch_string replace the end with
-# lines += [
-#       "",
-#       "# command",
-#       "export SUBMITIT_EXECUTOR=slurm",
-#       "export MKL_THREADING_LAYER=GNU",
-#       f"srun --mem {mem} --output '{stdout}' --error '{stderr}' --unbuffered {command}",
-#   ]
-#
-# and also had to add slurm to the path
-# export PATH="$PATH:/opt/slurm/bin"
