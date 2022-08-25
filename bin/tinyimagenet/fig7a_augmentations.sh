@@ -48,7 +48,7 @@ python utils/aggregate.py \
        +plot_scatter_lines.hue="augmentation_strength" \
        +plot_scatter_lines.logbase_x=10 \
        +plot_scatter_lines.legend_out=True \
-       +plot_scatter_lines.is_legend=False \
+       +plot_scatter_lines.is_legend=True \
        agg_mode=[plot_scatter_lines] \
        $add_kwargs
 fi

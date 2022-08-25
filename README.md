@@ -120,10 +120,10 @@ You should get the following results printed:
 | SimCLR   |                            45.2% |
 | CISSL    |                            45.8% |
 | + dim.   |                            47.6% |
-| + epochs |                                % |
- | + aug.   |                                % |
+| + epochs |                            48.7% |
+ | + aug.   |                            51.2% |
 
-Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/table1_distillation"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
+Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/table1_contrastive"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
 
 
 We also provide a minimal CISSL implementation: [![Minimal training of CISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/minimal_cissl.ipynb)
@@ -138,6 +138,9 @@ Figure 7a of our paper shows empirically that this is indeed the case.
 To reproduce a similar figure (single seed) run `bin/tinyimagenet/fig7a_augmentations.sh`.
 The following figure will then be saved as `results/exp_fig7a_augmentations/fig7a.pdf`.
 
-(Figure)
+<p float="left" align="middle">
+<img src="assets/fig7a.png" alt="Fig7a: Effect of augmentations" width="600"/>
+</p>
+
 
 Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/fig7a_augmentations"><img src="https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-28.svg" height="18"  /><a/>
