@@ -18,7 +18,7 @@ def _replace_dict_prefix(d, prefix, replace_with = ""):
     return { k.replace(prefix, replace_with, 1) if k.startswith(prefix) else k: v for k,v in d.items()}
 
 def _dissl(base, dim=None, sffx="", pretrained=True, **kwargs):
-    resnet = torchvision.models.__dict__[base](weights=None, **kwargs)
+    resnet = torchvision.models.__dict__[base](**kwargs)
     if dim is not None:
         _update_dim_resnet_(resnet, z_dim=dim, bottleneck_channel=512, is_residual=True)
     resnet.fc = torch.nn.Identity()
