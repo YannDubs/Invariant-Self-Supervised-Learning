@@ -147,7 +147,7 @@ def dissl_resnet50_dNone(*, weights=None, **kwargs):
     weights = DISSL_ResNet50DNone_Weights.verify(weights)
     return _dissl(base="resnet50", weights=weights, **kwargs)
 
-@_utils.handle_legacy_interface(*, weights=("pretrained", DISSL_ResNet50D8192_Weights.DEFAULT))
-def dissl_resnet50_d8192(weights=None, **kwargs):
+@_utils.handle_legacy_interface(weights=("pretrained", DISSL_ResNet50D8192_Weights.DEFAULT))
+def dissl_resnet50_d8192(*, weights=None, **kwargs):
     weights = DISSL_ResNet50D8192_Weights.verify(weights)
     return _dissl(base="resnet50", dim=8192, weights=weights, **kwargs)
