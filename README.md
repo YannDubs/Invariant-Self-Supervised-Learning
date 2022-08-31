@@ -30,14 +30,14 @@ model = torch.hub.load('YannDubs/Invariant-Self-Supervised-Learning:main',
 Here are all available models with their respective linear probing performance on ImageNet.
 They are all ResNet50 trained with a batch size of 2560 and 16fp on 8 A100.
 
-| Epochs | Dimensionality | Multi-crop   | ImageNet top-1 acc. |                TorchHub name |                                                                                                                                   Weights | 
-|--------|----------------|--------------|--------------------:|-----------------------------:|------------------------------------------------------------------------------------------------------------------------------------------:|
-| 100    | 2048           | 2x224        |                66.4 | dissl_resnet50_dNone_e100_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e100_m2.torch) | 
-| 100    | 8192           | 2x224        |                67.6 | dissl_resnet50_d8192_e100_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e100_m2.torch) | 
-| 400    | 2048           | 2x224        |                70.4 | dissl_resnet50_dNone_e400_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e400_m2.torch) | 
-| 400    | 2048           | 2x160 + 4x96 |                71.5 | dissl_resnet50_dNone_e400_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e400_m6.torch) |     
-| 400    | 8192           | 2x160 + 4x96 |                72.6 | dissl_resnet50_d8192_e400_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e400_m6.torch) |
-| 800    | 8192           | 2x224 + 6x96 |                72.9 | dissl_resnet50_d8192_e800_m8 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e800_m8.torch) |
+| Epochs | Dimensionality | Multi-crop    |  ImageNet top-1 acc. | ImageNet top-5 acc. |                TorchHub name |                                                                                                                                   Weights | 
+|--------|----------------|---------------|---------------------:|--------------------:|-----------------------------:|------------------------------------------------------------------------------------------------------------------------------------------:|
+| 100    | 2048           | 2x224         |                 66.9 |                87.5 | dissl_resnet50_dNone_e100_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e100_m2.torch) | 
+| 100    | 8192           | 2x224         |                 68.9 |                88.5 | dissl_resnet50_d8192_e100_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e100_m2.torch) |
+| 400    | 2048           | 2x224         |                 71.1 |                90.2 | dissl_resnet50_dNone_e400_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e400_m2.torch) | 
+| 400    | 2048           | 2x160 + 4x96  |                 73.0 |                91.3 | dissl_resnet50_dNone_e400_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e400_m6.torch) |     
+| 400    | 8192           | 2x160 + 4x96  |                 74.0 |                91.9 | dissl_resnet50_d8192_e400_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e400_m6.torch) |
+| 800    | 8192           | 2x224 + 6x96  |                 73.9 |                91.9 | dissl_resnet50_d8192_e800_m8 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e800_m8.torch) |
 
 For an example of how to use the pretrained models see: [![Minimal training of DISSL](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YannDubs/Invariant-Self-Supervised-Learning/blob/main/notebooks/torchhub.ipynb). 
 
