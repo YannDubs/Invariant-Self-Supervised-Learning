@@ -26,10 +26,6 @@ collect_data:
   params_to_add_dflt : {}
   params_to_create: {}
 
-plot_optuna_hypopt:
-  storage: sqlite:///${kwargs.base_dir}/${base_path}/optuna.db
-  study_name: main
-
 kwargs:
   base_dir: ${hydra:runtime.cwd}
   save_dir: ${base_path}

@@ -1,7 +1,7 @@
 # Lossy Compression for Lossless Prediction [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/YannDubs/lossyless/blob/main/LICENSE) [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 
 
-This repostiory contains pretrained weights from and the original implementation of [Improving Self-Supervised Learning by Characterizing Idealized Representations](https://github.com/YannDubs/Invariant-Self-Supervised-Learning),
+This repostiory contains pretrained weights from and the original implementation of [Improving Self-Supervised Learning by Characterizing Idealized Representations](https://arxiv.org/abs/2209.06235),
 which derives a simple uniying framework for invariant self-supervised learning (ISSL).
 Our framework provides actionable insights into ISSL that lead to important empirical gains such as how to:
 - [**Simplify non-contrastive ISSL using our DISSL objective**](#dissl-tinyimagenet) (no momentum encoders / no stop-gradients / ... )
@@ -34,6 +34,7 @@ They are all ResNet50 trained with a batch size of 2560 and 16fp on 8 A100.
 |--------|----------------|---------------|---------------------:|--------------------:|-----------------------------:|------------------------------------------------------------------------------------------------------------------------------------------:|
 | 100    | 2048           | 2x224         |                 66.9 |                87.5 | dissl_resnet50_dNone_e100_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e100_m2.torch) | 
 | 100    | 8192           | 2x224         |                 68.9 |                88.5 | dissl_resnet50_d8192_e100_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e100_m2.torch) |
+| 100    | 8192           | 2x160 + 4x96  |                 70.7 |                88.5 | dissl_resnet50_d8192_e100_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e100_m6.torch) |
 | 400    | 2048           | 2x224         |                 71.1 |                90.2 | dissl_resnet50_dNone_e400_m2 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e400_m2.torch) | 
 | 400    | 2048           | 2x160 + 4x96  |                 73.0 |                91.3 | dissl_resnet50_dNone_e400_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_dNone_e400_m6.torch) |     
 | 400    | 8192           | 2x160 + 4x96  |                 74.0 |                91.9 | dissl_resnet50_d8192_e400_m6 | [model](https://github.com/YannDubs/Invariant-Self-Supervised-Learning/releases/download/v1.0.0-alpha/dissl_resnet50_d8192_e400_m6.torch) |
