@@ -14,7 +14,10 @@ The following provides the code load our ImageNet pretrained models, to reproduc
 
 ## DISSL
 
-(GIF)
+
+https://user-images.githubusercontent.com/24327668/197094787-67f7e5cd-edb1-4448-aa1c-45cb65e4fe69.mp4
+
+
 
 Our DISSL objective is a very simple non-contrastive objective that outperforms previous baselines. 
 
@@ -108,7 +111,6 @@ Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/fig7c_dim
 In our paper, we prove that one of the two projection heads needs to have the same architecture as the dowsntream probe.
 This is to ensure that the SSL representations are pretrained the same way as they will be used in downstream tasks.
 
-(GIF)
 
 This is the difference between our CISSL and SimCLR. 
 The left column in Table 1 of our paper shows empirically that this improves performance.
