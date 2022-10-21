@@ -108,6 +108,10 @@ Training curves: <a href="https://wandb.ai/issl/issl_opensource/groups/fig7c_dim
 ### Projection heads
 
 
+
+https://user-images.githubusercontent.com/24327668/197136877-c9cea581-b5ec-4033-ada7-75e6c85eeab4.mov
+
+
 In our paper, we prove that one of the two projection heads needs to have the same architecture as the dowsntream probe.
 This is to ensure that the SSL representations are pretrained the same way as they will be used in downstream tasks.
 
