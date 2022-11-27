@@ -15,7 +15,10 @@ The following provides the code load our ImageNet pretrained models, to reproduc
 ## DISSL
 
 
-https://user-images.githubusercontent.com/24327668/197094787-67f7e5cd-edb1-4448-aa1c-45cb65e4fe69.mp4
+
+https://user-images.githubusercontent.com/24327668/204160941-fd0a2d0d-fe4e-49b7-b621-6139bcfc52be.mov
+
+
 
 
 
